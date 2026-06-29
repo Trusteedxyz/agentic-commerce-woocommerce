@@ -1,0 +1,319 @@
+# Spanish (Spain) translation for AgenticMCPStores for WooCommerce.
+# Copyright (C) 2026 AgenticMCPStores
+# This file is distributed under the same license as the AgenticMCPStores for WooCommerce package.
+msgid ""
+msgstr ""
+"Project-Id-Version: AgenticMCPStores for WooCommerce 1.0.0\n"
+"Report-Msgid-Bugs-To: https://agenticmcpstores.com/support\n"
+"POT-Creation-Date: 2026-03-28 00:00+0000\n"
+"PO-Revision-Date: 2026-03-28 00:00+0000\n"
+"Last-Translator: AgenticMCPStores <info@agenticmcpstores.com>\n"
+"Language-Team: Spanish (Spain) <es@li.org>\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Plugin Name of the plugin
+#: agenticmcpstores.php:3
+msgid "AgenticMCPStores for WooCommerce"
+msgstr "AgenticMCPStores para WooCommerce"
+
+#. Description of the plugin
+#: agenticmcpstores.php:5
+msgid "Connect your WooCommerce store to AI agents via MCP (Model Context Protocol). Enable Claude, ChatGPT, and any MCP-compatible agent to search your catalog and create carts."
+msgstr "Conecta tu tienda WooCommerce a agentes de IA mediante MCP (Model Context Protocol). Permite que Claude, ChatGPT y cualquier agente compatible con MCP busquen en tu catálogo y creen carritos."
+
+#: agenticmcpstores.php:87
+msgid "requires WooCommerce to be installed and active."
+msgstr "requiere que WooCommerce esté instalado y activo."
+
+#: includes/class-settings.php:117
+#: includes/class-settings.php:118
+msgid "AgenticMCPStores"
+msgstr "AgenticMCPStores"
+
+#: includes/class-settings.php:145
+msgid "API Connection"
+msgstr "Conexión API"
+
+#: includes/class-settings.php:152
+msgid "API Key"
+msgstr "Clave API"
+
+#. translators: %s: link to AgenticMCPStores dashboard
+#: includes/class-settings.php:173
+msgid "Enter your API key from the %s to connect your store."
+msgstr "Introduce tu clave API del %s para conectar tu tienda."
+
+#: includes/class-settings.php:175
+msgid "AgenticMCPStores Dashboard"
+msgstr "Panel de AgenticMCPStores"
+
+#: includes/class-settings.php:207
+msgid "Toggle API key visibility"
+msgstr "Alternar visibilidad de la clave API"
+
+#: includes/class-settings.php:212
+msgid "Your AgenticMCPStores API key. Keep this secret."
+msgstr "Tu clave API de AgenticMCPStores. Mantenla en secreto."
+
+#: includes/class-settings.php:250
+msgid "Save &amp; Connect"
+msgstr "Guardar y conectar"
+
+#: includes/class-settings.php:255
+#: includes/class-settings.php:256
+msgid "Connection Status"
+msgstr "Estado de conexión"
+
+#: includes/class-settings.php:260
+msgid "Status"
+msgstr "Estado"
+
+#: includes/class-settings.php:264
+#: includes/class-settings.php:533
+msgid "Connected"
+msgstr "Conectado"
+
+#: includes/class-settings.php:268
+msgid "Not Connected"
+msgstr "No conectado"
+
+#: includes/class-settings.php:275
+msgid "Store Slug"
+msgstr "Slug de la tienda"
+
+#: includes/class-settings.php:290
+msgid "MCP Endpoint"
+msgstr "Endpoint MCP"
+
+#: includes/class-settings.php:304
+msgid "Current Tier"
+msgstr "Plan actual"
+
+#: includes/class-settings.php:312
+msgid "Last Sync"
+msgstr "Última sincronización"
+
+#: includes/class-settings.php:319
+msgid "Never"
+msgstr "Nunca"
+
+#: includes/class-settings.php:328
+#: includes/class-settings.php:329
+msgid "Actions"
+msgstr "Acciones"
+
+#: includes/class-settings.php:337
+#: includes/class-settings.php:529
+msgid "Test Connection"
+msgstr "Probar conexión"
+
+#: includes/class-settings.php:348
+#: includes/class-settings.php:531
+msgid "Sync Catalog Now"
+msgstr "Sincronizar catálogo ahora"
+
+#: includes/class-settings.php:372
+msgid "Upgrade your plan"
+msgstr "Mejora tu plan"
+
+#: includes/class-settings.php:374
+msgid "Unlock More Features"
+msgstr "Desbloquea más funcionalidades"
+
+#: includes/class-settings.php:376
+msgid "Upgrade to a paid plan to get higher rate limits, advanced analytics, and priority support for your AI agent integrations."
+msgstr "Actualiza a un plan de pago para obtener límites de peticiones más altos, analíticas avanzadas y soporte prioritario para tus integraciones con agentes de IA."
+
+#: includes/class-settings.php:384
+msgid "View Plans &amp; Pricing"
+msgstr "Ver planes y precios"
+
+#: includes/class-settings.php:385
+msgid "(opens in new tab)"
+msgstr "(se abre en una nueva pestaña)"
+
+#: includes/class-settings.php:407
+#: includes/class-settings.php:451
+msgid "Permission denied."
+msgstr "Permiso denegado."
+
+#: includes/class-settings.php:482
+msgid "Catalog sync completed successfully."
+msgstr "Sincronización del catálogo completada correctamente."
+
+#: includes/class-settings.php:528
+msgid "Testing..."
+msgstr "Probando..."
+
+#: includes/class-settings.php:530
+msgid "Syncing..."
+msgstr "Sincronizando..."
+
+#: includes/class-settings.php:532
+msgid "Request failed"
+msgstr "Solicitud fallida"
+
+#: includes/class-settings.php:534
+msgid "Failed"
+msgstr "Fallido"
+
+#: includes/class-settings.php:535
+msgid "Show API key"
+msgstr "Mostrar clave API"
+
+#: includes/class-settings.php:536
+msgid "Hide API key"
+msgstr "Ocultar clave API"
+
+#. translators: 1: endpoint path, 2: timeout in seconds
+#: includes/class-api-client.php:149
+msgid "Request to %1$s timed out after %2$d seconds."
+msgstr "La solicitud a %1$s ha expirado tras %2$d segundos."
+
+#. translators: 1: endpoint path, 2: error message
+#: includes/class-api-client.php:160
+msgid "Transport error requesting %1$s: %2$s"
+msgstr "Error de transporte al solicitar %1$s: %2$s"
+
+#. translators: 1: endpoint path, 2: HTTP status code, 3: max retries
+#: includes/class-api-client.php:186
+msgid "Request to %1$s failed with status %2$d after %3$d attempts."
+msgstr "La solicitud a %1$s falló con estado %2$d tras %3$d intentos."
+
+#: includes/class-api-client.php:196
+msgid "Unexpected error during API request."
+msgstr "Error inesperado durante la solicitud a la API."
+
+#. translators: 1: HTTP status code
+#: includes/class-api-client.php:261
+msgid "API health check returned status %1$d. Expected 200 with status \"ok\"."
+msgstr "La comprobación de salud de la API devolvió estado %1$d. Se esperaba 200 con estado \"ok\"."
+
+#: includes/class-api-client.php:308
+msgid "Unknown error during store registration."
+msgstr "Error desconocido durante el registro de la tienda."
+
+#: includes/class-api-client.php:325
+msgid "Registration response missing expected data field."
+msgstr "La respuesta de registro no contiene el campo de datos esperado."
+
+#. translators: 1: endpoint path, 2: JSON error message
+#: includes/class-api-client.php:363
+msgid "Invalid JSON response from %1$s: %2$s"
+msgstr "Respuesta JSON inválida de %1$s: %2$s"
+
+#. translators: 1: HTTP status code, 2: error message
+#: includes/class-api-client.php:388
+msgid "API error %1$d: %2$s"
+msgstr "Error de API %1$d: %2$s"
+
+#: includes/class-catalog-sync.php:259
+msgid "Invalid security token."
+msgstr "Token de seguridad inválido."
+
+#: includes/class-catalog-sync.php:267
+msgid "Insufficient permissions."
+msgstr "Permisos insuficientes."
+
+#: includes/class-cart-bridge.php:90
+msgid "line_items must be a non-empty array."
+msgstr "line_items debe ser un array no vacío."
+
+#. translators: %d: maximum number of line items
+#: includes/class-cart-bridge.php:100
+msgid "Maximum %d line items allowed per cart."
+msgstr "Se permiten un máximo de %d artículos por carrito."
+
+#. translators: %d: line item index (0-based)
+#: includes/class-cart-bridge.php:120
+msgid "Invalid product_id at line item index %d."
+msgstr "product_id inválido en el índice de artículo %d."
+
+#. translators: %d: line item index (0-based)
+#: includes/class-cart-bridge.php:131
+msgid "Quantity must be greater than 0 at line item index %d."
+msgstr "La cantidad debe ser mayor que 0 en el índice de artículo %d."
+
+#. translators: %d: product ID
+#: includes/class-cart-bridge.php:148
+msgid "Product with ID %d not found."
+msgstr "Producto con ID %d no encontrado."
+
+#. translators: %s: product name
+#: includes/class-cart-bridge.php:159
+msgid "Product \"%s\" is not available for purchase."
+msgstr "El producto \"%s\" no está disponible para compra."
+
+#. translators: %s: product name
+#: includes/class-cart-bridge.php:170
+msgid "Product \"%s\" is out of stock."
+msgstr "El producto \"%s\" está agotado."
+
+#: includes/class-cart-bridge.php:216
+msgid "Plugin API key is not configured."
+msgstr "La clave API del plugin no está configurada."
+
+#: includes/class-cart-bridge.php:224
+msgid "Invalid or missing API key."
+msgstr "Clave API inválida o no proporcionada."
+
+#: includes/class-billing-webhooks.php:370
+msgid "AgenticMCPStores:"
+msgstr "AgenticMCPStores:"
+
+#. translators: 1: previous tier name, 2: link to pricing page
+#: includes/class-billing-webhooks.php:374
+msgid "Your %1$s subscription has expired. Your store is now on the FREE tier with limited features. %2$s to restore full functionality."
+msgstr "Tu suscripción %1$s ha expirado. Tu tienda está ahora en el plan GRATUITO con funcionalidades limitadas. %2$s para restaurar la funcionalidad completa."
+
+#: includes/class-billing-webhooks.php:377
+msgid "Upgrade now"
+msgstr "Actualizar ahora"
+
+#: includes/admin/class-admin-router.php
+msgid "Trusteed"
+msgstr "Trusteed"
+
+#: includes/admin/class-admin-router.php
+msgid "Home"
+msgstr "Inicio"
+
+#: includes/admin/class-admin-router.php
+msgid "Trust Center"
+msgstr "Centro de Confianza"
+
+#: includes/admin/class-admin-router.php
+msgid "My Sales"
+msgstr "Mis Ventas"
+
+#: includes/admin/class-admin-router.php
+msgid "My Rules"
+msgstr "Mis Reglas"
+
+#: includes/admin/class-admin-router.php
+msgid "Agents"
+msgstr "Agentes"
+
+#: includes/admin/class-admin-router.php
+msgid "Security"
+msgstr "Seguridad"
+
+#: includes/admin/class-admin-router.php
+msgid "Merchant Center"
+msgstr "Centro del Comercio"
+
+#: includes/admin/class-admin-router.php
+msgid "Settings"
+msgstr "Ajustes"
+
+#: includes/admin/class-admin-router.php
+msgid "You do not have sufficient permissions to access this page."
+msgstr "No tienes permisos suficientes para acceder a esta página."
+
+#: includes/admin/class-admin-router.php
+msgid "Internal error: SPA view not found."
+msgstr "Error interno: vista SPA no encontrada."

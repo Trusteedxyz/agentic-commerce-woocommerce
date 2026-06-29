@@ -1,0 +1,186 @@
+/**
+ * AgenticMCPStores for WooCommerce — Settings page styles.
+ *
+ * Aligned with WordPress Admin UI conventions.
+ * WCAG 2.1 AA compliant: min contrast 4.5:1, focus outlines, visible labels.
+ *
+ * @package AgenticMCPStores
+ * @since   1.0.0
+ */
+
+/* ----------------------------------------------------------------
+   Layout
+   ---------------------------------------------------------------- */
+
+.agenticmcp-settings {
+	max-width: 800px;
+}
+
+.agenticmcp-section {
+	margin-top: 24px;
+	padding: 16px 0;
+	border-top: 1px solid #c3c4c7;
+}
+
+.agenticmcp-section h2 {
+	margin-top: 0;
+	font-size: 1.3em;
+}
+
+/* ----------------------------------------------------------------
+   API Key field wrapper
+   ---------------------------------------------------------------- */
+
+.agenticmcp-api-key-wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.agenticmcp-api-key-wrapper input {
+	flex: 1 1 auto;
+	min-width: 200px;
+}
+
+.agenticmcp-api-key-wrapper .description {
+	flex-basis: 100%;
+}
+
+#agenticmcp-toggle-key {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 36px;
+	padding: 0 8px;
+}
+
+#agenticmcp-toggle-key .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+/* ----------------------------------------------------------------
+   Badges
+   ---------------------------------------------------------------- */
+
+.agenticmcp-badge {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 4px;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.5;
+	vertical-align: middle;
+}
+
+/* Green — contrast ratio ~5.9:1 on white */
+.agenticmcp-badge--success {
+	background: #d4edda;
+	color: #155724;
+}
+
+/* Red — contrast ratio ~5.3:1 on white */
+.agenticmcp-badge--error {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+/* Blue — contrast ratio ~6.4:1 on white */
+.agenticmcp-badge--info {
+	background: #cce5ff;
+	color: #004085;
+}
+
+/* ----------------------------------------------------------------
+   Action buttons row
+   ---------------------------------------------------------------- */
+
+.agenticmcp-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 12px 0;
+}
+
+.agenticmcp-result {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.agenticmcp-result .spinner {
+	float: none;
+	margin: 0;
+}
+
+/* ----------------------------------------------------------------
+   Status table readonly fields
+   ---------------------------------------------------------------- */
+
+.agenticmcp-section input[readonly] {
+	background: #f0f0f1;
+	color: #50575e;
+	cursor: default;
+	border-color: #c3c4c7;
+}
+
+/* ----------------------------------------------------------------
+   Upgrade CTA banner
+   ---------------------------------------------------------------- */
+
+.agenticmcp-upgrade-cta {
+	margin-top: 24px;
+	padding: 20px 24px;
+	background: linear-gradient(135deg, #f0f6fc 0%, #e8f0fe 100%);
+	border: 1px solid #2271b1;
+	border-radius: 4px;
+	border-left-width: 4px;
+}
+
+.agenticmcp-upgrade-cta h3 {
+	margin-top: 0;
+	margin-bottom: 8px;
+	color: #1d2327;
+}
+
+.agenticmcp-upgrade-cta p {
+	margin-bottom: 16px;
+	color: #50575e;
+}
+
+.agenticmcp-upgrade-cta .button-primary {
+	text-decoration: none;
+}
+
+/* ----------------------------------------------------------------
+   Focus outlines (WCAG 2.1 AA)
+   ---------------------------------------------------------------- */
+
+.agenticmcp-settings button:focus-visible,
+.agenticmcp-settings input:focus-visible,
+.agenticmcp-settings a:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+	box-shadow: none;
+}
+
+/* ----------------------------------------------------------------
+   Responsive
+   ---------------------------------------------------------------- */
+
+@media screen and (max-width: 782px) {
+	.agenticmcp-settings {
+		max-width: 100%;
+	}
+
+	.agenticmcp-api-key-wrapper input {
+		min-width: 150px;
+	}
+
+	.agenticmcp-actions {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}
