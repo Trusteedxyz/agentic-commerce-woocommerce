@@ -21,6 +21,12 @@ Each panel below maps to an item in the **Trusteed** menu inside WooCommerce.
 |----------|--------|-----------------|
 | ![My Rules](assets/screenshots/my-rules.png) | ![Agents](assets/screenshots/agents.png) | ![Merchant Center](assets/screenshots/merchant-center.png) |
 
+| Trust Receipts (My Sales → AI Sales) |
+|--------------------------------------|
+| ![Trust Receipts](assets/screenshots/ai-receipts.png) |
+
+Every agent transaction produces a cryptographically signed **trust receipt** — a tamper-proof record (compatible with eIDAS / eSIGN) listed under **My Sales → AI Sales**.
+
 ## Features
 
 Trusteed for WooCommerce is a **thin connector** that bridges your product catalog to the growing ecosystem of AI shopping agents using the **Model Context Protocol (MCP)** — an open standard created by Anthropic. The plugin never processes payments or touches sensitive customer data: checkout always happens in your **native WooCommerce checkout**.
