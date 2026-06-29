@@ -11,9 +11,15 @@ Enable new online shoppers, AI agents, to make purchases in your store securely 
 
 ## Screenshots
 
-| Connection Status | Settings | Catalog |
-|-------------------|----------|---------|
-| ![Connection](assets/screenshots/connection-status.png) | ![Settings](assets/screenshots/settings-page.png) | ![Products](assets/screenshots/woocommerce-products.png) |
+Each panel below maps to an item in the **Trusteed** menu inside WooCommerce.
+
+| Home | Trust Center | My Sales |
+|------|--------------|----------|
+| ![Home](assets/screenshots/home.png) | ![Trust Center](assets/screenshots/trust-center.png) | ![My Sales](assets/screenshots/my-sales.png) |
+
+| My Rules | Agents | Merchant Center |
+|----------|--------|-----------------|
+| ![My Rules](assets/screenshots/my-rules.png) | ![Agents](assets/screenshots/agents.png) | ![Merchant Center](assets/screenshots/merchant-center.png) |
 
 ## Features
 
