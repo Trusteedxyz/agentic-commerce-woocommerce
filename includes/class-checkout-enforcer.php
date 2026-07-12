@@ -303,8 +303,18 @@ class Amcp_Checkout_Enforcer {
 	 *   INDETERMINATE → 'enforce' mode returns 'BLOCK' (fail-closed),
 	 *                   'observe' mode returns 'ALLOW' + telemetry log.
 	 *
-	 * Skipped entirely (return 'ALLOW') when not an agent cart, merchant unset,
-	 * or WC session unavailable.
+	 * App Store remediation (2026-07-11): previously this method returned
+	 * 'ALLOW' immediately for any non-agent cart, WITHOUT ever calling the
+	 * evaluator — which meant merchant-wide policy rules (R019 country
+	 * restriction, R020 business hours, R030 max-order-amount, etc.) never
+	 * applied to a normal human checkout, only to agentic ones. The shared
+	 * evaluator (`rule-evaluator.service.ts`) already resolves each rule's
+	 * `appliesTo` from ruleCode identity (not a DB column) and correctly
+	 * excludes AGENT-only rules (R001, etc.) when `agentId` is null — so it
+	 * is now safe to call `evaluate()` unconditionally with `agentId: null`
+	 * for a non-agent cart, and let the server-side partition decide which
+	 * rules apply. Only merchant-unset / WC-session-unavailable still fail
+	 * fast (nothing to evaluate against).
 	 *
 	 * @since 1.3.0
 	 *
@@ -312,24 +322,22 @@ class Amcp_Checkout_Enforcer {
 	 * @return string 'ALLOW' or 'BLOCK'.
 	 */
 	private function run_evaluation( array $order_context ): string {
-		if ( ! WC()->session ) {
-			return 'ALLOW';
-		}
-
-		$agent_id = WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENT_ID );
-
-		// Not an agent-initiated cart — skip enforcement entirely.
-		if ( empty( $agent_id ) || ! is_string( $agent_id ) ) {
-			return 'ALLOW';
-		}
-
 		// Merchant not configured — cannot evaluate. In enforce mode this is a
 		// hard fail (would silently bypass otherwise); in observe mode allow + log.
 		if ( empty( $this->merchant_id ) ) {
 			return $this->apply_failure_mode( 'merchant_id_unset' );
 		}
 
+		$agent_id = WC()->session
+			? WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENT_ID )
+			: null;
+		if ( empty( $agent_id ) || ! is_string( $agent_id ) ) {
+			$agent_id = null;
+		}
+
 		// Verify agent token signature and enrich orderContext cartAttributes.
+		// Safe to call unconditionally — no-ops (returns $order_context
+		// unchanged) when there is no session token to verify.
 		$order_context = $this->enrich_with_token_verification( $order_context );
 
 		$payload = array(
@@ -344,14 +352,81 @@ class Amcp_Checkout_Enforcer {
 		$result = $this->api_client->evaluate( $payload );
 
 		// Clear session regardless of decision to avoid re-checking on retry.
-		WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_ID, null );
-		WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, null );
+		if ( WC()->session ) {
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_ID, null );
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, null );
+		}
 
 		if ( Amcp_Eval_Outcome::INDETERMINATE === $result->outcome ) {
+			// App Store remediation follow-up (2026-07-11) — before falling
+			// back to the blunt failure_mode policy (block everything /
+			// allow everything), try the offline safety-valve evaluator
+			// against the last pulled signed snapshot. This lets a merchant's
+			// own universal policy rules (max order amount, blocked
+			// countries, business hours, PO-box block, gift-card cap...)
+			// still fire during a remote-API outage, instead of either
+			// silently letting every cart through or blocking every
+			// legitimate human checkout.
+			$offline_block = $this->try_offline_safety_valve( $order_context );
+			if ( null !== $offline_block ) {
+				error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+					sprintf(
+						'[amcp.offline_safety_valve] BLOCK ruleCode=%s reason=%s (remote evaluate() was INDETERMINATE: %s)',
+						$offline_block['ruleCode'],
+						$offline_block['reason'],
+						$result->reason
+					)
+				);
+				return 'BLOCK';
+			}
 			return $this->apply_failure_mode( $result->reason );
 		}
 
+		// R043 HITL — a human-in-the-loop approval is required before the order may
+		// complete. Instead of a hard block (which loses the customer's intent) we
+		// park the freeze payload so AgenticMCP_R043_Hitl_Gate::on_order_processed
+		// stamps the created order as `wc-pending` (payment NOT captured) pending
+		// merchant approval — parity with Magento's quote freeze (is_active=0).
+		if (
+			Amcp_Eval_Outcome::BLOCK === $result->outcome
+			&& null !== $result->hitl_payload
+			&& class_exists( 'AgenticMCP_R043_Hitl_Gate' )
+		) {
+			AgenticMCP_R043_Hitl_Gate::park_in_session( $result->hitl_payload );
+			return 'ALLOW'; // Order proceeds → gate freezes it to pending.
+		}
+
 		return Amcp_Eval_Outcome::BLOCK === $result->outcome ? 'BLOCK' : 'ALLOW';
+	}
+
+	/**
+	 * App Store remediation follow-up (2026-07-11) — offline safety-valve
+	 * fallback. Evaluates the merchant-policy rule subset that needs no
+	 * network/DB (R014-country/R018/R019/R020/R025/R027/R028/R029/R030)
+	 * against the last pulled signed snapshot's `rules[]`, using ONLY the
+	 * cart data already in $order_context. Returns null (no local block —
+	 * caller falls through to failure_mode) when the snapshot is
+	 * unavailable, has no applicable rules, or the cart passes.
+	 *
+	 * @param array $order_context Same shape sent to the remote evaluator.
+	 * @return array{ruleCode: string, reason: string}|null
+	 */
+	private function try_offline_safety_valve( array $order_context ): ?array {
+		if ( null === $this->snapshot_client || ! method_exists( $this->snapshot_client, 'get_rules' ) ) {
+			return null;
+		}
+		try {
+			$rules = $this->snapshot_client->get_rules( $this->merchant_id );
+		} catch ( \Throwable $e ) {
+			return null;
+		}
+		if ( empty( $rules ) || ! class_exists( 'Amcp_Offline_Safety_Valve_Evaluator' ) ) {
+			return null;
+		}
+		$cart_attributes = isset( $order_context['cartAttributes'] ) && is_array( $order_context['cartAttributes'] )
+			? $order_context['cartAttributes']
+			: array();
+		return Amcp_Offline_Safety_Valve_Evaluator::evaluate( $rules, $order_context, $cart_attributes );
 	}
 
 	/**

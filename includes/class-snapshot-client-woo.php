@@ -71,8 +71,51 @@ class Amcp_Snapshot_Client_Woo {
 	 * @return array Array of { did, publicKeyJwk }.
 	 */
 	public function get_did_resolver( string $merchant_id ): array {
-		if ( empty( $merchant_id ) ) {
+		$payload = $this->get_cached_payload( $merchant_id );
+		if ( null === $payload ) {
 			return array();
+		}
+		return isset( $payload['agentDidResolver'] ) && is_array( $payload['agentDidResolver'] )
+			? $payload['agentDidResolver']
+			: array();
+	}
+
+	/**
+	 * Return the snapshot `rules[]` array for a merchant — the merchant-policy
+	 * ruleset (ruleCode/enabled/params per rule) consumed by
+	 * {@see Amcp_Offline_Safety_Valve_Evaluator} when the remote
+	 * `/v1/rules/evaluate` call is unavailable.
+	 *
+	 * App Store remediation (2026-07-11). Shares the same cached payload as
+	 * {@see get_did_resolver()} — no extra network round-trip when both are
+	 * called within the same request (the common case: token verification
+	 * calls get_did_resolver() first, then a failed evaluate() call triggers
+	 * the offline fallback which calls get_rules()).
+	 *
+	 * @param string $merchant_id Merchant UUID.
+	 * @return array Snapshot `rules[]`, or empty array on any error.
+	 */
+	public function get_rules( string $merchant_id ): array {
+		$payload = $this->get_cached_payload( $merchant_id );
+		if ( null === $payload ) {
+			return array();
+		}
+		return isset( $payload['rules'] ) && is_array( $payload['rules'] )
+			? $payload['rules']
+			: array();
+	}
+
+	/**
+	 * Fetch (or return the transient-cached) full signed snapshot payload for
+	 * a merchant. Shared by get_did_resolver() and get_rules() so both read
+	 * from a single cache entry / network fetch.
+	 *
+	 * @param string $merchant_id Merchant UUID.
+	 * @return array|null Decoded payload, or null on any error.
+	 */
+	private function get_cached_payload( string $merchant_id ): ?array {
+		if ( empty( $merchant_id ) ) {
+			return null;
 		}
 
 		$transient_key = self::SNAP_TRANSIENT_PREFIX . substr( md5( $merchant_id ), 0, 12 );
@@ -83,12 +126,8 @@ class Amcp_Snapshot_Client_Woo {
 
 		$payload = $this->fetch_and_verify_snapshot( $merchant_id );
 		if ( null === $payload ) {
-			return array();
+			return null;
 		}
-
-		$resolver = isset( $payload['agentDidResolver'] ) && is_array( $payload['agentDidResolver'] )
-			? $payload['agentDidResolver']
-			: array();
 
 		// Cache until validUntil or 60s, whichever is smaller, max 300s.
 		$ttl = 60;
@@ -99,8 +138,8 @@ class Amcp_Snapshot_Client_Woo {
 			}
 		}
 
-		set_transient( $transient_key, $resolver, $ttl );
-		return $resolver;
+		set_transient( $transient_key, $payload, $ttl );
+		return $payload;
 	}
 
 	/**

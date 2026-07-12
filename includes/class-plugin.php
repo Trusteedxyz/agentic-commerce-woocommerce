@@ -154,9 +154,11 @@ class Trusteed_Plugin {
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-enforcement-api-client.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-token-verifier.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-snapshot-client-woo.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-offline-safety-valve-evaluator.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-cart-signals.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-classic-meta-persister.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-checkout-enforcer.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-r043-hitl-gate.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-event-webhook.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-multi-add-handler.php';
 
@@ -270,6 +272,14 @@ class Trusteed_Plugin {
 
 		// Checkout enforcement for agent-initiated orders.
 		$this->checkout_enforcer->init();
+
+		// R043 HITL gate — stamps agentic orders flagged for human review as
+		// `wc-pending` (payment not captured) instead of losing them to a hard
+		// block. The checkout enforcer parks the freeze payload in the WC session
+		// on a HITL decision; this hook consumes it at order-processed time.
+		if ( class_exists( 'AgenticMCP_R043_Hitl_Gate' ) ) {
+			AgenticMCP_R043_Hitl_Gate::register();
+		}
 
 		// R023 refund/cancel webhook — propagates events to backend for R023 evaluation.
 		$this->agent_event_webhook->init();

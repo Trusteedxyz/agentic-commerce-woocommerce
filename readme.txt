@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 WC requires at least: 8.0
 WC tested up to: 10.6
 License: GPLv2 or later
@@ -129,6 +129,12 @@ Privacy Policy: [https://trusteed.xyz/privacy](https://trusteed.xyz/privacy)
 3. AI agent searching products — Claude finding products in your catalog via MCP
 
 == Changelog ==
+
+= 2.0.2 =
+**Checkout enforcement fix (Shopify App Store review remediation, 2026-07-11/12)** — closes an agent-gating gap surfaced by cross-platform verification after an unrelated Shopify App Store suspension.
+
+* Fixed: checkout enforcement was skipped entirely for organic (human, non-agent) checkouts — merchant rules such as maximum order amount, blocked countries, and business-hours restrictions never ran unless an agent token was present. These rules now apply to every checkout regardless of agent presence.
+* Added: an offline safety-valve evaluator that enforces the same universal merchant rules locally when the remote rules-evaluation API is unreachable, instead of only falling back to a blanket allow/block policy.
 
 = 2.0.1 =
 **Critical activation + security hotfix (Codex audit, 2026-06-11)** — Closes 9 audit findings + 2 adjacent HIGH issues surfaced in code review.

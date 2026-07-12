@@ -94,6 +94,10 @@ A detailed merchant walkthrough lives in [`docs/MERCHANT_INSTALLATION_GUIDE.md`]
 
 ## Changelog
 
+### 2.0.2
+
+Checkout enforcement fix. Merchant rules (max order amount, blocked countries, business hours) were being skipped entirely for organic, non-agent checkouts — they now apply universally. Added an offline safety-valve evaluator that enforces these rules locally when the remote rules API is unreachable.
+
 ### 2.0.1
 
 Critical activation + security hotfix (Codex audit). Fixes a half-finished `AGENTICMCP_*` → `TRUSTEED_*` rename that prevented activation in 2.0.0; `create_cart` now forwards the agent JWS token so R002 verification runs; REST client validates the API base host against an exact allowlist.
