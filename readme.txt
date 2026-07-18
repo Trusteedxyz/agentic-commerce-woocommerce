@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.0.2
+Stable tag: 2.1.0
 WC requires at least: 8.0
 WC tested up to: 10.6
 License: GPLv2 or later
