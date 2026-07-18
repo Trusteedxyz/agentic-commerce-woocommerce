@@ -15,7 +15,7 @@
  * Fail-open silently on transport errors — these events are best-effort
  * telemetry; the source of truth remains the merchant's order DB.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.5.0
  */
 
@@ -24,11 +24,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Amcp_Agent_Event_Webhook
+ * Class Trusteed_Agent_Event_Webhook
  *
  * @since 1.5.0
  */
-class Amcp_Agent_Event_Webhook {
+class Trusteed_Agent_Event_Webhook {
 
 	private string $api_base;
 	private string $installation_id;
@@ -50,7 +50,7 @@ class Amcp_Agent_Event_Webhook {
 	private const BLOCKING_TIMEOUT_SECONDS  = 3;
 	private const MAX_RETRY_ATTEMPTS        = 3;
 	private const RETRY_BASE_DELAY_SECONDS  = 60;
-	private const RETRY_HOOK                = 'amcp_agent_event_retry';
+	private const RETRY_HOOK                = 'trusteed_agent_event_retry';
 
 	/**
 	 * F6.PHP1 / CR1 — Hard cap on the JSON body bytes persisted into a cron
@@ -88,7 +88,7 @@ class Amcp_Agent_Event_Webhook {
 	 * disconnected mid-flight). Surfaced by class-settings.php via an
 	 * admin_notices hook.
 	 */
-	public const NOTICE_OPTION_HMAC_MISSING = 'amcp_enforcement_hmac_missing_notice';
+	public const NOTICE_OPTION_HMAC_MISSING = 'trusteed_enforcement_hmac_missing_notice';
 
 	public function __construct(
 		string $api_base,

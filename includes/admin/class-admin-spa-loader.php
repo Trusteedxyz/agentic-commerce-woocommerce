@@ -2,7 +2,7 @@
 /**
  * Admin SPA asset loader — enqueues the Vite-built React bundle from manifest.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.1.0
  */
 
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Amcp_Admin_Spa_Loader
+ * Class Trusteed_Admin_Spa_Loader
  *
  * Reads the Vite manifest at assets/admin-spa/.vite/manifest.json and
  * enqueues the compiled JS + CSS on any Trusteed admin page.
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class Amcp_Admin_Spa_Loader {
+class Trusteed_Admin_Spa_Loader {
 
 	/**
 	 * Path to the Vite manifest relative to assets/.
@@ -143,7 +143,7 @@ class Amcp_Admin_Spa_Loader {
 
 		// Pass only public, non-sensitive config to the SPA (constraint C-003).
 		// NEVER include tokens, secrets, or credentials here.
-		$api_base = untrailingslashit( (string) get_option( 'amcp_api_base_url', TRUSTEED_API_BASE ) );
+		$api_base = untrailingslashit( (string) Trusteed_Options::get_option( 'api_base_url', TRUSTEED_API_BASE ) );
 
 		// Dev: when the stored URL is a private Docker bridge IP (172.x.x.x) or the
 		// Docker host alias (host.docker.internal), the SPA runs in the user's

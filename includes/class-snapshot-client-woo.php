@@ -13,7 +13,7 @@
  * Fail-open: any connectivity, parse, or crypto error returns an empty resolver
  * array, which causes token verification to return INDETERMINATE (not INVALID).
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.4.0
  */
 
@@ -22,17 +22,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Amcp_Snapshot_Client_Woo
+ * Class Trusteed_Snapshot_Client_Woo
  *
  * @since 1.4.0
  */
-class Amcp_Snapshot_Client_Woo {
+class Trusteed_Snapshot_Client_Woo {
 
 	/** WP transient key prefix for snapshot cache (per merchant). */
-	private const SNAP_TRANSIENT_PREFIX = 'amcp_snap_';
+	private const SNAP_TRANSIENT_PREFIX = 'trusteed_snap_';
 
 	/** WP transient key for JWKS cache. */
-	private const JWKS_TRANSIENT_KEY = 'amcp_trusteed_jwks';
+	private const JWKS_TRANSIENT_KEY = 'trusteed_jwks';
 
 	/** JWKS cache TTL in seconds. */
 	private const JWKS_TTL_SECONDS = 3600;
@@ -83,7 +83,7 @@ class Amcp_Snapshot_Client_Woo {
 	/**
 	 * Return the snapshot `rules[]` array for a merchant — the merchant-policy
 	 * ruleset (ruleCode/enabled/params per rule) consumed by
-	 * {@see Amcp_Offline_Safety_Valve_Evaluator} when the remote
+	 * {@see Trusteed_Offline_Safety_Valve_Evaluator} when the remote
 	 * `/v1/rules/evaluate` call is unavailable.
 	 *
 	 * App Store remediation (2026-07-11). Shares the same cached payload as
@@ -331,8 +331,8 @@ class Amcp_Snapshot_Client_Woo {
 			// permissive verifier. We still return headers so wp_remote_get
 			// runs and the calling code's existing non-200 path triggers.
 			error_log( '[amcp.snapshot] fail-closed: enforcement_hmac_secret missing' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-			if ( function_exists( 'update_option' ) && class_exists( 'Amcp_Agent_Event_Webhook' ) ) {
-				update_option( Amcp_Agent_Event_Webhook::NOTICE_OPTION_HMAC_MISSING, 1, false );
+			if ( function_exists( 'update_option' ) && class_exists( 'Trusteed_Agent_Event_Webhook' ) ) {
+				update_option( Trusteed_Agent_Event_Webhook::NOTICE_OPTION_HMAC_MISSING, 1, false );
 			}
 			return array(
 				'X-Trusteed-Installation-Id' => $this->installation_id,

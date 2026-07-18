@@ -2,7 +2,7 @@
 /**
  * Catalog synchronization between WooCommerce and AgenticMCPStores.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.0.0
  */
 
@@ -12,14 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class AgenticMCP_Catalog_Sync
+ * Class Trusteed_Catalog_Sync
  *
  * Handles product sync on create, update, stock change, and delete events.
  * Also provides a full catalog sync triggered manually from the settings page.
  *
  * @since 1.0.0
  */
-class AgenticMCP_Catalog_Sync {
+class Trusteed_Catalog_Sync {
 
 	/**
 	 * Number of products per batch during full sync.
@@ -319,7 +319,7 @@ class AgenticMCP_Catalog_Sync {
 	 *
 	 * @param string         $context  Caller name (e.g. 'on_product_save').
 	 * @param int            $entity_id Product / post ID being synced.
-	 * @param array|WP_Error $response  Result returned by AgenticMCP_Api_Client::post().
+	 * @param array|WP_Error $response  Result returned by Trusteed_Api_Client::post().
 	 *
 	 * @return void
 	 */

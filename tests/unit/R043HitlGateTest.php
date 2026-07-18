@@ -29,7 +29,7 @@ final class R043HitlGateTest extends TestCase
                 'reason_code' => 'trusteed:R043.agent-checkout-approval-required',
             ],
         ];
-        $this->assertTrue(AgenticMCP_R043_Hitl_Gate::is_hitl_response($resp));
+        $this->assertTrue(Trusteed_R043_Hitl_Gate::is_hitl_response($resp));
     }
 
     public function test_detects_with_object_response(): void
@@ -41,7 +41,7 @@ final class R043HitlGateTest extends TestCase
                 'reason_code' => 'trusteed:R043.something',
             ],
         ];
-        $this->assertTrue(AgenticMCP_R043_Hitl_Gate::is_hitl_response($resp));
+        $this->assertTrue(Trusteed_R043_Hitl_Gate::is_hitl_response($resp));
     }
 
     public function test_rejects_plain_block(): void
@@ -50,7 +50,7 @@ final class R043HitlGateTest extends TestCase
             'decision' => 'BLOCK',
             'ucp' => ['state' => 'failed', 'reason_code' => 'trusteed:R001'],
         ];
-        $this->assertFalse(AgenticMCP_R043_Hitl_Gate::is_hitl_response($resp));
+        $this->assertFalse(Trusteed_R043_Hitl_Gate::is_hitl_response($resp));
     }
 
     public function test_rejects_allow_with_escalation(): void
@@ -59,7 +59,7 @@ final class R043HitlGateTest extends TestCase
             'decision' => 'ALLOW',
             'ucp' => ['state' => 'requires_escalation', 'reason_code' => 'trusteed:R043'],
         ];
-        $this->assertFalse(AgenticMCP_R043_Hitl_Gate::is_hitl_response($resp));
+        $this->assertFalse(Trusteed_R043_Hitl_Gate::is_hitl_response($resp));
     }
 
     public function test_rejects_other_rule_codes(): void
@@ -68,7 +68,7 @@ final class R043HitlGateTest extends TestCase
             'decision' => 'BLOCK',
             'ucp' => ['state' => 'requires_escalation', 'reason_code' => 'trusteed:R031.kill-switch'],
         ];
-        $this->assertFalse(AgenticMCP_R043_Hitl_Gate::is_hitl_response($resp));
+        $this->assertFalse(Trusteed_R043_Hitl_Gate::is_hitl_response($resp));
     }
 
     public function test_rule_code_from_extracts_canonical(): void
@@ -79,19 +79,19 @@ final class R043HitlGateTest extends TestCase
         ];
         $this->assertSame(
             'R043.agent-checkout-approval-required',
-            AgenticMCP_R043_Hitl_Gate::rule_code_from($resp)
+            Trusteed_R043_Hitl_Gate::rule_code_from($resp)
         );
     }
 
     public function test_rule_code_from_returns_empty_on_missing_prefix(): void
     {
         $resp = ['ucp' => ['reason_code' => 'R043.no-prefix']];
-        $this->assertSame('', AgenticMCP_R043_Hitl_Gate::rule_code_from($resp));
+        $this->assertSame('', Trusteed_R043_Hitl_Gate::rule_code_from($resp));
     }
 
     public function test_rejects_missing_ucp(): void
     {
         $resp = ['decision' => 'BLOCK'];
-        $this->assertFalse(AgenticMCP_R043_Hitl_Gate::is_hitl_response($resp));
+        $this->assertFalse(Trusteed_R043_Hitl_Gate::is_hitl_response($resp));
     }
 }

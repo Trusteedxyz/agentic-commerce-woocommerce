@@ -2,12 +2,12 @@
 /**
  * Classic-checkout agent-DID meta persister (Gap 1).
  *
- * Extracted from Amcp_Checkout_Enforcer to keep that file under the 800-line
+ * Extracted from Trusteed_Checkout_Enforcer to keep that file under the 800-line
  * limit set in CLAUDE.md while preserving the single-responsibility split:
  * the enforcer decides ALLOW/BLOCK, this helper stamps order meta when the
  * classic-checkout path can't write to a WC_Order inline.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.6.0
  */
 
@@ -16,11 +16,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Amcp_Classic_Meta_Persister
+ * Class Trusteed_Classic_Meta_Persister
  *
  * @since 1.6.0
  */
-class Amcp_Classic_Meta_Persister {
+class Trusteed_Classic_Meta_Persister {
 
 	/**
 	 * Per-request guard so repeated invocations (e.g. payment gateway

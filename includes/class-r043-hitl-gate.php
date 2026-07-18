@@ -19,25 +19,25 @@
  * indica HITL, aparca el pedido en estado `wc-pending` con metadata HITL para
  * que el comerciante pueda aprobar/rechazar después sin perder la intención.
  *
- * @package AgenticMCP_Stores
+ * @package Trusteed
  * @since   1.6.0 (spec-048 Sprint E.2 T-E45)
  */
 
 defined( 'ABSPATH' ) || exit;
 
-if ( ! class_exists( 'AgenticMCP_R043_Hitl_Gate' ) ) {
+if ( ! class_exists( 'Trusteed_R043_Hitl_Gate' ) ) {
 
 	/**
 	 * Detects R043 HITL outcomes from enforcement responses and freezes the cart.
 	 */
-	class AgenticMCP_R043_Hitl_Gate {
+	class Trusteed_R043_Hitl_Gate {
 
 		public const R043_REASON_PREFIX  = 'trusteed:R043';
-		public const SESSION_HITL_PENDING = 'amcp_hitl_pending_payload';
-		public const ORDER_META_HITL     = '_amcp_hitl_pending';
-		public const ORDER_META_RULE     = '_amcp_hitl_rule_code';
-		public const ORDER_META_REASON   = '_amcp_hitl_reason';
-		public const ORDER_META_EVAL_ID  = '_amcp_hitl_evaluation_id';
+		public const SESSION_HITL_PENDING = 'trusteed_hitl_pending_payload';
+		public const ORDER_META_HITL     = '_trusteed_hitl_pending';
+		public const ORDER_META_RULE     = '_trusteed_hitl_rule_code';
+		public const ORDER_META_REASON   = '_trusteed_hitl_reason';
+		public const ORDER_META_EVAL_ID  = '_trusteed_hitl_evaluation_id';
 
 		/**
 		 * Returns true if the evaluation response signals R043 HITL.
@@ -130,8 +130,19 @@ if ( ! class_exists( 'AgenticMCP_R043_Hitl_Gate' ) ) {
 			if ( ! function_exists( 'add_action' ) ) {
 				return;
 			}
+			// Classic (shortcode) checkout path.
 			add_action(
 				'woocommerce_checkout_order_processed',
+				array( __CLASS__, 'on_order_processed' ),
+				20,
+				1
+			);
+			// Blocks / Store API checkout path — fires with a WC_Order object,
+			// which on_order_processed() tolerates (wc_get_order() accepts both an
+			// id and an order object). Without this the freeze would only apply to
+			// classic checkout, silently degrading Blocks HITL to a hard block.
+			add_action(
+				'woocommerce_store_api_checkout_order_processed',
 				array( __CLASS__, 'on_order_processed' ),
 				20,
 				1

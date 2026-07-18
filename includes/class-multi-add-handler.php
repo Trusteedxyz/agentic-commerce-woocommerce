@@ -18,7 +18,7 @@
  *  - NO nonce check: the URL is meant to be opened by the buyer in a
  *    fresh browser session; nonces would not be available.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.6.0
  */
 
@@ -27,11 +27,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Amcp_Multi_Add_Handler
+ * Class Trusteed_Multi_Add_Handler
  *
  * @since 1.6.0
  */
-class Amcp_Multi_Add_Handler {
+class Trusteed_Multi_Add_Handler {
 
 	/**
 	 * Query flag that activates this handler.

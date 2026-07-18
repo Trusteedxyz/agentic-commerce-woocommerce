@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 /**
- * TokenVerifierTest — PHPUnit 10 tests for Amcp_Token_Verifier.
+ * TokenVerifierTest — PHPUnit 10 tests for Trusteed_Token_Verifier.
  *
  * Tests use real Ed25519 cryptography via ext-sodium (sodium_crypto_sign_*).
- * No WordPress runtime is needed — Amcp_Token_Verifier is pure PHP.
+ * No WordPress runtime is needed — Trusteed_Token_Verifier is pure PHP.
  *
  * Three-state model verified:
  *   VALID        — signature correct, all claims pass
@@ -79,9 +79,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->makeToken([]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::VALID, $result->state, 'State must be valid');
+        $this->assertSame(Trusteed_Token_State::VALID, $result->state, 'State must be valid');
         $this->assertSame(self::AGENT_DID, $result->agent_did);
         $this->assertFalse($result->is_invalid());
         $this->assertTrue($result->is_valid());
@@ -96,9 +96,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->makeToken(['agentTrustScore' => 0.85]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::VALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::VALID, $result->state);
         $this->assertEqualsWithDelta(0.85, $result->trust_score, 0.001);
     }
 
@@ -109,9 +109,9 @@ class TokenVerifierTest extends TestCase
     {
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
 
-        $result = Amcp_Token_Verifier::verify('onlytwoparts.here', $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify('onlytwoparts.here', $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('malformed_jws', $result->error);
         $this->assertTrue($result->is_invalid());
     }
@@ -124,9 +124,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->makeTokenWithHeader(['alg' => 'RS256', 'typ' => 'trusteed-agent-token+jwt', 'kid' => self::AGENT_DID . '#key-1'], []);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('wrong_alg', $result->error);
     }
 
@@ -138,9 +138,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->makeTokenWithHeader(['alg' => 'EdDSA', 'typ' => 'JWT', 'kid' => self::AGENT_DID . '#key-1'], []);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('wrong_typ', $result->error);
     }
 
@@ -152,9 +152,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->makeTokenWithHeader(['alg' => 'EdDSA', 'typ' => 'trusteed-agent-token+jwt'], []);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('missing_kid', $result->error);
     }
 
@@ -170,9 +170,9 @@ class TokenVerifierTest extends TestCase
         // iss is a different DID from what kid implies.
         $jws = $this->makeToken(['iss' => 'did:web:attacker.example.com']);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('iss_kid_mismatch', $result->error);
     }
 
@@ -184,9 +184,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->makeToken(['aud' => 'shopify']);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('wrong_aud', $result->error);
     }
 
@@ -198,9 +198,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->makeToken(['merchantId' => 'other-merchant-uuid']);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('merchant_id_mismatch', $result->error);
     }
 
@@ -212,9 +212,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->makeToken(['exp' => time() - 31, 'iat' => time() - 400]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('expired', $result->error);
     }
 
@@ -230,9 +230,9 @@ class TokenVerifierTest extends TestCase
             'exp' => time() + 300,
         ]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('too_old', $result->error);
     }
 
@@ -260,9 +260,9 @@ class TokenVerifierTest extends TestCase
         ], JSON_THROW_ON_ERROR));
         $tampered = $parts[0] . '.' . $evilPayload . '.' . $parts[2];
 
-        $result = Amcp_Token_Verifier::verify($tampered, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($tampered, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('sig_invalid', $result->error);
     }
 
@@ -275,9 +275,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver('did:web:other.example.com', self::$pubkeyRaw);
         $jws      = $this->makeToken([]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INDETERMINATE, $result->state);
+        $this->assertSame(Trusteed_Token_State::INDETERMINATE, $result->state);
         $this->assertSame('did_not_in_resolver', $result->error);
         $this->assertFalse($result->is_invalid(), 'INDETERMINATE must not be treated as invalid');
         $this->assertFalse($result->is_valid());
@@ -289,9 +289,9 @@ class TokenVerifierTest extends TestCase
     public function testEmptyResolverReturnsIndeterminate(): void
     {
         $jws    = $this->makeToken([]);
-        $result = Amcp_Token_Verifier::verify($jws, [], self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, [], self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INDETERMINATE, $result->state);
+        $this->assertSame(Trusteed_Token_State::INDETERMINATE, $result->state);
         $this->assertSame('did_not_in_resolver', $result->error);
     }
 
@@ -306,9 +306,9 @@ class TokenVerifierTest extends TestCase
         ]];
         $jws = $this->makeToken([]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('wrong_key_type', $result->error);
     }
 
@@ -325,9 +325,9 @@ class TokenVerifierTest extends TestCase
         ]];
         $jws = $this->makeToken([]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('bad_pubkey', $result->error);
     }
 
@@ -343,9 +343,9 @@ class TokenVerifierTest extends TestCase
         // makeToken() already uses kid = AGENT_DID + '#key-1' — confirmed valid.
         $jws = $this->makeToken([]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::VALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::VALID, $result->state);
         $this->assertSame(self::AGENT_DID, $result->agent_did);
     }
 
@@ -359,9 +359,9 @@ class TokenVerifierTest extends TestCase
         unset($claims['merchantId']);
         $jws = $this->signToken($this->defaultHeader(), $claims);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::VALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::VALID, $result->state);
     }
 
     // ── TV-19: exp within 30s grace ─────────────────────────────────────────
@@ -375,9 +375,9 @@ class TokenVerifierTest extends TestCase
             'iat' => time() - 60,
         ]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::VALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::VALID, $result->state);
     }
 
     // ── TV-20: iat at exact MAX_AGE_SECONDS boundary ─────────────────────────
@@ -391,9 +391,9 @@ class TokenVerifierTest extends TestCase
             'exp' => time() + 10,
         ]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::VALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::VALID, $result->state);
     }
 
     // ── TV-21: wrong signing key ─────────────────────────────────────────────
@@ -408,9 +408,9 @@ class TokenVerifierTest extends TestCase
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $jws      = $this->signToken($this->defaultHeader(), $this->baseClaims(), self::$otherPrivkeyRaw);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('sig_invalid', $result->error);
     }
 
@@ -421,9 +421,9 @@ class TokenVerifierTest extends TestCase
     {
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
 
-        $valid      = Amcp_Token_Verifier::verify($this->makeToken([]), $resolver, self::MERCHANT_ID);
-        $indeterminate = Amcp_Token_Verifier::verify($this->makeToken([]), [], self::MERCHANT_ID);
-        $invalid    = Amcp_Token_Verifier::verify('bad.jws.here', $resolver, self::MERCHANT_ID);
+        $valid      = Trusteed_Token_Verifier::verify($this->makeToken([]), $resolver, self::MERCHANT_ID);
+        $indeterminate = Trusteed_Token_Verifier::verify($this->makeToken([]), [], self::MERCHANT_ID);
+        $invalid    = Trusteed_Token_Verifier::verify('bad.jws.here', $resolver, self::MERCHANT_ID);
 
         $this->assertTrue($valid->token_present());
         $this->assertTrue($indeterminate->token_present());

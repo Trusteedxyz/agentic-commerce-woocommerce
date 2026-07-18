@@ -17,11 +17,11 @@ if (!function_exists('wp_json_encode')) {
     }
 }
 
-// AgenticMCP_Plugin pulls a lot of dependencies via require_once chains we
+// Trusteed_Plugin pulls a lot of dependencies via require_once chains we
 // can't satisfy in unit tests. We re-declare the helper method as a small
 // surrogate class so the normalization logic can be exercised directly.
-if (!class_exists('AgenticMCP_Plugin_FailureModeSurrogate')) {
-    final class AgenticMCP_Plugin_FailureModeSurrogate
+if (!class_exists('Trusteed_Plugin_FailureModeSurrogate')) {
+    final class Trusteed_Plugin_FailureModeSurrogate
     {
         private const ALLOWED = ['enforce', 'observe'];
 
@@ -32,7 +32,7 @@ if (!class_exists('AgenticMCP_Plugin_FailureModeSurrogate')) {
                 return $normalized;
             }
             error_log(sprintf(
-                '[amcp.config_drift] amcp_failure_mode has invalid value %s — falling back to enforce',
+                '[amcp.config_drift] trusteed_failure_mode has invalid value %s — falling back to enforce',
                 wp_json_encode($raw)
             ));
             return 'enforce';
@@ -46,25 +46,25 @@ final class FailureModeNormalizationTest extends TestCase
 {
     public function test_accepts_enforce(): void
     {
-        $this->assertSame('enforce', AgenticMCP_Plugin_FailureModeSurrogate::normalize('enforce'));
+        $this->assertSame('enforce', Trusteed_Plugin_FailureModeSurrogate::normalize('enforce'));
     }
 
     public function test_accepts_observe(): void
     {
-        $this->assertSame('observe', AgenticMCP_Plugin_FailureModeSurrogate::normalize('observe'));
+        $this->assertSame('observe', Trusteed_Plugin_FailureModeSurrogate::normalize('observe'));
     }
 
     public function test_normalizes_case_and_whitespace(): void
     {
-        $this->assertSame('observe', AgenticMCP_Plugin_FailureModeSurrogate::normalize('  OBSERVE '));
-        $this->assertSame('enforce', AgenticMCP_Plugin_FailureModeSurrogate::normalize('Enforce'));
+        $this->assertSame('observe', Trusteed_Plugin_FailureModeSurrogate::normalize('  OBSERVE '));
+        $this->assertSame('enforce', Trusteed_Plugin_FailureModeSurrogate::normalize('Enforce'));
     }
 
     public function test_falls_back_to_enforce_on_drift(): void
     {
-        $this->assertSame('enforce', AgenticMCP_Plugin_FailureModeSurrogate::normalize('panic'));
-        $this->assertSame('enforce', AgenticMCP_Plugin_FailureModeSurrogate::normalize(''));
-        $this->assertSame('enforce', AgenticMCP_Plugin_FailureModeSurrogate::normalize('block-everything'));
+        $this->assertSame('enforce', Trusteed_Plugin_FailureModeSurrogate::normalize('panic'));
+        $this->assertSame('enforce', Trusteed_Plugin_FailureModeSurrogate::normalize(''));
+        $this->assertSame('enforce', Trusteed_Plugin_FailureModeSurrogate::normalize('block-everything'));
     }
 
     public function test_normalize_matches_real_plugin_logic(): void

@@ -6,7 +6,7 @@ declare(strict_types=1);
  * App Store remediation follow-up (2026-07-11) — cross-language conformance
  * test. Loads the SAME fixture consumed by
  * packages/shared/src/enforcement/__tests__/offline-safety-valve-conformance.test.ts
- * and asserts Amcp_Offline_Safety_Valve_Evaluator matches the canonical TS
+ * and asserts Trusteed_Offline_Safety_Valve_Evaluator matches the canonical TS
  * evaluators for every vector.
  */
 
@@ -22,7 +22,7 @@ final class OfflineSafetyValveConformanceTest extends TestCase
 {
     private function loadFixture(): array
     {
-        $path = __DIR__ . '/../fixtures/offline-safety-valve-conformance.json';
+        $path = __DIR__ . '/../../../../shared/src/enforcement/__fixtures__/offline-safety-valve-conformance.json';
         $this->assertFileExists($path, 'conformance fixture must be reachable from the monorepo layout');
         $json = json_decode((string) file_get_contents($path), true);
         $this->assertIsArray($json);
@@ -52,7 +52,7 @@ final class OfflineSafetyValveConformanceTest extends TestCase
                 'params'   => $vector['params'],
             ],
         ];
-        $result = Amcp_Offline_Safety_Valve_Evaluator::evaluate(
+        $result = Trusteed_Offline_Safety_Valve_Evaluator::evaluate(
             $rules,
             $vector['orderContext'],
             $vector['cartAttributes']
@@ -74,7 +74,7 @@ final class OfflineSafetyValveConformanceTest extends TestCase
 
     public static function vectorProvider(): array
     {
-        $path = __DIR__ . '/../fixtures/offline-safety-valve-conformance.json';
+        $path = __DIR__ . '/../../../../shared/src/enforcement/__fixtures__/offline-safety-valve-conformance.json';
         $json = json_decode((string) file_get_contents($path), true);
         $cases = [];
         foreach ($json['vectors'] as $vector) {

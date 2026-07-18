@@ -157,7 +157,7 @@ class Trusteed_Settings {
 		if ( ! class_exists( 'Trusteed_Plugin' ) ) {
 			return;
 		}
-		if ( ! get_option( Trusteed_Plugin::NOTICE_OPTION_INSTALLATION_STUB ) ) {
+		if ( ! Trusteed_Options::get_option( 'enforcement_installation_stub_notice' ) ) {
 			return;
 		}
 		?>
@@ -175,7 +175,7 @@ class Trusteed_Settings {
 	/**
 	 * F5.S3 — render an admin notice when the agent-event webhook (or any
 	 * other HMAC-signed outbound call) was aborted because the plugin's
-	 * `enforcement_hmac_secret` is empty. Set by Amcp_Agent_Event_Webhook
+	 * `enforcement_hmac_secret` is empty. Set by Trusteed_Agent_Event_Webhook
 	 * (and sibling clients) as `update_option( NOTICE_OPTION_HMAC_MISSING, 1 )`.
 	 *
 	 * Dismissible — the option is cleared the next time the merchant visits
@@ -189,10 +189,10 @@ class Trusteed_Settings {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return;
 		}
-		if ( ! class_exists( 'Amcp_Agent_Event_Webhook' ) ) {
+		if ( ! class_exists( 'Trusteed_Agent_Event_Webhook' ) ) {
 			return;
 		}
-		if ( ! get_option( Amcp_Agent_Event_Webhook::NOTICE_OPTION_HMAC_MISSING ) ) {
+		if ( ! Trusteed_Options::get_option( 'enforcement_hmac_missing_notice' ) ) {
 			return;
 		}
 		?>
@@ -212,7 +212,7 @@ class Trusteed_Settings {
 
 	/**
 	 * Gap 5 — render an admin notice when the enforcement API has been
-	 * returning HTTP 4xx repeatedly (set via Amcp_Enforcement_Api_Client).
+	 * returning HTTP 4xx repeatedly (set via Trusteed_Enforcement_Api_Client).
 	 *
 	 * @since 1.6.0
 	 *
@@ -222,7 +222,7 @@ class Trusteed_Settings {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return;
 		}
-		if ( ! get_transient( Amcp_Enforcement_Api_Client::EVAL_4XX_NOTICE_TRANSIENT ) ) {
+		if ( ! get_transient( Trusteed_Enforcement_Api_Client::EVAL_4XX_NOTICE_TRANSIENT ) ) {
 			return;
 		}
 		?>
@@ -287,7 +287,7 @@ class Trusteed_Settings {
 		);
 		register_setting(
 			self::SETTINGS_GROUP,
-			'amcp_embed_wp_secret',
+			'trusteed_embed_wp_secret',
 			array(
 				'type'    => 'string',
 				'default' => '',
@@ -307,10 +307,10 @@ class Trusteed_Settings {
 		$sanitized = sanitize_text_field( (string) $value );
 
 		if ( '' === $sanitized ) {
-			return (string) get_option( 'amcp_embed_wp_secret', '' );
+			return (string) Trusteed_Options::get_option( 'embed_wp_secret', '' );
 		}
 
-		return Amcp_Crypto_Helper::encrypt( $sanitized );
+		return Trusteed_Crypto_Helper::encrypt( $sanitized );
 	}
 
 	/**
@@ -519,7 +519,7 @@ class Trusteed_Settings {
 	/**
 	 * Render the spec-048 enforcement controls.
 	 *
-	 * Exposes the `amcp_failure_mode` toggle: 'enforce' (fail-closed,
+	 * Exposes the `trusteed_failure_mode` toggle: 'enforce' (fail-closed,
 	 * INDETERMINATE → BLOCK) vs 'observe' (fail-open + telemetry only).
 	 * Default is 'enforce'. Operators flip to 'observe' during canary
 	 * burn-in, switch back once burn-in passes.
@@ -535,41 +535,41 @@ class Trusteed_Settings {
 
 		// Persist on POST (nonce-guarded, capability-guarded).
 		if (
-			isset( $_POST['amcp_failure_mode_nonce'] ) // phpcs:ignore WordPress.Security.NonceVerification
+			isset( $_POST['trusteed_failure_mode_nonce'] ) // phpcs:ignore WordPress.Security.NonceVerification
 			&& wp_verify_nonce(
-				sanitize_text_field( wp_unslash( $_POST['amcp_failure_mode_nonce'] ) ), // phpcs:ignore WordPress.Security.NonceVerification
-				'amcp_failure_mode_save'
+				sanitize_text_field( wp_unslash( $_POST['trusteed_failure_mode_nonce'] ) ), // phpcs:ignore WordPress.Security.NonceVerification
+				'trusteed_failure_mode_save'
 			)
-			&& isset( $_POST['amcp_failure_mode'] )
+			&& isset( $_POST['trusteed_failure_mode'] )
 		) {
-			$submitted = sanitize_text_field( wp_unslash( $_POST['amcp_failure_mode'] ) );
+			$submitted = sanitize_text_field( wp_unslash( $_POST['trusteed_failure_mode'] ) );
 			$value     = 'observe' === $submitted ? 'observe' : 'enforce';
-			update_option( 'amcp_failure_mode', $value );
+			update_option( 'trusteed_failure_mode', $value );
 			echo '<div class="notice notice-success is-dismissible"><p>'
 				. esc_html__( 'Modo de fallo actualizado. Recarga el plugin (deactivate + activate) para aplicar.', 'trusteed-for-woocommerce' )
 				. '</p></div>';
 		}
 
-		$current = (string) get_option( 'amcp_failure_mode', 'enforce' );
+		$current = (string) Trusteed_Options::get_option( 'failure_mode', 'enforce' );
 		$current = 'observe' === $current ? 'observe' : 'enforce';
 		?>
 		<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Enforcement', 'trusteed-for-woocommerce' ); ?>" style="margin-top:24px;">
 			<h2><?php esc_html_e( 'Enforcement de checkout (Spec-048)', 'trusteed-for-woocommerce' ); ?></h2>
 			<p><?php esc_html_e( 'Cuando el evaluador remoto no responde (timeout, 5xx, payload inválido), el plugin debe decidir si bloquear el checkout o permitirlo y registrar telemetría.', 'trusteed-for-woocommerce' ); ?></p>
 			<form method="post" action="">
-				<?php wp_nonce_field( 'amcp_failure_mode_save', 'amcp_failure_mode_nonce' ); ?>
+				<?php wp_nonce_field( 'trusteed_failure_mode_save', 'trusteed_failure_mode_nonce' ); ?>
 				<table class="form-table" role="presentation">
 					<tbody>
 						<tr>
 							<th scope="row"><?php esc_html_e( 'Modo de fallo', 'trusteed-for-woocommerce' ); ?></th>
 							<td>
 								<label style="display:block;margin-bottom:8px;">
-									<input type="radio" name="amcp_failure_mode" value="enforce" <?php checked( $current, 'enforce' ); ?> />
+									<input type="radio" name="trusteed_failure_mode" value="enforce" <?php checked( $current, 'enforce' ); ?> />
 									<strong><?php esc_html_e( 'Enforce (recomendado)', 'trusteed-for-woocommerce' ); ?></strong> —
 									<?php esc_html_e( 'fallos del evaluador bloquean el checkout (fail-closed).', 'trusteed-for-woocommerce' ); ?>
 								</label>
 								<label style="display:block;">
-									<input type="radio" name="amcp_failure_mode" value="observe" <?php checked( $current, 'observe' ); ?> />
+									<input type="radio" name="trusteed_failure_mode" value="observe" <?php checked( $current, 'observe' ); ?> />
 									<strong><?php esc_html_e( 'Observe (solo canary)', 'trusteed-for-woocommerce' ); ?></strong> —
 									<?php esc_html_e( 'permite el checkout y envía telemetría a Prometheus (enforcement_api_fail_total). Usar solo durante burn-in.', 'trusteed-for-woocommerce' ); ?>
 								</label>
@@ -657,10 +657,10 @@ class Trusteed_Settings {
 			Trusteed_Api_Client::store_api_key( $result['api_key'] );
 		}
 		if ( ! empty( $result['merchant_id'] ) ) {
-			update_option( 'amcp_merchant_id', sanitize_text_field( $result['merchant_id'] ) );
+			update_option( 'trusteed_merchant_id', sanitize_text_field( $result['merchant_id'] ) );
 		}
 		if ( ! empty( $result['embed_wp_secret'] ) ) {
-			update_option( 'amcp_embed_wp_secret', Amcp_Crypto_Helper::encrypt( sanitize_text_field( $result['embed_wp_secret'] ) ) );
+			update_option( 'trusteed_embed_wp_secret', Trusteed_Crypto_Helper::encrypt( sanitize_text_field( $result['embed_wp_secret'] ) ) );
 		}
 		if ( ! empty( $result['store_slug'] ) ) {
 			update_option( 'agenticmcp_store_slug', sanitize_text_field( $result['store_slug'] ) );
@@ -673,12 +673,12 @@ class Trusteed_Settings {
 		}
 		// F1.T1 — enforcement HMAC + Woo webhook secrets. Backward-compat: if a
 		// legacy backend omits these fields the plugin keeps its previous
-		// (broken) fallback (`amcp_enforcement_installation_id` UUID stub +
+		// (broken) fallback (`trusteed_enforcement_installation_id` UUID stub +
 		// empty HMAC). New backends always populate them.
 		if ( ! empty( $result['enforcement_installation_id'] ) ) {
 			$new_install_id = sanitize_text_field( $result['enforcement_installation_id'] );
 			update_option(
-				'amcp_enforcement_installation_id',
+				'trusteed_enforcement_installation_id',
 				$new_install_id
 			);
 			// F6.PHP2 / M1 — clear stub-id admin notice once a real
@@ -688,21 +688,21 @@ class Trusteed_Settings {
 				&& Trusteed_Plugin::STUB_INSTALLATION_ID !== $new_install_id
 				&& '' !== $new_install_id
 			) {
-				delete_option( Trusteed_Plugin::NOTICE_OPTION_INSTALLATION_STUB );
+				Trusteed_Options::delete_option( 'enforcement_installation_stub_notice' );
 			}
 		}
 		if ( ! empty( $result['enforcement_hmac_secret'] ) ) {
 			update_option(
-				'amcp_enforcement_hmac_secret',
-				Amcp_Crypto_Helper::encrypt(
+				'trusteed_enforcement_hmac_secret',
+				Trusteed_Crypto_Helper::encrypt(
 					sanitize_text_field( $result['enforcement_hmac_secret'] )
 				)
 			);
 		}
 		if ( ! empty( $result['woo_webhook_secret'] ) ) {
 			update_option(
-				'amcp_woo_webhook_secret',
-				Amcp_Crypto_Helper::encrypt(
+				'trusteed_woo_webhook_secret',
+				Trusteed_Crypto_Helper::encrypt(
 					sanitize_text_field( $result['woo_webhook_secret'] )
 				)
 			);
@@ -760,7 +760,7 @@ class Trusteed_Settings {
 		// Key validated by the backend — persist it (encrypted at rest) and metadata.
 		Trusteed_Api_Client::store_api_key( $api_key );
 		if ( ! empty( $result['merchant_id'] ) ) {
-			update_option( 'amcp_merchant_id', sanitize_text_field( $result['merchant_id'] ) );
+			update_option( 'trusteed_merchant_id', sanitize_text_field( $result['merchant_id'] ) );
 		}
 		if ( ! empty( $result['store_slug'] ) ) {
 			update_option( 'agenticmcp_store_slug', sanitize_text_field( $result['store_slug'] ) );
@@ -812,16 +812,16 @@ class Trusteed_Settings {
 		}
 
 		delete_option( 'agenticmcp_api_key' );
-		delete_option( 'amcp_merchant_id' );
-		delete_option( 'amcp_embed_wp_secret' );
+		Trusteed_Options::delete_option( 'merchant_id' );
+		Trusteed_Options::delete_option( 'embed_wp_secret' );
 		delete_option( 'agenticmcp_store_slug' );
 		delete_option( 'agenticmcp_mcp_endpoint' );
 		delete_option( 'agenticmcp_tier' );
 		delete_option( 'agenticmcp_last_sync' );
 		// F1.T1 — clear enforcement + webhook secrets on disconnect.
-		delete_option( 'amcp_enforcement_installation_id' );
-		delete_option( 'amcp_enforcement_hmac_secret' );
-		delete_option( 'amcp_woo_webhook_secret' );
+		Trusteed_Options::delete_option( 'enforcement_installation_id' );
+		Trusteed_Options::delete_option( 'enforcement_hmac_secret' );
+		Trusteed_Options::delete_option( 'woo_webhook_secret' );
 
 		wp_send_json_success( array( 'message' => __( 'Tienda desconectada.', 'trusteed-for-woocommerce' ) ) );
 	}

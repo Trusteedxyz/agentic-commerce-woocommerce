@@ -2,7 +2,7 @@
 /**
  * Billing webhook receiver for plan/subscription changes.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.0.0
  */
 
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class AgenticMCP_Billing_Webhooks
+ * Class Trusteed_Billing_Webhooks
  *
  * Receives webhook events from the AgenticMCPStores backend
  * to keep the local tier/plan state in sync. Verifies HMAC-SHA256
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class AgenticMCP_Billing_Webhooks {
+class Trusteed_Billing_Webhooks {
 
 	/**
 	 * REST namespace for webhook routes.
@@ -28,7 +28,17 @@ class AgenticMCP_Billing_Webhooks {
 	 * @since 1.0.0
 	 * @var string
 	 */
-	private const REST_NAMESPACE = 'agenticmcp/v1';
+	private const REST_NAMESPACE = 'trusteed/v1';
+
+	/**
+	 * Legacy REST namespace kept as an alias so webhook senders configured
+	 * against the pre-rename /wp-json/agenticmcp/v1/billing-webhook endpoint
+	 * keep working. The route is registered under both namespaces.
+	 *
+	 * @since 2.1.0
+	 * @var string
+	 */
+	private const REST_NAMESPACE_LEGACY = 'agenticmcp/v1';
 
 	/**
 	 * REST route path for billing webhooks.
@@ -119,15 +129,15 @@ class AgenticMCP_Billing_Webhooks {
 	 * @return void
 	 */
 	public function register_routes() {
-		register_rest_route(
-			self::REST_NAMESPACE,
-			self::REST_ROUTE,
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( $this, 'handle_webhook' ),
-				'permission_callback' => array( $this, 'verify_webhook_signature' ),
-			)
+		$route_args = array(
+			'methods'             => 'POST',
+			'callback'            => array( $this, 'handle_webhook' ),
+			'permission_callback' => array( $this, 'verify_webhook_signature' ),
 		);
+
+		register_rest_route( self::REST_NAMESPACE, self::REST_ROUTE, $route_args );
+		// Back-compat alias for pre-rename webhook senders (see REST_NAMESPACE_LEGACY).
+		register_rest_route( self::REST_NAMESPACE_LEGACY, self::REST_ROUTE, $route_args );
 	}
 
 	/**

@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 /**
- * F6.PHP2 / M3 — Amcp_Crypto_Helper idempotency + legacy-plaintext contract.
+ * F6.PHP2 / M3 — Trusteed_Crypto_Helper idempotency + legacy-plaintext contract.
  *
  * Verifies:
- *   1. encrypt(x) emits a value prefixed with `amcp_enc:` (versioned format).
+ *   1. encrypt(x) emits a value prefixed with `trusteed_enc:` (versioned format).
  *   2. decrypt(encrypt(x)) === x (round-trip).
  *   3. decrypt(legacy plaintext, i.e. no prefix) returns the value as-is.
  *   4. decrypt('') === ''.
- *   5. decrypt('amcp_enc:<corrupted-base64>') returns '' (no throw).
- *   6. The ciphertext prefix is the documented `amcp_enc:` constant.
+ *   5. decrypt('amcp_enc:<corrupted-base64>') returns '' (no throw) — legacy prefix still recognised.
+ *   6. The write prefix is `trusteed_enc:`; the legacy `amcp_enc:` prefix stays decryptable.
  *
  * No WordPress runtime is loaded; the helper only touches PHP core
  * (sodium + base64), so the bootstrap stays minimal.
@@ -67,16 +67,16 @@ final class CryptoHelperTest extends TestCase
 
     public function test_encrypt_includes_versioned_prefix(): void
     {
-        $cipher = Amcp_Crypto_Helper::encrypt('hello-world');
-        $this->assertStringStartsWith('amcp_enc:', $cipher);
+        $cipher = Trusteed_Crypto_Helper::encrypt('hello-world');
+        $this->assertStringStartsWith('trusteed_enc:', $cipher);
         $this->assertNotSame('hello-world', $cipher);
     }
 
     public function test_decrypt_round_trip(): void
     {
         $plain  = 'super-secret-value-123';
-        $cipher = Amcp_Crypto_Helper::encrypt($plain);
-        $back   = Amcp_Crypto_Helper::decrypt($cipher);
+        $cipher = Trusteed_Crypto_Helper::encrypt($plain);
+        $back   = Trusteed_Crypto_Helper::decrypt($cipher);
 
         $this->assertSame($plain, $back);
     }
@@ -84,18 +84,18 @@ final class CryptoHelperTest extends TestCase
     public function test_decrypt_legacy_plaintext_returned_as_is(): void
     {
         $legacy = 'not-encrypted-string';
-        $this->assertSame($legacy, Amcp_Crypto_Helper::decrypt($legacy));
+        $this->assertSame($legacy, Trusteed_Crypto_Helper::decrypt($legacy));
     }
 
     public function test_decrypt_empty_returns_empty(): void
     {
-        $this->assertSame('', Amcp_Crypto_Helper::decrypt(''));
+        $this->assertSame('', Trusteed_Crypto_Helper::decrypt(''));
     }
 
     public function test_decrypt_corrupted_ciphertext_returns_empty(): void
     {
         // Has the prefix but the body is not valid base64 + nonce + box.
-        $result = Amcp_Crypto_Helper::decrypt('amcp_enc:!!!not-base64!!!');
+        $result = Trusteed_Crypto_Helper::decrypt('amcp_enc:!!!not-base64!!!');
         $this->assertSame('', $result);
     }
 
@@ -103,12 +103,12 @@ final class CryptoHelperTest extends TestCase
     {
         // base64 decodes fine but shorter than nonce length → empty (no throw).
         $tiny = 'amcp_enc:' . base64_encode('short');
-        $this->assertSame('', Amcp_Crypto_Helper::decrypt($tiny));
+        $this->assertSame('', Trusteed_Crypto_Helper::decrypt($tiny));
     }
 
     public function test_decrypt_does_not_leak_key_in_log(): void
     {
-        Amcp_Crypto_Helper::decrypt('amcp_enc:' . base64_encode('short'));
+        Trusteed_Crypto_Helper::decrypt('amcp_enc:' . base64_encode('short'));
         $log = $this->captured_log();
         // Whatever the helper logs, it MUST NOT contain the raw key.
         $this->assertStringNotContainsString(TRUSTEED_EMBED_SECRET_KEY, $log);

@@ -84,7 +84,7 @@ class Trusteed_Api_Client {
 	 * Conceptual SSOT: Trusteed_Token_Broker::ALLOWED_API_HOSTS
 	 * (includes/admin/class-token-broker.php). Kept in sync here so the
 	 * credentialed request path (X-AgenticMCP-Key / account password) never
-	 * targets an attacker-controlled host via a manipulated `amcp_api_base_url`.
+	 * targets an attacker-controlled host via a manipulated `trusteed_api_base_url`.
 	 *
 	 * @since 2.0.0
 	 * @var string[]
@@ -111,7 +111,7 @@ class Trusteed_Api_Client {
 
 		$this->api_base = ! empty( $api_base )
 			? esc_url_raw( untrailingslashit( $api_base ) )
-			: esc_url_raw( untrailingslashit( (string) get_option( 'amcp_api_base_url', TRUSTEED_API_BASE ) ) );
+			: esc_url_raw( untrailingslashit( (string) Trusteed_Options::get_option( 'api_base_url', TRUSTEED_API_BASE ) ) );
 
 		$this->timeout = absint( $timeout );
 	}
@@ -120,7 +120,7 @@ class Trusteed_Api_Client {
 	 * Read and decrypt the stored Trusteed API key.
 	 *
 	 * Single choke-point for reading the `agenticmcp_api_key` option. Values
-	 * written by store_api_key() are encrypted at rest via Amcp_Crypto_Helper;
+	 * written by store_api_key() are encrypted at rest via Trusteed_Crypto_Helper;
 	 * legacy plaintext values are returned unchanged (transparent decrypt).
 	 *
 	 * @since 2.0.0
@@ -128,7 +128,7 @@ class Trusteed_Api_Client {
 	 * @return string Decrypted API key, or empty string when unset.
 	 */
 	public static function get_stored_api_key(): string {
-		return Amcp_Crypto_Helper::decrypt( (string) get_option( 'agenticmcp_api_key', '' ) );
+		return Trusteed_Crypto_Helper::decrypt( (string) get_option( 'agenticmcp_api_key', '' ) );
 	}
 
 	/**
@@ -136,7 +136,7 @@ class Trusteed_Api_Client {
 	 *
 	 * Single choke-point for writing the `agenticmcp_api_key` option. When the
 	 * TRUSTEED_EMBED_SECRET_KEY constant is configured the value is stored as
-	 * `amcp_enc:` ciphertext; otherwise it degrades to plaintext (identical to
+	 * `trusteed_enc:` ciphertext; otherwise it degrades to plaintext (identical to
 	 * the embed secret) until the key is provisioned.
 	 *
 	 * @since 2.0.0
@@ -147,7 +147,7 @@ class Trusteed_Api_Client {
 	public static function store_api_key( string $plaintext ): void {
 		update_option(
 			'agenticmcp_api_key',
-			Amcp_Crypto_Helper::encrypt( sanitize_text_field( $plaintext ) )
+			Trusteed_Crypto_Helper::encrypt( sanitize_text_field( $plaintext ) )
 		);
 	}
 
@@ -155,7 +155,7 @@ class Trusteed_Api_Client {
 	 * Determine whether the parsed host is a local/dev host.
 	 *
 	 * Loopback and private addresses cannot be reached by external attackers,
-	 * so the dev/staging override (`amcp_api_base_url`) keeps working against a
+	 * so the dev/staging override (`trusteed_api_base_url`) keeps working against a
 	 * local API even over plain HTTP.
 	 *
 	 * @since 2.0.0
@@ -182,7 +182,7 @@ class Trusteed_Api_Client {
 	 * Guard against sending credentials to an untrusted or insecure endpoint.
 	 *
 	 * Production credentials (account password, API key) must only travel over
-	 * HTTPS *and* to a Trusteed-owned host. A manipulated `amcp_api_base_url`
+	 * HTTPS *and* to a Trusteed-owned host. A manipulated `trusteed_api_base_url`
 	 * pointing at an attacker host over HTTPS would otherwise leak the embed
 	 * S2S secret / API key. Plain HTTP and arbitrary hosts are tolerated solely
 	 * for local development hosts so the dev/staging override keeps working.

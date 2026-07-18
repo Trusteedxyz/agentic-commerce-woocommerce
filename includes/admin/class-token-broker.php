@@ -2,7 +2,7 @@
 /**
  * Token broker — REST endpoint for the admin SPA to obtain an ephemeral embed token.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.1.0
  */
 
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Amcp_Token_Broker
+ * Class Trusteed_Token_Broker
  *
  * Registers a REST route that the Trusteed admin SPA calls to obtain a
  * short-lived token from the Trusteed API. The token is returned in the
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class Amcp_Token_Broker {
+class Trusteed_Token_Broker {
 
 	/**
 	 * REST namespace.
@@ -33,7 +33,19 @@ class Amcp_Token_Broker {
 	 * @since 1.1.0
 	 * @var string
 	 */
-	private const REST_NAMESPACE = 'agenticmcps/v1';
+	private const REST_NAMESPACE = 'trusteed/v1';
+
+	/**
+	 * Legacy (pre-rename, typo'd) REST namespace. The shipped admin SPA bundle
+	 * (assets/admin-spa/*.js from v2.0.2) and its source (admin-spa/src/lib/
+	 * tokenManager.ts) hardcode `agenticmcps/v1/embed/token`, so the route is
+	 * still registered under it to avoid 404-ing the token broker on already
+	 * deployed admin panels. Remove once the SPA is rebuilt against trusteed/v1.
+	 *
+	 * @since 2.1.0
+	 * @var string
+	 */
+	private const REST_NAMESPACE_LEGACY = 'agenticmcps/v1';
 
 	/**
 	 * REST route path.
@@ -42,22 +54,6 @@ class Amcp_Token_Broker {
 	 * @var string
 	 */
 	private const REST_ROUTE = '/embed/token';
-
-	/**
-	 * WP option key that holds the S2S embed secret.
-	 *
-	 * @since 1.1.0
-	 * @var string
-	 */
-	private const OPTION_EMBED_SECRET = 'amcp_embed_wp_secret';
-
-	/**
-	 * WP option key that holds the merchant identifier.
-	 *
-	 * @since 1.1.0
-	 * @var string
-	 */
-	private const OPTION_MERCHANT_ID = 'amcp_merchant_id';
 
 	/**
 	 * Remote API endpoint path to issue an embed token.
@@ -180,15 +176,15 @@ class Amcp_Token_Broker {
 	 * @return void
 	 */
 	public function register_routes(): void {
-		register_rest_route(
-			self::REST_NAMESPACE,
-			self::REST_ROUTE,
-			array(
-				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'handle_token_request' ),
-				'permission_callback' => array( $this, 'check_permission' ),
-			)
+		$route_args = array(
+			'methods'             => \WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'handle_token_request' ),
+			'permission_callback' => array( $this, 'check_permission' ),
 		);
+
+		register_rest_route( self::REST_NAMESPACE, self::REST_ROUTE, $route_args );
+		// Back-compat alias for the shipped SPA bundle (see REST_NAMESPACE_LEGACY).
+		register_rest_route( self::REST_NAMESPACE_LEGACY, self::REST_ROUTE, $route_args );
 	}
 
 	/**
@@ -233,7 +229,7 @@ class Amcp_Token_Broker {
 	 * @return \WP_REST_Response|\WP_Error REST response or error.
 	 */
 	public function handle_token_request( \WP_REST_Request $request ) {
-		$merchant_id = get_option( self::OPTION_MERCHANT_ID, '' );
+		$merchant_id = Trusteed_Options::get_option( 'merchant_id', '' );
 
 		if ( empty( $merchant_id ) ) {
 			return new \WP_Error(
@@ -244,8 +240,8 @@ class Amcp_Token_Broker {
 		}
 
 		// S039-SEC-004: decrypt the stored secret before use.
-		$stored_secret = (string) get_option( self::OPTION_EMBED_SECRET, '' );
-		$embed_secret  = Amcp_Crypto_Helper::decrypt( $stored_secret );
+		$stored_secret = (string) Trusteed_Options::get_option( 'embed_wp_secret', '' );
+		$embed_secret  = Trusteed_Crypto_Helper::decrypt( $stored_secret );
 
 		if ( empty( $embed_secret ) ) {
 			return new \WP_Error(

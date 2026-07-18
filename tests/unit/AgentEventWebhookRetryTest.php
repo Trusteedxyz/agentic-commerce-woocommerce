@@ -8,7 +8,7 @@ declare(strict_types=1);
  *   - CR1 : schedule_retry() body size cap (anti wp_options bloat)
  *   - CR1-backoff : exact 60s / 120s / 240s sequence + naming
  *
- * Asserts the public + private surface of Amcp_Agent_Event_Webhook without a
+ * Asserts the public + private surface of Trusteed_Agent_Event_Webhook without a
  * WordPress runtime. WP helpers are stubbed below; behaviour is driven by
  * globals so the same stubs can coexist with the FailClosed test file in the
  * same PHPUnit suite (first-loaded wins via `function_exists` guards).
@@ -106,9 +106,9 @@ final class AgentEventWebhookRetryTest extends TestCase
      * Helper: minimal webhook with a non-empty HMAC secret so signed-header
      * construction succeeds.
      */
-    private function makeWebhook(): Amcp_Agent_Event_Webhook
+    private function makeWebhook(): Trusteed_Agent_Event_Webhook
     {
-        return new Amcp_Agent_Event_Webhook(
+        return new Trusteed_Agent_Event_Webhook(
             'https://api.example.com',
             self::INSTALLATION_ID,
             self::HMAC_SECRET,
@@ -137,7 +137,7 @@ final class AgentEventWebhookRetryTest extends TestCase
         ];
     }
 
-    private function invokePrivate(Amcp_Agent_Event_Webhook $webhook, string $method, array $args = [])
+    private function invokePrivate(Trusteed_Agent_Event_Webhook $webhook, string $method, array $args = [])
     {
         $ref = new ReflectionMethod($webhook, $method);
         $ref->setAccessible(true);

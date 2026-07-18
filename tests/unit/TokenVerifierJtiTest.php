@@ -43,9 +43,9 @@ class TokenVerifierJtiTest extends TestCase
         $expAt    = time() + 300;
         $jws      = $this->makeToken(['jti' => 'wellFormedJti0123ABCD', 'exp' => $expAt]);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::VALID, $result->state, 'jti present → VALID');
+        $this->assertSame(Trusteed_Token_State::VALID, $result->state, 'jti present → VALID');
         $this->assertSame('wellFormedJti0123ABCD', $result->jti);
         $this->assertSame($expAt, $result->exp);
         $this->assertSame('', $result->error);
@@ -67,9 +67,9 @@ class TokenVerifierJtiTest extends TestCase
         ];
         $jws = $this->signToken($this->defaultHeader(), $claims);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('missing_jti', $result->error);
         $this->assertSame('', $result->jti);
     }
@@ -82,9 +82,9 @@ class TokenVerifierJtiTest extends TestCase
         // `.` is outside the [A-Za-z0-9_-]{16,128} alphabet.
         $jws = $this->makeToken(['jti' => 'has.dot.in.it.illegal0001']);
 
-        $result = Amcp_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Amcp_Token_State::INVALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
         $this->assertSame('bad_jti', $result->error);
     }
 
@@ -99,36 +99,36 @@ class TokenVerifierJtiTest extends TestCase
         $jti15  = str_repeat('c', 15);                              // 15 — should reject
         $jti129 = str_repeat('d', 129);                             // 129 — should reject
 
-        $r16 = Amcp_Token_Verifier::verify(
+        $r16 = Trusteed_Token_Verifier::verify(
             $this->makeToken(['jti' => $jti16]),
             $resolver,
             self::MERCHANT_ID
         );
-        $this->assertSame(Amcp_Token_State::VALID, $r16->state, '16-char jti accepted');
+        $this->assertSame(Trusteed_Token_State::VALID, $r16->state, '16-char jti accepted');
         $this->assertSame($jti16, $r16->jti);
 
-        $r128 = Amcp_Token_Verifier::verify(
+        $r128 = Trusteed_Token_Verifier::verify(
             $this->makeToken(['jti' => $jti128]),
             $resolver,
             self::MERCHANT_ID
         );
-        $this->assertSame(Amcp_Token_State::VALID, $r128->state, '128-char jti accepted');
+        $this->assertSame(Trusteed_Token_State::VALID, $r128->state, '128-char jti accepted');
         $this->assertSame($jti128, $r128->jti);
 
-        $r15 = Amcp_Token_Verifier::verify(
+        $r15 = Trusteed_Token_Verifier::verify(
             $this->makeToken(['jti' => $jti15]),
             $resolver,
             self::MERCHANT_ID
         );
-        $this->assertSame(Amcp_Token_State::INVALID, $r15->state, '15-char jti rejected');
+        $this->assertSame(Trusteed_Token_State::INVALID, $r15->state, '15-char jti rejected');
         $this->assertSame('bad_jti', $r15->error);
 
-        $r129 = Amcp_Token_Verifier::verify(
+        $r129 = Trusteed_Token_Verifier::verify(
             $this->makeToken(['jti' => $jti129]),
             $resolver,
             self::MERCHANT_ID
         );
-        $this->assertSame(Amcp_Token_State::INVALID, $r129->state, '129-char jti rejected');
+        $this->assertSame(Trusteed_Token_State::INVALID, $r129->state, '129-char jti rejected');
         $this->assertSame('bad_jti', $r129->error);
     }
 

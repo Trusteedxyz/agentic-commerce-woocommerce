@@ -35,7 +35,7 @@ class Trusteed_Plugin {
 	/**
 	 * Catalog sync instance.
 	 *
-	 * @var AgenticMCP_Catalog_Sync|null
+	 * @var Trusteed_Catalog_Sync|null
 	 */
 	private $catalog_sync = null;
 
@@ -56,33 +56,33 @@ class Trusteed_Plugin {
 	/**
 	 * Billing webhooks instance.
 	 *
-	 * @var AgenticMCP_Billing_Webhooks|null
+	 * @var Trusteed_Billing_Webhooks|null
 	 */
 	private $billing_webhooks = null;
 
 	/**
 	 * Checkout enforcer instance.
 	 *
-	 * @var Amcp_Checkout_Enforcer|null
+	 * @var Trusteed_Checkout_Enforcer|null
 	 */
 	private $checkout_enforcer = null;
 
 	/**
 	 * Agent event webhook instance (R023 refund/cancel emitter).
 	 *
-	 * @var Amcp_Agent_Event_Webhook|null
+	 * @var Trusteed_Agent_Event_Webhook|null
 	 */
 	private $agent_event_webhook = null;
 
 	/**
 	 * Multi-item add-to-cart handler (Gap 2 — consumes `agenticmcp_multi_add=1`).
 	 *
-	 * @var Amcp_Multi_Add_Handler|null
+	 * @var Trusteed_Multi_Add_Handler|null
 	 */
 	private $multi_add_handler = null;
 
 	/**
-	 * Allowed values for the `amcp_failure_mode` option.
+	 * Allowed values for the `trusteed_failure_mode` option.
 	 *
 	 * @var string[]
 	 */
@@ -90,7 +90,7 @@ class Trusteed_Plugin {
 
 	/**
 	 * F6.PHP2 / M1 — sentinel UUID used as fallback when no real
-	 * `amcp_enforcement_installation_id` has been provisioned by the
+	 * `trusteed_enforcement_installation_id` has been provisioned by the
 	 * backend onboarding flow. Backend fail-closes any request signed
 	 * with this stub; the admin notice asks the merchant to reconnect.
 	 *
@@ -106,7 +106,7 @@ class Trusteed_Plugin {
 	 *
 	 * @var string
 	 */
-	public const NOTICE_OPTION_INSTALLATION_STUB = 'amcp_enforcement_installation_stub_notice';
+	public const NOTICE_OPTION_INSTALLATION_STUB = 'trusteed_enforcement_installation_stub_notice';
 
 	/**
 	 * Get the singleton instance.
@@ -144,7 +144,8 @@ class Trusteed_Plugin {
 	 */
 	private function load_dependencies() {
 		// S039-SEC-004: crypto helper must be loaded before settings and token broker
-		// so Amcp_Crypto_Helper is available when secrets are read or written.
+		// so Trusteed_Crypto_Helper is available when secrets are read or written.
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-trusteed-options.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-crypto-helper.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-api-client.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-catalog-sync.php';
@@ -163,53 +164,53 @@ class Trusteed_Plugin {
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-multi-add-handler.php';
 
 		$this->api_client       = new Trusteed_Api_Client();
-		$this->catalog_sync     = new AgenticMCP_Catalog_Sync( $this->api_client );
+		$this->catalog_sync     = new Trusteed_Catalog_Sync( $this->api_client );
 		$this->cart_bridge      = new Trusteed_Cart_Bridge();
 		$this->settings         = new Trusteed_Settings();
-		$this->billing_webhooks = new AgenticMCP_Billing_Webhooks();
+		$this->billing_webhooks = new Trusteed_Billing_Webhooks();
 
 		// Checkout enforcement (Spec-048 WooCommerce integration).
 		// Single source of truth: default to TRUSTEED_API_BASE constant (defined in
 		// trusteed-for-woocommerce.php, overridable via wp-config.php). Avoids divergent
 		// hardcoded defaults across plugin components.
-		$api_base_url    = (string) get_option( 'amcp_api_base_url', TRUSTEED_API_BASE );
-		$merchant_id     = (string) get_option( 'amcp_merchant_id', '' );
-		$installation_id = (string) get_option( 'amcp_enforcement_installation_id', self::STUB_INSTALLATION_ID );
-		$raw_hmac_secret = (string) get_option( 'amcp_enforcement_hmac_secret', '' );
+		$api_base_url    = (string) Trusteed_Options::get_option( 'api_base_url', TRUSTEED_API_BASE );
+		$merchant_id     = (string) Trusteed_Options::get_option( 'merchant_id', '' );
+		$installation_id = (string) Trusteed_Options::get_option( 'enforcement_installation_id', self::STUB_INSTALLATION_ID );
+		$raw_hmac_secret = (string) Trusteed_Options::get_option( 'enforcement_hmac_secret', '' );
 
 		// F6.PHP2 / M1 — detect stub / empty installation id and flag the
 		// admin notice so the merchant sees an actionable error instead of
 		// silent backend rejections. Cleared after a successful onboard
-		// (see Amcp_Settings::ajax_onboard).
+		// (see Trusteed_Settings::ajax_onboard).
 		if ( '' === $installation_id || self::STUB_INSTALLATION_ID === $installation_id ) {
 			update_option( self::NOTICE_OPTION_INSTALLATION_STUB, 1, false );
 		} else {
 			// Cheap self-heal: clear stale notice if a real id is in place.
-			if ( get_option( self::NOTICE_OPTION_INSTALLATION_STUB ) ) {
-				delete_option( self::NOTICE_OPTION_INSTALLATION_STUB );
+			if ( Trusteed_Options::get_option( 'enforcement_installation_stub_notice' ) ) {
+				Trusteed_Options::delete_option( 'enforcement_installation_stub_notice' );
 			}
 		}
-		$hmac_secret     = Amcp_Crypto_Helper::decrypt( $raw_hmac_secret );
+		$hmac_secret     = Trusteed_Crypto_Helper::decrypt( $raw_hmac_secret );
 
-		$enforcement_client = new Amcp_Enforcement_Api_Client( $api_base_url, $installation_id, $hmac_secret );
-		$snapshot_client    = new Amcp_Snapshot_Client_Woo( $api_base_url, $installation_id, $hmac_secret );
+		$enforcement_client = new Trusteed_Enforcement_Api_Client( $api_base_url, $installation_id, $hmac_secret );
+		$snapshot_client    = new Trusteed_Snapshot_Client_Woo( $api_base_url, $installation_id, $hmac_secret );
 
 		// Failure-mode policy (spec-048 Gap 5/6). Default 'enforce' fail-closed.
-		// Operators can switch to 'observe' via amcp_failure_mode option during canary.
+		// Operators can switch to 'observe' via trusteed_failure_mode option during canary.
 		// Gap 4 — defensive normalization with explicit log when value drifts
 		// (typo in wp-cli, manual DB edit, plugin downgrade).
-		$failure_mode = self::normalize_failure_mode( (string) get_option( 'amcp_failure_mode', 'enforce' ) );
+		$failure_mode = self::normalize_failure_mode( (string) Trusteed_Options::get_option( 'failure_mode', 'enforce' ) );
 
 		// R023 refund/cancel + enforcement_indeterminate emitter — wires WC
 		// order events + checkout-enforcer fail-open telemetry to backend.
-		$this->agent_event_webhook = new Amcp_Agent_Event_Webhook(
+		$this->agent_event_webhook = new Trusteed_Agent_Event_Webhook(
 			$api_base_url,
 			$installation_id,
 			$hmac_secret,
 			$merchant_id
 		);
 
-		$this->checkout_enforcer = new Amcp_Checkout_Enforcer(
+		$this->checkout_enforcer = new Trusteed_Checkout_Enforcer(
 			$enforcement_client,
 			$merchant_id,
 			$installation_id,
@@ -220,14 +221,14 @@ class Trusteed_Plugin {
 
 		// Gap 2 — handle multi-item agent carts emitted with
 		// `?agenticmcp_multi_add=1&items[N][...]`. Native WC ignores `items[]`.
-		$this->multi_add_handler = new Amcp_Multi_Add_Handler();
+		$this->multi_add_handler = new Trusteed_Multi_Add_Handler();
 
 		// Token broker REST endpoint: must be registered outside is_admin() because
 		// REST API requests (/wp-json/*) are processed without WP_ADMIN defined,
 		// so is_admin() returns false and the route would never be registered.
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/admin/class-token-broker.php';
-		$api_base = (string) get_option( 'amcp_api_base_url', TRUSTEED_API_BASE );
-		( new Amcp_Token_Broker( $api_base, TRUSTEED_VERSION ) )->init();
+		$api_base = (string) Trusteed_Options::get_option( 'api_base_url', TRUSTEED_API_BASE );
+		( new Trusteed_Token_Broker( $api_base, TRUSTEED_VERSION ) )->init();
 
 		// Admin embed shell — spec 039 F3 (T039-310..T039-313).
 		if ( is_admin() ) {
@@ -237,8 +238,8 @@ class Trusteed_Plugin {
 			$plugin_url  = TRUSTEED_PLUGIN_URL;
 			$plugin_path = TRUSTEED_PLUGIN_DIR;
 
-			( new Amcp_Admin_Router( $plugin_url, $plugin_path ) )->init();
-			( new Amcp_Admin_Spa_Loader( $plugin_url, $plugin_path ) )->init();
+			( new Trusteed_Admin_Router( $plugin_url, $plugin_path ) )->init();
+			( new Trusteed_Admin_Spa_Loader( $plugin_url, $plugin_path ) )->init();
 		}
 	}
 
@@ -277,8 +278,8 @@ class Trusteed_Plugin {
 		// `wc-pending` (payment not captured) instead of losing them to a hard
 		// block. The checkout enforcer parks the freeze payload in the WC session
 		// on a HITL decision; this hook consumes it at order-processed time.
-		if ( class_exists( 'AgenticMCP_R043_Hitl_Gate' ) ) {
-			AgenticMCP_R043_Hitl_Gate::register();
+		if ( class_exists( 'Trusteed_R043_Hitl_Gate' ) ) {
+			Trusteed_R043_Hitl_Gate::register();
 		}
 
 		// R023 refund/cancel webhook — propagates events to backend for R023 evaluation.
@@ -291,7 +292,7 @@ class Trusteed_Plugin {
 	}
 
 	/**
-	 * Gap 4 — coerce the raw `amcp_failure_mode` option to a whitelisted value
+	 * Gap 4 — coerce the raw `trusteed_failure_mode` option to a whitelisted value
 	 * and emit a structured log line when drift is detected so ops can spot
 	 * misconfiguration before the silent fallback hides it.
 	 *
@@ -307,7 +308,7 @@ class Trusteed_Plugin {
 
 		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 			sprintf(
-				'[amcp.config_drift] amcp_failure_mode has invalid value %s — falling back to enforce',
+				'[amcp.config_drift] trusteed_failure_mode has invalid value %s — falling back to enforce',
 				wp_json_encode( $raw )
 			)
 		);

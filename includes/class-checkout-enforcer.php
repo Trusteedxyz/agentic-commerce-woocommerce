@@ -5,7 +5,7 @@
  * Supports both checkout paths:
  *
  * CLASSIC checkout (woocommerce_checkout_process):
- *  1. Cart bridge appends ?amcp_agent_id=<did> to the checkout URL.
+ *  1. Cart bridge appends ?trusteed_agent_id=<did> to the checkout URL.
  *  2. `woocommerce_before_checkout_form` saves the DID to WC session.
  *  3. `woocommerce_checkout_process` fires on POST: calls /v1/rules/evaluate.
  *  4. On BLOCK → wc_add_notice() aborts.
@@ -18,7 +18,7 @@
  * Fail-open design: connectivity issues, timeouts, or misconfiguration
  * never prevent a legitimate checkout from completing.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.3.0
  */
 
@@ -28,19 +28,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Amcp_Checkout_Enforcer
+ * Class Trusteed_Checkout_Enforcer
  *
  * @since 1.3.0
  */
-class Amcp_Checkout_Enforcer {
+class Trusteed_Checkout_Enforcer {
 
 	/**
 	 * Enforcement API client.
 	 *
 	 * @since 1.3.0
-	 * @var Amcp_Enforcement_Api_Client
+	 * @var Trusteed_Enforcement_Api_Client
 	 */
-	private Amcp_Enforcement_Api_Client $api_client;
+	private Trusteed_Enforcement_Api_Client $api_client;
 
 	/**
 	 * Merchant UUID.
@@ -62,9 +62,9 @@ class Amcp_Checkout_Enforcer {
 	 * Snapshot client — fetches agentDidResolver for Ed25519 verification.
 	 *
 	 * @since 1.4.0
-	 * @var Amcp_Snapshot_Client_Woo|null
+	 * @var Trusteed_Snapshot_Client_Woo|null
 	 */
-	private ?Amcp_Snapshot_Client_Woo $snapshot_client;
+	private ?Trusteed_Snapshot_Client_Woo $snapshot_client;
 
 	/**
 	 * Failure mode policy (spec-048 Gap 5/6 tri-state fail-closed).
@@ -83,28 +83,28 @@ class Amcp_Checkout_Enforcer {
 	 * ticks per fail-open / fail-closed event.
 	 *
 	 * @since 1.5.0
-	 * @var Amcp_Agent_Event_Webhook|null
+	 * @var Trusteed_Agent_Event_Webhook|null
 	 */
-	private ?Amcp_Agent_Event_Webhook $event_webhook;
+	private ?Trusteed_Agent_Event_Webhook $event_webhook;
 
 	/**
 	 * Constructor.
 	 *
 	 * @since 1.3.0
 	 *
-	 * @param Amcp_Enforcement_Api_Client   $api_client      Enforcement API client.
+	 * @param Trusteed_Enforcement_Api_Client   $api_client      Enforcement API client.
 	 * @param string                        $merchant_id     Merchant UUID.
 	 * @param string                        $installation_id Installation UUID.
-	 * @param Amcp_Snapshot_Client_Woo|null $snapshot_client Optional snapshot client for token verification.
+	 * @param Trusteed_Snapshot_Client_Woo|null $snapshot_client Optional snapshot client for token verification.
 	 * @param string                        $failure_mode    'enforce' (fail-closed) or 'observe' (fail-open).
 	 */
 	public function __construct(
-		Amcp_Enforcement_Api_Client $api_client,
+		Trusteed_Enforcement_Api_Client $api_client,
 		string $merchant_id,
 		string $installation_id,
-		?Amcp_Snapshot_Client_Woo $snapshot_client = null,
+		?Trusteed_Snapshot_Client_Woo $snapshot_client = null,
 		string $failure_mode = 'enforce',
-		?Amcp_Agent_Event_Webhook $event_webhook = null
+		?Trusteed_Agent_Event_Webhook $event_webhook = null
 	) {
 		$this->api_client      = $api_client;
 		$this->merchant_id     = $merchant_id;
@@ -229,11 +229,11 @@ class Amcp_Checkout_Enforcer {
 			);
 		}
 
-		// ALLOW path — delegate to Amcp_Classic_Meta_Persister which registers
+		// ALLOW path — delegate to Trusteed_Classic_Meta_Persister which registers
 		// a one-shot `woocommerce_checkout_create_order` hook to stamp the
 		// three metas the Blocks path writes inline.
 		if ( ! empty( $agent_id_for_meta ) && is_string( $agent_id_for_meta ) ) {
-			Amcp_Classic_Meta_Persister::register( $agent_id_for_meta );
+			Trusteed_Classic_Meta_Persister::register( $agent_id_for_meta );
 		}
 	}
 
@@ -357,7 +357,7 @@ class Amcp_Checkout_Enforcer {
 			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, null );
 		}
 
-		if ( Amcp_Eval_Outcome::INDETERMINATE === $result->outcome ) {
+		if ( Trusteed_Eval_Outcome::INDETERMINATE === $result->outcome ) {
 			// App Store remediation follow-up (2026-07-11) — before falling
 			// back to the blunt failure_mode policy (block everything /
 			// allow everything), try the offline safety-valve evaluator
@@ -384,19 +384,19 @@ class Amcp_Checkout_Enforcer {
 
 		// R043 HITL — a human-in-the-loop approval is required before the order may
 		// complete. Instead of a hard block (which loses the customer's intent) we
-		// park the freeze payload so AgenticMCP_R043_Hitl_Gate::on_order_processed
+		// park the freeze payload so Trusteed_R043_Hitl_Gate::on_order_processed
 		// stamps the created order as `wc-pending` (payment NOT captured) pending
 		// merchant approval — parity with Magento's quote freeze (is_active=0).
 		if (
-			Amcp_Eval_Outcome::BLOCK === $result->outcome
+			Trusteed_Eval_Outcome::BLOCK === $result->outcome
 			&& null !== $result->hitl_payload
-			&& class_exists( 'AgenticMCP_R043_Hitl_Gate' )
+			&& class_exists( 'Trusteed_R043_Hitl_Gate' )
 		) {
-			AgenticMCP_R043_Hitl_Gate::park_in_session( $result->hitl_payload );
+			Trusteed_R043_Hitl_Gate::park_in_session( $result->hitl_payload );
 			return 'ALLOW'; // Order proceeds → gate freezes it to pending.
 		}
 
-		return Amcp_Eval_Outcome::BLOCK === $result->outcome ? 'BLOCK' : 'ALLOW';
+		return Trusteed_Eval_Outcome::BLOCK === $result->outcome ? 'BLOCK' : 'ALLOW';
 	}
 
 	/**
@@ -420,13 +420,13 @@ class Amcp_Checkout_Enforcer {
 		} catch ( \Throwable $e ) {
 			return null;
 		}
-		if ( empty( $rules ) || ! class_exists( 'Amcp_Offline_Safety_Valve_Evaluator' ) ) {
+		if ( empty( $rules ) || ! class_exists( 'Trusteed_Offline_Safety_Valve_Evaluator' ) ) {
 			return null;
 		}
 		$cart_attributes = isset( $order_context['cartAttributes'] ) && is_array( $order_context['cartAttributes'] )
 			? $order_context['cartAttributes']
 			: array();
-		return Amcp_Offline_Safety_Valve_Evaluator::evaluate( $rules, $order_context, $cart_attributes );
+		return Trusteed_Offline_Safety_Valve_Evaluator::evaluate( $rules, $order_context, $cart_attributes );
 	}
 
 	/**
@@ -495,7 +495,7 @@ class Amcp_Checkout_Enforcer {
 		}
 
 		$did_resolver = $this->snapshot_client->get_did_resolver( $this->merchant_id );
-		$result       = Amcp_Token_Verifier::verify( $jws_token, $did_resolver, $this->merchant_id );
+		$result       = Trusteed_Token_Verifier::verify( $jws_token, $did_resolver, $this->merchant_id );
 
 		if ( $result->is_invalid() ) {
 			$order_context['cartAttributes']['_agent_token_signature_invalid'] = 'true';
@@ -520,12 +520,12 @@ class Amcp_Checkout_Enforcer {
 				$result->exp
 			);
 
-			if ( Amcp_Nonce_Outcome::REPLAY === $nonce_outcome->outcome ) {
+			if ( Trusteed_Nonce_Outcome::REPLAY === $nonce_outcome->outcome ) {
 				// Token reused — downgrade to INVALID and tag attributes so the rule
 				// evaluator can reject (R002 / R005 etc.) and ops can alert.
 				$order_context['cartAttributes']['_agent_token_signature_invalid'] = 'true';
 				$order_context['cartAttributes']['_agent_token_replay']            = 'true';
-			} elseif ( Amcp_Nonce_Outcome::INDETERMINATE === $nonce_outcome->outcome ) {
+			} elseif ( Trusteed_Nonce_Outcome::INDETERMINATE === $nonce_outcome->outcome ) {
 				// Honor failure_mode: enforce → mark INVALID (fail-closed); observe →
 				// leave token VALID + emit telemetry (parity with rules/evaluate path).
 				if ( 'enforce' === $this->failure_mode ) {
@@ -541,7 +541,7 @@ class Amcp_Checkout_Enforcer {
 
 		// R004: first-seen key age tracking via WP transients (persistent across requests).
 		if ( '' !== $result->kid ) {
-			$transient_key = 'amcp_kid_fs_' . hash( 'sha256', $result->kid );
+			$transient_key = 'trusteed_kid_fs_' . hash( 'sha256', $result->kid );
 			$first_seen    = get_transient( $transient_key );
 			if ( false === $first_seen ) {
 				$first_seen = time();
@@ -761,7 +761,7 @@ class Amcp_Checkout_Enforcer {
 
 	/**
 	 * Convert a WC_Product + quantity into the primitive signal dict used by
-	 * AgenticMCP_Cart_Signals helpers. Pure data — no further WC calls.
+	 * Trusteed_Cart_Signals helpers. Pure data — no further WC calls.
 	 *
 	 * @param \WC_Product $product Product object.
 	 * @param int         $qty     Line quantity.
@@ -787,7 +787,7 @@ class Amcp_Checkout_Enforcer {
 
 	/**
 	 * Merge per-item primitive signals into orderContext.cartAttributes via
-	 * the pure-function helpers in AgenticMCP_Cart_Signals.
+	 * the pure-function helpers in Trusteed_Cart_Signals.
 	 *
 	 * R015 price-snap verification: reads the per-merchant HMAC key from the
 	 * latest signed snapshot (R015.params.priceSnapHmacKeyHex). Cookie
@@ -807,31 +807,35 @@ class Amcp_Checkout_Enforcer {
 			$context['cartAttributes'] = array();
 		}
 
-		$lowest = AgenticMCP_Cart_Signals::lowest_stock( $items );
+		$lowest = Trusteed_Cart_Signals::lowest_stock( $items );
 		if ( $lowest !== null ) {
 			$context['cartAttributes']['_lowest_stock'] = (string) $lowest;
 		}
 
-		if ( AgenticMCP_Cart_Signals::cart_has_subscription( $items ) ) {
+		if ( Trusteed_Cart_Signals::cart_has_subscription( $items ) ) {
 			$context['cartAttributes']['_subscription'] = 'true';
 		}
 
-		$stored = AgenticMCP_Cart_Signals::stored_value_cents( $items );
+		$stored = Trusteed_Cart_Signals::stored_value_cents( $items );
 		if ( $stored > 0 ) {
 			$context['cartAttributes']['_stored_value_cents'] = (string) $stored;
 		}
 
 		// R015 — verify HMAC-signed price snapshot cookie if present.
+		// NOTE: the cookie name intentionally keeps the legacy `amcp_price_snap_`
+		// prefix. Its setter lives in front-end/edge code outside this repo, so
+		// renaming the read side here would silently break price-snap evidence
+		// for existing storefronts with no way to verify. Left as-is by design.
 		$hmac_key = $this->resolve_r015_hmac_key();
 		$cookie   = isset( $_COOKIE[ 'amcp_price_snap_' . $cart_id ] ) ? (string) $_COOKIE[ 'amcp_price_snap_' . $cart_id ] : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification
 		if ( $cookie !== '' && $hmac_key !== '' ) {
-			$snapshot = AgenticMCP_Cart_Signals::verify_price_snap( $cookie, $hmac_key );
+			$snapshot = Trusteed_Cart_Signals::verify_price_snap( $cookie, $hmac_key );
 			if ( ! empty( $snapshot ) ) {
 				$current = array();
 				foreach ( $items as $signal ) {
 					$current[ (string) $signal['id'] ] = (int) $signal['price_cents'];
 				}
-				$delta = AgenticMCP_Cart_Signals::max_price_delta_bps( $current, $snapshot );
+				$delta = Trusteed_Cart_Signals::max_price_delta_bps( $current, $snapshot );
 				if ( $delta > 0 ) {
 					$context['cartAttributes']['_price_delta_bps'] = (string) $delta;
 				}
@@ -856,10 +860,10 @@ class Amcp_Checkout_Enforcer {
 			$context['cartAttributes'] = array();
 		}
 
-		if ( AgenticMCP_Cart_Signals::detect_po_box( $ship_a1, $ship_a2 ) ) {
+		if ( Trusteed_Cart_Signals::detect_po_box( $ship_a1, $ship_a2 ) ) {
 			$context['cartAttributes']['_shipping_po_box'] = 'true';
 		}
-		if ( AgenticMCP_Cart_Signals::detect_freight_forwarder( $ship_a1, $ship_a2, $ship_co ) ) {
+		if ( Trusteed_Cart_Signals::detect_freight_forwarder( $ship_a1, $ship_a2, $ship_co ) ) {
 			$context['cartAttributes']['_shipping_freight_forwarder'] = 'true';
 		}
 
@@ -871,7 +875,7 @@ class Amcp_Checkout_Enforcer {
 				$roles = $user->roles;
 			}
 		}
-		if ( AgenticMCP_Cart_Signals::is_b2b_order( $bill_co, $user_id, $roles ) ) {
+		if ( Trusteed_Cart_Signals::is_b2b_order( $bill_co, $user_id, $roles ) ) {
 			$context['cartAttributes']['_b2b_order'] = 'true';
 		}
 

@@ -25,13 +25,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Amcp_Crypto_Helper {
+class Trusteed_Crypto_Helper {
 
 	/**
 	 * Prefix prepended to every ciphertext stored in the DB.
 	 * Used to distinguish encrypted values from plaintext legacy values.
 	 */
-	private const CIPHERTEXT_PREFIX = 'amcp_enc:';
+	private const CIPHERTEXT_PREFIX = 'trusteed_enc:';
+
+	/**
+	 * Legacy ciphertext prefix used before the `trusteed` rebrand. Still
+	 * recognised on decrypt so secrets encrypted by pre-rename installs keep
+	 * working; new ciphertext is always written with CIPHERTEXT_PREFIX.
+	 */
+	private const LEGACY_CIPHERTEXT_PREFIX = 'amcp_enc:';
 
 	/**
 	 * Expected byte length of the symmetric key (libsodium secretbox).
@@ -41,7 +48,7 @@ class Amcp_Crypto_Helper {
 	/**
 	 * Encrypt a plaintext string using sodium_crypto_secretbox.
 	 *
-	 * Returns the encrypted value prefixed with `amcp_enc:` so decrypt() can
+	 * Returns the encrypted value prefixed with `trusteed_enc:` so decrypt() can
 	 * distinguish ciphertext from legacy plaintext values.
 	 * Returns the original $plaintext unchanged if no valid key is configured.
 	 *
@@ -68,7 +75,7 @@ class Amcp_Crypto_Helper {
 	 * Decrypt a value previously encrypted by encrypt().
 	 *
 	 * Handles three cases:
-	 *  1. Ciphertext (starts with `amcp_enc:`) + valid key → decrypted plaintext.
+	 *  1. Ciphertext (starts with `trusteed_enc:`, or legacy `amcp_enc:`) + valid key → decrypted plaintext.
 	 *  2. Ciphertext + no/invalid key → empty string (cannot decrypt).
 	 *  3. Plaintext (legacy or no key on encrypt) → returned as-is.
 	 *
@@ -78,7 +85,13 @@ class Amcp_Crypto_Helper {
 	 * @return string Decrypted value, or empty string on decryption failure.
 	 */
 	public static function decrypt( string $stored ): string {
-		if ( ! str_starts_with( $stored, self::CIPHERTEXT_PREFIX ) ) {
+		$prefix = null;
+		if ( str_starts_with( $stored, self::CIPHERTEXT_PREFIX ) ) {
+			$prefix = self::CIPHERTEXT_PREFIX;
+		} elseif ( str_starts_with( $stored, self::LEGACY_CIPHERTEXT_PREFIX ) ) {
+			$prefix = self::LEGACY_CIPHERTEXT_PREFIX;
+		}
+		if ( null === $prefix ) {
 			// Legacy plaintext — return unchanged.
 			return $stored;
 		}
@@ -89,7 +102,7 @@ class Amcp_Crypto_Helper {
 			return ''; // Cannot decrypt without key.
 		}
 
-		$raw = base64_decode( substr( $stored, strlen( self::CIPHERTEXT_PREFIX ) ), true );
+		$raw = base64_decode( substr( $stored, strlen( $prefix ) ), true );
 		if ( false === $raw || strlen( $raw ) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ) {
 			sodium_memzero( $key );
 			return ''; // Corrupted ciphertext.

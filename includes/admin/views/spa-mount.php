@@ -5,11 +5,11 @@
  * SECURITY: Zero data-attributes with tokens or secrets (constraint C-003).
  * All sensitive data flows through the REST token-broker endpoint, not the DOM.
  *
- * Expected variables provided by the caller (Amcp_Admin_Router::render_spa_shell):
+ * Expected variables provided by the caller (Trusteed_Admin_Router::render_spa_shell):
  *   @var string $section One of 'trust-center' | 'merchant-center' | 'settings' |
  *                        'inicio' | 'mis-ventas' | 'mis-reglas' | 'seguridad' | 'agentes'.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.2.0
  */
 

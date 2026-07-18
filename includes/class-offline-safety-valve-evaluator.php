@@ -6,7 +6,7 @@
  *
  * Why this exists: WooCommerce currently has ZERO local per-rule evaluator —
  * every ALLOW/BLOCK verdict comes from the single remote
- * `/v1/rules/evaluate` call (`Amcp_Checkout_Enforcer::run_evaluation()`). If
+ * `/v1/rules/evaluate` call (`Trusteed_Checkout_Enforcer::run_evaluation()`). If
  * that call fails (network error, timeout, 5xx), the merchant's own safety
  * rules (max order amount, blocked countries, business hours, PO-box block,
  * gift-card cap...) simply never get a chance to fire — the checkout falls
@@ -34,7 +34,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Amcp_Offline_Safety_Valve_Evaluator {
+class Trusteed_Offline_Safety_Valve_Evaluator {
 
 	private const DEFAULT_HIGH_RISK_COUNTRIES = array( 'KP', 'IR', 'SY', 'CU' );
 

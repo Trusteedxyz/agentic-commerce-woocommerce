@@ -6,8 +6,8 @@ declare(strict_types=1);
  * Gap 1 — Verify the classic-checkout path stamps `_trusteed_agent_did`
  * (parity with the Blocks/Store API path).
  *
- * Tests Amcp_Classic_Meta_Persister::register() which is the extracted
- * helper called by Amcp_Checkout_Enforcer on the ALLOW branch of the
+ * Tests Trusteed_Classic_Meta_Persister::register() which is the extracted
+ * helper called by Trusteed_Checkout_Enforcer on the ALLOW branch of the
  * classic-checkout path.
  */
 
@@ -65,13 +65,13 @@ final class ClassicCheckoutMetaPersistenceTest extends TestCase
     {
         parent::setUp();
         Stub_Captured_Hooks_Registry::$hooks = [];
-        \Amcp_Classic_Meta_Persister::reset_for_tests();
+        \Trusteed_Classic_Meta_Persister::reset_for_tests();
     }
 
     public function test_persister_registers_action_and_stamps_metas(): void
     {
         $did = 'did:web:agent.example.com';
-        \Amcp_Classic_Meta_Persister::register($did);
+        \Trusteed_Classic_Meta_Persister::register($did);
 
         $this->assertArrayHasKey('woocommerce_checkout_create_order', Stub_Captured_Hooks_Registry::$hooks);
         $this->assertCount(1, Stub_Captured_Hooks_Registry::$hooks['woocommerce_checkout_create_order']);
@@ -92,9 +92,9 @@ final class ClassicCheckoutMetaPersistenceTest extends TestCase
     public function test_persister_is_idempotent_per_did_in_same_request(): void
     {
         $did = 'did:web:dup.example.com';
-        \Amcp_Classic_Meta_Persister::register($did);
-        \Amcp_Classic_Meta_Persister::register($did);
-        \Amcp_Classic_Meta_Persister::register($did);
+        \Trusteed_Classic_Meta_Persister::register($did);
+        \Trusteed_Classic_Meta_Persister::register($did);
+        \Trusteed_Classic_Meta_Persister::register($did);
 
         $this->assertCount(
             1,
@@ -105,7 +105,7 @@ final class ClassicCheckoutMetaPersistenceTest extends TestCase
 
     public function test_persister_silently_ignores_empty_did(): void
     {
-        \Amcp_Classic_Meta_Persister::register('');
+        \Trusteed_Classic_Meta_Persister::register('');
         $this->assertArrayNotHasKey(
             'woocommerce_checkout_create_order',
             Stub_Captured_Hooks_Registry::$hooks,
@@ -115,7 +115,7 @@ final class ClassicCheckoutMetaPersistenceTest extends TestCase
 
     public function test_persister_silently_ignores_non_order_payload(): void
     {
-        \Amcp_Classic_Meta_Persister::register('did:web:safe.example.com');
+        \Trusteed_Classic_Meta_Persister::register('did:web:safe.example.com');
 
         $closure = Stub_Captured_Hooks_Registry::$hooks['woocommerce_checkout_create_order'][0];
         // Should not throw nor warn on non-WC_Order input.

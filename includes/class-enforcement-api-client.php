@@ -10,7 +10,7 @@
  * Caller decides BLOCK vs ALLOW on INDETERMINATE based on failure_mode
  * (spec-048 Gap 5/6 — fail-closed when ENFORCE, fail-open + telemetry when OBSERVE).
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.3.0
  */
 
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.5.0
  */
-class Amcp_Eval_Outcome {
+class Trusteed_Eval_Outcome {
 	const ALLOW         = 'ALLOW';
 	const BLOCK         = 'BLOCK';
 	const INDETERMINATE = 'INDETERMINATE';
@@ -38,7 +38,7 @@ class Amcp_Eval_Outcome {
  *
  * @since 1.6.0
  */
-class Amcp_Nonce_Outcome {
+class Trusteed_Nonce_Outcome {
 	const ACCEPTED      = 'ACCEPTED';
 	const REPLAY        = 'REPLAY';
 	const INDETERMINATE = 'INDETERMINATE';
@@ -49,9 +49,9 @@ class Amcp_Nonce_Outcome {
  *
  * @since 1.6.0
  */
-class Amcp_Nonce_Result {
+class Trusteed_Nonce_Result {
 
-	/** @var string Amcp_Nonce_Outcome::* */
+	/** @var string Trusteed_Nonce_Outcome::* */
 	public string $outcome;
 
 	/** @var string Short reason code. */
@@ -72,9 +72,9 @@ class Amcp_Nonce_Result {
  *
  * @since 1.5.0
  */
-class Amcp_Eval_Result {
+class Trusteed_Eval_Result {
 
-	/** @var string Amcp_Eval_Outcome::* */
+	/** @var string Trusteed_Eval_Outcome::* */
 	public string $outcome;
 
 	/** @var string Short reason code (network_error, http_5xx, bad_response, ok). */
@@ -83,19 +83,31 @@ class Amcp_Eval_Result {
 	/** @var int|null HTTP status if response received, null otherwise. */
 	public ?int $http_status;
 
-	public function __construct( string $outcome, string $reason, ?int $http_status = null ) {
-		$this->outcome     = $outcome;
-		$this->reason      = $reason;
-		$this->http_status = $http_status;
+	/**
+	 * R043 HITL freeze payload when the BLOCK is a human-in-the-loop escalation
+	 * (decision=BLOCK + ucp.state=requires_escalation + reason_code trusteed:R043).
+	 * Shape: ['rule_code' => string, 'reason' => string, 'evaluation_id' => string].
+	 * Null for plain blocks / non-HITL outcomes.
+	 *
+	 * @since 1.6.0
+	 * @var array<string,string>|null
+	 */
+	public ?array $hitl_payload;
+
+	public function __construct( string $outcome, string $reason, ?int $http_status = null, ?array $hitl_payload = null ) {
+		$this->outcome      = $outcome;
+		$this->reason       = $reason;
+		$this->http_status  = $http_status;
+		$this->hitl_payload = $hitl_payload;
 	}
 }
 
 /**
- * Class Amcp_Enforcement_Api_Client
+ * Class Trusteed_Enforcement_Api_Client
  *
  * @since 1.3.0
  */
-class Amcp_Enforcement_Api_Client {
+class Trusteed_Enforcement_Api_Client {
 
 	private string $api_base;
 	private string $installation_id;
@@ -108,10 +120,10 @@ class Amcp_Enforcement_Api_Client {
 	 * Counts /v1/rules/evaluate HTTP-4xx responses; when the count exceeds
 	 * the threshold within the window, we set a 24h notice transient.
 	 */
-	private const EVAL_4XX_RATE_TRANSIENT      = 'amcp_eval_4xx_rate';
+	private const EVAL_4XX_RATE_TRANSIENT      = 'trusteed_eval_4xx_rate';
 	private const EVAL_4XX_RATE_WINDOW_SECONDS = 900;   // 15 min
 	private const EVAL_4XX_RATE_THRESHOLD      = 10;
-	public const  EVAL_4XX_NOTICE_TRANSIENT    = 'amcp_eval_config_drift_notice';
+	public const  EVAL_4XX_NOTICE_TRANSIENT    = 'trusteed_eval_config_drift_notice';
 	private const EVAL_4XX_NOTICE_TTL_SECONDS  = 86400; // 24h
 
 	public function __construct( string $api_base, string $installation_id, string $hmac_secret ) {
@@ -129,20 +141,20 @@ class Amcp_Enforcement_Api_Client {
 	 * @since 1.5.0
 	 *
 	 * @param array $payload Evaluate payload.
-	 * @return Amcp_Eval_Result
+	 * @return Trusteed_Eval_Result
 	 */
-	public function evaluate( array $payload ): Amcp_Eval_Result {
+	public function evaluate( array $payload ): Trusteed_Eval_Result {
 		$url      = $this->api_base . '/v1/rules/evaluate';
 		$raw_body = wp_json_encode( $payload );
 
 		if ( false === $raw_body ) {
-			return new Amcp_Eval_Result( Amcp_Eval_Outcome::INDETERMINATE, 'json_encode_failed' );
+			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::INDETERMINATE, 'json_encode_failed' );
 		}
 
 		$signature = $this->build_signature( $raw_body );
 		if ( '' === $signature ) {
 			// F5.S3 — fail-closed: never POST a placeholder/unsigned request.
-			return new Amcp_Eval_Result( Amcp_Eval_Outcome::INDETERMINATE, 'hmac_secret_missing' );
+			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::INDETERMINATE, 'hmac_secret_missing' );
 		}
 
 		$headers = array(
@@ -162,14 +174,14 @@ class Amcp_Enforcement_Api_Client {
 
 		if ( is_wp_error( $response ) ) {
 			error_log( '[amcp] enforcement evaluate network error: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-			return new Amcp_Eval_Result( Amcp_Eval_Outcome::INDETERMINATE, 'network_error' );
+			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::INDETERMINATE, 'network_error' );
 		}
 
 		$status = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( $status >= 500 ) {
 			error_log( '[amcp] enforcement evaluate HTTP ' . $status ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-			return new Amcp_Eval_Result( Amcp_Eval_Outcome::INDETERMINATE, 'http_5xx', $status );
+			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::INDETERMINATE, 'http_5xx', $status );
 		}
 
 		if ( 200 !== $status ) {
@@ -177,20 +189,35 @@ class Amcp_Enforcement_Api_Client {
 			// not as ALLOW, so ENFORCE mode surfaces it instead of silently passing.
 			error_log( '[amcp] enforcement evaluate unexpected HTTP ' . $status ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 			$this->record_4xx_rate();
-			return new Amcp_Eval_Result( Amcp_Eval_Outcome::INDETERMINATE, 'http_4xx', $status );
+			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::INDETERMINATE, 'http_4xx', $status );
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( ! is_array( $body ) || empty( $body['decision'] ) ) {
-			return new Amcp_Eval_Result( Amcp_Eval_Outcome::INDETERMINATE, 'bad_response', $status );
+			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::INDETERMINATE, 'bad_response', $status );
 		}
 
 		if ( 'BLOCK' === $body['decision'] ) {
-			return new Amcp_Eval_Result( Amcp_Eval_Outcome::BLOCK, 'ok', $status );
+			// R043 HITL — surface the freeze payload so the checkout enforcer can
+			// park the order pending merchant approval (via Trusteed_R043_Hitl_Gate)
+			// instead of a hard block that loses the customer's intent. Guarded by
+			// class_exists so this file has no hard dependency on load order.
+			$hitl = null;
+			if (
+				class_exists( 'Trusteed_R043_Hitl_Gate' )
+				&& Trusteed_R043_Hitl_Gate::is_hitl_response( $body )
+			) {
+				$hitl = array(
+					'rule_code'     => Trusteed_R043_Hitl_Gate::rule_code_from( $body ),
+					'reason'        => (string) ( $body['reason'] ?? '' ),
+					'evaluation_id' => (string) ( $body['evaluationId'] ?? '' ),
+				);
+			}
+			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::BLOCK, 'ok', $status, $hitl );
 		}
 
-		return new Amcp_Eval_Result( Amcp_Eval_Outcome::ALLOW, 'ok', $status );
+		return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::ALLOW, 'ok', $status );
 	}
 
 	/**
@@ -203,9 +230,9 @@ class Amcp_Enforcement_Api_Client {
 	 * @param string $agent_did   Agent DID from the verified JWS iss/kid claim.
 	 * @param string $jti         Single-use nonce — base64url 16–128 chars.
 	 * @param int    $exp         Token exp (unix seconds). Used as nonce TTL upper bound.
-	 * @return Amcp_Nonce_Result
+	 * @return Trusteed_Nonce_Result
 	 */
-	public function consume_nonce( string $merchant_id, string $agent_did, string $jti, int $exp ): Amcp_Nonce_Result {
+	public function consume_nonce( string $merchant_id, string $agent_did, string $jti, int $exp ): Trusteed_Nonce_Result {
 		$url = $this->api_base . '/v1/agent-events/nonce-consume';
 
 		$payload = array(
@@ -218,13 +245,13 @@ class Amcp_Enforcement_Api_Client {
 
 		$raw_body = wp_json_encode( $payload );
 		if ( false === $raw_body ) {
-			return new Amcp_Nonce_Result( Amcp_Nonce_Outcome::INDETERMINATE, 'json_encode_failed' );
+			return new Trusteed_Nonce_Result( Trusteed_Nonce_Outcome::INDETERMINATE, 'json_encode_failed' );
 		}
 
 		$signature = $this->build_signature( $raw_body );
 		if ( '' === $signature ) {
 			// F5.S3 — fail-closed.
-			return new Amcp_Nonce_Result( Amcp_Nonce_Outcome::INDETERMINATE, 'hmac_secret_missing' );
+			return new Trusteed_Nonce_Result( Trusteed_Nonce_Outcome::INDETERMINATE, 'hmac_secret_missing' );
 		}
 
 		$headers = array(
@@ -243,21 +270,21 @@ class Amcp_Enforcement_Api_Client {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return new Amcp_Nonce_Result( Amcp_Nonce_Outcome::INDETERMINATE, 'network_error' );
+			return new Trusteed_Nonce_Result( Trusteed_Nonce_Outcome::INDETERMINATE, 'network_error' );
 		}
 
 		$status = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( 200 === $status ) {
-			return new Amcp_Nonce_Result( Amcp_Nonce_Outcome::ACCEPTED, 'ok', $status );
+			return new Trusteed_Nonce_Result( Trusteed_Nonce_Outcome::ACCEPTED, 'ok', $status );
 		}
 		if ( 409 === $status ) {
-			return new Amcp_Nonce_Result( Amcp_Nonce_Outcome::REPLAY, 'replay_detected', $status );
+			return new Trusteed_Nonce_Result( Trusteed_Nonce_Outcome::REPLAY, 'replay_detected', $status );
 		}
 		if ( $status >= 500 ) {
-			return new Amcp_Nonce_Result( Amcp_Nonce_Outcome::INDETERMINATE, 'http_5xx', $status );
+			return new Trusteed_Nonce_Result( Trusteed_Nonce_Outcome::INDETERMINATE, 'http_5xx', $status );
 		}
-		return new Amcp_Nonce_Result( Amcp_Nonce_Outcome::INDETERMINATE, 'http_4xx', $status );
+		return new Trusteed_Nonce_Result( Trusteed_Nonce_Outcome::INDETERMINATE, 'http_4xx', $status );
 	}
 
 	/**
@@ -313,7 +340,7 @@ class Amcp_Enforcement_Api_Client {
 		if ( empty( $this->hmac_secret ) ) {
 			error_log( '[amcp.enforcement_api] fail-closed: enforcement_hmac_secret missing' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 			if ( function_exists( 'update_option' ) ) {
-				update_option( Amcp_Agent_Event_Webhook::NOTICE_OPTION_HMAC_MISSING, 1, false );
+				update_option( Trusteed_Agent_Event_Webhook::NOTICE_OPTION_HMAC_MISSING, 1, false );
 			}
 			return '';
 		}

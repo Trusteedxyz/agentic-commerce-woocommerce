@@ -89,8 +89,8 @@ if (!class_exists('WP_Error')) {
 }
 
 // Stub the api client type (the SUT only needs the symbol for typehint).
-if (!class_exists('AgenticMCP_Api_Client')) {
-    class AgenticMCP_Api_Client
+if (!class_exists('Trusteed_Api_Client')) {
+    class Trusteed_Api_Client
     {
         /** @var array */
         public $next_response = ['status' => 200, 'body' => []];
@@ -140,12 +140,12 @@ final class CatalogSyncErrorHandlingTest extends TestCase
             : '';
     }
 
-    private function makeSync(): AgenticMCP_Catalog_Sync
+    private function makeSync(): Trusteed_Catalog_Sync
     {
-        return new AgenticMCP_Catalog_Sync(new AgenticMCP_Api_Client());
+        return new Trusteed_Catalog_Sync(new Trusteed_Api_Client());
     }
 
-    private function invokeLog(AgenticMCP_Catalog_Sync $sync, string $context, int $entity_id, $response): void
+    private function invokeLog(Trusteed_Catalog_Sync $sync, string $context, int $entity_id, $response): void
     {
         $ref = new \ReflectionClass($sync);
         $method = $ref->getMethod('log_sync_outcome');

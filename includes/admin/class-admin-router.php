@@ -2,7 +2,7 @@
 /**
  * Admin menu router — registers top-level "Trusteed" menu with submenus.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.1.0
  */
 
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Amcp_Admin_Router
+ * Class Trusteed_Admin_Router
  *
  * Registers the WP-admin top-level menu "Trusteed" and its three submenus:
  * Trust Center, Merchant Center, and Configuración.
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.1.0
  */
-class Amcp_Admin_Router {
+class Trusteed_Admin_Router {
 
 	/**
 	 * Menu capability required for all Trusteed pages.

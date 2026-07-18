@@ -12,7 +12,7 @@
  *
  * Mirrors pattern in packages/prestashop-module-agenticmcpstores/src/Enforcement/TokenVerifier.php.
  *
- * @package AgenticMCPStores
+ * @package Trusteed
  * @since   1.4.0
  */
 
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Verification state enum.
  */
-class Amcp_Token_State {
+class Trusteed_Token_State {
 	const VALID         = 'valid';
 	const INVALID       = 'invalid';
 	const INDETERMINATE = 'indeterminate';
@@ -34,9 +34,9 @@ class Amcp_Token_State {
  *
  * @since 1.4.0
  */
-class Amcp_Token_Verify_Result {
+class Trusteed_Token_Verify_Result {
 
-	/** @var string Amcp_Token_State::* constant. */
+	/** @var string Trusteed_Token_State::* constant. */
 	public string $state;
 
 	/** @var string Agent DID, or '' if absent. */
@@ -92,21 +92,21 @@ class Amcp_Token_Verify_Result {
 
 	/** Whether the signature is confirmed invalid (should set _agent_token_signature_invalid). */
 	public function is_invalid(): bool {
-		return Amcp_Token_State::INVALID === $this->state;
+		return Trusteed_Token_State::INVALID === $this->state;
 	}
 
 	/** Whether the signature is confirmed valid. */
 	public function is_valid(): bool {
-		return Amcp_Token_State::VALID === $this->state;
+		return Trusteed_Token_State::VALID === $this->state;
 	}
 }
 
 /**
- * Class Amcp_Token_Verifier
+ * Class Trusteed_Token_Verifier
  *
  * @since 1.4.0
  */
-class Amcp_Token_Verifier {
+class Trusteed_Token_Verifier {
 
 	/** Expected JWS typ header value. */
 	private const EXPECTED_TYP = 'trusteed-agent-token+jwt';
@@ -129,78 +129,78 @@ class Amcp_Token_Verifier {
 	 * @param string $jws_compact  JWS Compact Serialization.
 	 * @param array  $did_resolver Array of { did, publicKeyJwk: { kty, crv, x } }.
 	 * @param string $merchant_id  Expected merchantId claim.
-	 * @return Amcp_Token_Verify_Result
+	 * @return Trusteed_Token_Verify_Result
 	 */
 	public static function verify(
 		string $jws_compact,
 		array $did_resolver,
 		string $merchant_id
-	): Amcp_Token_Verify_Result {
+	): Trusteed_Token_Verify_Result {
 		if ( ! function_exists( 'sodium_crypto_sign_verify_detached' ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INDETERMINATE, '', 0.0, 'sodium_unavailable' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INDETERMINATE, '', 0.0, 'sodium_unavailable' );
 		}
 
 		$parts = explode( '.', $jws_compact );
 		if ( 3 !== count( $parts ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, '', 0.0, 'malformed_jws' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, '', 0.0, 'malformed_jws' );
 		}
 
 		[ $header_b64, $payload_b64, $sig_b64 ] = $parts;
 
 		$header_json = self::b64url_decode( $header_b64 );
 		if ( false === $header_json ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, '', 0.0, 'bad_header_encoding' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, '', 0.0, 'bad_header_encoding' );
 		}
 		$header = json_decode( $header_json, true );
 		if ( ! is_array( $header ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, '', 0.0, 'bad_header_json' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, '', 0.0, 'bad_header_json' );
 		}
 
 		if ( 'EdDSA' !== ( $header['alg'] ?? '' ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, '', 0.0, 'wrong_alg' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, '', 0.0, 'wrong_alg' );
 		}
 		if ( self::EXPECTED_TYP !== ( $header['typ'] ?? '' ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, '', 0.0, 'wrong_typ' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, '', 0.0, 'wrong_typ' );
 		}
 
 		// Extract DID from kid: "did:web:example.com#key-1" → "did:web:example.com".
 		$kid = (string) ( $header['kid'] ?? '' );
 		$did = false !== strpos( $kid, '#' ) ? explode( '#', $kid )[0] : $kid;
 		if ( '' === $did ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, '', 0.0, 'missing_kid' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, '', 0.0, 'missing_kid' );
 		}
 
 		$payload_json = self::b64url_decode( $payload_b64 );
 		if ( false === $payload_json ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'bad_payload_encoding' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'bad_payload_encoding' );
 		}
 		$payload = json_decode( $payload_json, true );
 		if ( ! is_array( $payload ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'bad_payload_json' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'bad_payload_json' );
 		}
 
 		// Key-confusion guard (HIGH-4): iss must match kid-derived DID.
 		if ( ( $payload['iss'] ?? '' ) !== $did ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'iss_kid_mismatch' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'iss_kid_mismatch' );
 		}
 
 		if ( self::EXPECTED_AUD !== ( $payload['aud'] ?? '' ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'wrong_aud' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'wrong_aud' );
 		}
 
 		if ( isset( $payload['merchantId'] ) && $payload['merchantId'] !== $merchant_id ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'merchant_id_mismatch' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'merchant_id_mismatch' );
 		}
 
 		$now = time();
 		$exp = isset( $payload['exp'] ) ? (int) $payload['exp'] : 0;
 		if ( $exp > 0 && $now > $exp + 30 ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'expired' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'expired' );
 		}
 
 		$iat = isset( $payload['iat'] ) ? (int) $payload['iat'] : 0;
 		if ( $iat > 0 && ( $now - $iat ) > self::MAX_AGE_SECONDS ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'too_old' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'too_old' );
 		}
 
 		// Resolve public key from agentDidResolver (keyed by DID).
@@ -208,21 +208,21 @@ class Amcp_Token_Verifier {
 		$jwk          = $resolver_map[ $did ] ?? null;
 		if ( null === $jwk ) {
 			// DID not in resolver — we cannot verify (not necessarily spoofed). Fail open.
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INDETERMINATE, $did, 0.0, 'did_not_in_resolver', $kid );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INDETERMINATE, $did, 0.0, 'did_not_in_resolver', $kid );
 		}
 
 		if ( 'OKP' !== ( $jwk['kty'] ?? '' ) || 'Ed25519' !== ( $jwk['crv'] ?? '' ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'wrong_key_type' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'wrong_key_type' );
 		}
 
 		$pubkey_bytes = self::b64url_decode( $jwk['x'] ?? '' );
 		if ( false === $pubkey_bytes || SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES !== strlen( $pubkey_bytes ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'bad_pubkey' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'bad_pubkey' );
 		}
 
 		$sig_bytes = self::b64url_decode( $sig_b64 );
 		if ( false === $sig_bytes || SODIUM_CRYPTO_SIGN_BYTES !== strlen( $sig_bytes ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'bad_sig_encoding' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'bad_sig_encoding' );
 		}
 
 		$signing_input = $header_b64 . '.' . $payload_b64;
@@ -231,11 +231,11 @@ class Amcp_Token_Verifier {
 			$valid = sodium_crypto_sign_verify_detached( $sig_bytes, $signing_input, $pubkey_bytes );
 		} catch ( \SodiumException $e ) {
 			// sodium internal error — fail open (indeterminate).
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INDETERMINATE, $did, 0.0, 'sodium_exception', $kid );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INDETERMINATE, $did, 0.0, 'sodium_exception', $kid );
 		}
 
 		if ( ! $valid ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'sig_invalid' );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'sig_invalid' );
 		}
 
 		// Spec-048 P2.8 — extract `jti` for replay protection. Missing or
@@ -243,15 +243,15 @@ class Amcp_Token_Verifier {
 		// via tokens minted without single-use identifiers.
 		$jti_raw = isset( $payload['jti'] ) ? (string) $payload['jti'] : '';
 		if ( '' === $jti_raw ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'missing_jti', $kid );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'missing_jti', $kid );
 		}
 		if ( ! preg_match( self::JTI_RE, $jti_raw ) ) {
-			return new Amcp_Token_Verify_Result( Amcp_Token_State::INVALID, $did, 0.0, 'bad_jti', $kid );
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'bad_jti', $kid );
 		}
 
 		$trust_score = isset( $payload['agentTrustScore'] ) ? (float) $payload['agentTrustScore'] : 0.0;
-		return new Amcp_Token_Verify_Result(
-			Amcp_Token_State::VALID,
+		return new Trusteed_Token_Verify_Result(
+			Trusteed_Token_State::VALID,
 			$did,
 			$trust_score,
 			'',

@@ -17,7 +17,7 @@ declare(strict_types=1);
  * — this test only asserts the WooCommerce plugin no longer short-circuits
  * before ever calling it.
  *
- * `Amcp_Checkout_Enforcer::run_evaluation()` is private and deeply coupled
+ * `Trusteed_Checkout_Enforcer::run_evaluation()` is private and deeply coupled
  * to the live WC()/WC_Session globals (not stubbed anywhere in this test
  * suite — see FailureModeNormalizationTest.php for the same constraint).
  * Following that file's established pattern, this test asserts the control

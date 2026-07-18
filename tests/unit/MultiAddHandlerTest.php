@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Gap 2 — Amcp_Multi_Add_Handler structural test.
+ * Gap 2 — Trusteed_Multi_Add_Handler structural test.
  *
  * Full integration requires WC()->cart + wc_get_product, which we cannot
  * bootstrap in pure unit tests. We instead verify:
@@ -50,21 +50,21 @@ final class MultiAddHandlerTest extends TestCase
     {
         // The bridge emits `agenticmcp_multi_add=1` — handler must consume the
         // exact same flag.
-        $this->assertSame('agenticmcp_multi_add', Amcp_Multi_Add_Handler::FLAG_PARAM);
+        $this->assertSame('agenticmcp_multi_add', Trusteed_Multi_Add_Handler::FLAG_PARAM);
     }
 
     public function test_max_line_items_matches_cart_bridge(): void
     {
         $this->assertSame(
             Trusteed_Cart_Bridge::MAX_LINE_ITEMS,
-            Amcp_Multi_Add_Handler::MAX_LINE_ITEMS,
+            Trusteed_Multi_Add_Handler::MAX_LINE_ITEMS,
             'Handler cap must mirror the bridge cap (defense in depth)'
         );
     }
 
     public function test_init_registers_wp_loaded_hook(): void
     {
-        $handler = new Amcp_Multi_Add_Handler();
+        $handler = new Trusteed_Multi_Add_Handler();
         $handler->init();
 
         $this->assertTrue(
@@ -82,8 +82,8 @@ final class MultiAddHandlerTest extends TestCase
     public function test_maybe_handle_silently_returns_without_flag(): void
     {
         // No flag in $_GET → no work, no side effects, no warnings.
-        unset($_GET[Amcp_Multi_Add_Handler::FLAG_PARAM]);
-        $handler = new Amcp_Multi_Add_Handler();
+        unset($_GET[Trusteed_Multi_Add_Handler::FLAG_PARAM]);
+        $handler = new Trusteed_Multi_Add_Handler();
         $handler->maybe_handle();
         $this->assertTrue(true);
     }

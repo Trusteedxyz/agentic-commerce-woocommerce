@@ -72,7 +72,7 @@ final class AgentEventWebhookFailClosedTest extends TestCase
 
     public function test_build_signed_headers_returns_null_when_secret_empty(): void
     {
-        $webhook = new Amcp_Agent_Event_Webhook(
+        $webhook = new Trusteed_Agent_Event_Webhook(
             'https://api.example.com',
             'install-1',
             '', // empty secret — fail-closed path
@@ -85,7 +85,7 @@ final class AgentEventWebhookFailClosedTest extends TestCase
 
         $this->assertNull($headers, 'build_signed_headers must return null when secret missing (fail-closed)');
         $this->assertArrayHasKey(
-            Amcp_Agent_Event_Webhook::NOTICE_OPTION_HMAC_MISSING,
+            Trusteed_Agent_Event_Webhook::NOTICE_OPTION_HMAC_MISSING,
             $GLOBALS['__amcp_option_calls'],
             'admin-notice flag must be set so merchant is alerted'
         );
@@ -93,7 +93,7 @@ final class AgentEventWebhookFailClosedTest extends TestCase
 
     public function test_build_signed_headers_signs_correctly_when_secret_present(): void
     {
-        $webhook = new Amcp_Agent_Event_Webhook(
+        $webhook = new Trusteed_Agent_Event_Webhook(
             'https://api.example.com',
             'install-1',
             'super-secret-hmac-key',
@@ -120,7 +120,7 @@ final class AgentEventWebhookFailClosedTest extends TestCase
 
     public function test_post_signed_does_not_dispatch_when_secret_empty(): void
     {
-        $webhook = new Amcp_Agent_Event_Webhook(
+        $webhook = new Trusteed_Agent_Event_Webhook(
             'https://api.example.com',
             'install-1',
             '', // empty

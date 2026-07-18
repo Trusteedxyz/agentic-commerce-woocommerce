@@ -15,7 +15,7 @@ defined('ABSPATH') || exit;
  * The enforcer calls these helpers after extracting primitive arrays from
  * WC_Product / WC_Order / WC_Cart objects.
  */
-final class AgenticMCP_Cart_Signals
+final class Trusteed_Cart_Signals
 {
     public const PRICE_SNAP_VERSION = 'tps.v1';
 

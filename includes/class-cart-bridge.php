@@ -31,7 +31,19 @@ class Trusteed_Cart_Bridge {
 	 * @since 1.0.0
 	 * @var string
 	 */
-	const REST_NAMESPACE = 'agenticmcp/v1';
+	const REST_NAMESPACE = 'trusteed/v1';
+
+	/**
+	 * Legacy REST namespace kept as an alias for backward compatibility.
+	 *
+	 * The mcp-server (packages/mcp-server/src/utils/woo-cart-bridge.ts) and any
+	 * already-integrated agents still POST to /wp-json/agenticmcp/v1/cart, so
+	 * the cart route is registered under both namespaces.
+	 *
+	 * @since 2.1.0
+	 * @var string
+	 */
+	const REST_NAMESPACE_LEGACY = 'agenticmcp/v1';
 
 	/**
 	 * Maximum allowed line items per cart request.
@@ -51,22 +63,22 @@ class Trusteed_Cart_Bridge {
 	 * @return void
 	 */
 	public function register_routes() {
-		register_rest_route(
-			self::REST_NAMESPACE,
-			'/cart',
-			array(
-				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'handle_create_cart' ),
-				'permission_callback' => array( $this, 'check_api_key_permission' ),
-				'args'                => array(
-					'line_items' => array(
-						'required'          => true,
-						'validate_callback' => array( $this, 'validate_line_items_param' ),
-						'sanitize_callback' => array( $this, 'sanitize_line_items_param' ),
-					),
+		$route_args = array(
+			'methods'             => \WP_REST_Server::CREATABLE,
+			'callback'            => array( $this, 'handle_create_cart' ),
+			'permission_callback' => array( $this, 'check_api_key_permission' ),
+			'args'                => array(
+				'line_items' => array(
+					'required'          => true,
+					'validate_callback' => array( $this, 'validate_line_items_param' ),
+					'sanitize_callback' => array( $this, 'sanitize_line_items_param' ),
 				),
-			)
+			),
 		);
+
+		register_rest_route( self::REST_NAMESPACE, '/cart', $route_args );
+		// Back-compat alias for pre-rename callers (see REST_NAMESPACE_LEGACY).
+		register_rest_route( self::REST_NAMESPACE_LEGACY, '/cart', $route_args );
 	}
 
 	/**
@@ -75,7 +87,7 @@ class Trusteed_Cart_Bridge {
 	 * @since 1.3.0
 	 * @var string
 	 */
-	const SESSION_AGENT_ID = 'amcp_agent_id';
+	const SESSION_AGENT_ID = 'trusteed_agent_id';
 
 	/**
 	 * URL query param that carries the agent DID to the checkout page.
@@ -83,7 +95,7 @@ class Trusteed_Cart_Bridge {
 	 * @since 1.3.0
 	 * @var string
 	 */
-	const AGENT_ID_PARAM = 'amcp_agent_id';
+	const AGENT_ID_PARAM = 'trusteed_agent_id';
 
 	/**
 	 * DID regex — matches did:web:... and did:key:... without fragment.
@@ -99,7 +111,7 @@ class Trusteed_Cart_Bridge {
 	 * @since 1.4.0
 	 * @var string
 	 */
-	const AGENT_TOKEN_PARAM = 'amcp_agent_token';
+	const AGENT_TOKEN_PARAM = 'trusteed_agent_token';
 
 	/**
 	 * WC session key used to carry the agent JWS token from checkout page load to checkout process.
@@ -107,10 +119,10 @@ class Trusteed_Cart_Bridge {
 	 * @since 1.4.0
 	 * @var string
 	 */
-	const SESSION_AGENT_TOKEN = 'amcp_agent_token';
+	const SESSION_AGENT_TOKEN = 'trusteed_agent_token';
 
 	/**
-	 * Handle POST /wp-json/agenticmcp/v1/cart.
+	 * Handle POST /wp-json/trusteed/v1/cart (legacy alias: /wp-json/agenticmcp/v1/cart).
 	 *
 	 * Validates each line item, builds a native WooCommerce checkout URL,
 	 * and returns it along with item count and estimated total.
