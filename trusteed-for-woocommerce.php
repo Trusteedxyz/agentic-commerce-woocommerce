@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @var string
  */
-define( 'TRUSTEED_VERSION', '2.0.2' );
+define( 'TRUSTEED_VERSION', '2.1.0' );
 
 /**
  * Plugin directory path (with trailing slash).
