@@ -94,6 +94,13 @@ A detailed merchant walkthrough lives in [`docs/MERCHANT_INSTALLATION_GUIDE.md`]
 
 ## Changelog
 
+### 2.1.0
+
+- **Rebrand** — internal classes, option keys, and REST routes renamed `Amcp_`/`amcp_` → `Trusteed_`/`trusteed_`. Back-compat preserved: existing installs keep working (legacy `amcp_{key}` options are still read as a fallback, legacy REST namespaces stay registered alongside the new ones, legacy encrypted-value prefix still decrypts).
+- **Fix** — R043 HITL payload is now plumbed through end-to-end, so a BLOCK can surface a human-in-the-loop freeze instead of a hard block that loses buyer intent.
+- **Fix (critical)** — the compiled admin SPA bundle (`assets/admin-spa/`) was missing from the distributed package entirely; the Trusteed admin panel rendered a "bundle not compiled" error on every install. Bundle now ships correctly.
+- Hardening in billing webhooks, checkout enforcer, catalog sync, and cart signals.
+
 ### 2.0.2
 
 Checkout enforcement fix. Merchant rules (max order amount, blocked countries, business hours) were being skipped entirely for organic, non-agent checkouts — they now apply universally. Added an offline safety-valve evaluator that enforces these rules locally when the remote rules API is unreachable.
