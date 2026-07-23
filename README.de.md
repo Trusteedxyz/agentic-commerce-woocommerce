@@ -27,7 +27,7 @@ Jedes Panel unten entspricht einem Eintrag im **Trusteed**-Menü innerhalb von W
 |--------------------------------------|
 | ![Trust Receipts](assets/screenshots/ai-receipts.png) |
 
-Jede Agententransaktion erzeugt einen kryptografisch signierten **Vertrauensbeleg (Trust Receipt)** — einen manipulationssicheren Datensatz (kompatibel mit eIDAS / eSIGN), der unter **Meine Verkäufe → KI-Verkäufe** aufgeführt wird.
+Jede Agententransaktion erzeugt einen kryptografisch signierten **Vertrauensbeleg (Trust Receipt)** — einen manipulationssicheren Datensatz (kompatibel mit eIDAS / eSIGN), der unter **Meine Verkäufe → KI-Verkäufe** aufgeführt wird. Klicke auf eine Zeile, um alle Details zu sehen (Agenten-ID, aufgerufenes Tool, Input-/Output-Hashes, JWS) und den Beleg als ZIP herunterzuladen, um ihn im Streitfall als Nachweis vorzulegen.
 
 ## Funktionen
 
