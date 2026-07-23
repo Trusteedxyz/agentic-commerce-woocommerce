@@ -27,7 +27,7 @@ Each panel below maps to an item in the **Trusteed** menu inside WooCommerce.
 |--------------------------------------|
 | ![Trust Receipts](assets/screenshots/ai-receipts.png) |
 
-Every agent transaction produces a cryptographically signed **trust receipt** — a tamper-proof record (compatible with eIDAS / eSIGN) listed under **My Sales → AI Sales**.
+Every agent transaction produces a cryptographically signed **trust receipt** — a tamper-proof record (compatible with eIDAS / eSIGN) listed under **My Sales → AI Sales**. Click any row to see the full detail (agent ID, tool called, input/output hashes, JWS) and download the receipt as a ZIP file to hand over as backup in case of a dispute.
 
 ## Features
 
