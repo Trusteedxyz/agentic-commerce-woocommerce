@@ -27,7 +27,7 @@ Cada panel de abajo corresponde a un elemento del menú **Trusteed** dentro de W
 |--------------------------------------|
 | ![Trust Receipts](assets/screenshots/ai-receipts.png) |
 
-Cada transacción de un agente genera un **recibo de confianza** firmado criptográficamente — un registro a prueba de manipulación (compatible con eIDAS / eSIGN) que aparece en **Mis Ventas → Ventas IA**.
+Cada transacción de un agente genera un **recibo de confianza** firmado criptográficamente — un registro a prueba de manipulación (compatible con eIDAS / eSIGN) que aparece en **Mis Ventas → Ventas IA**. Haz clic en cualquier fila para ver el detalle completo (ID del agente, herramienta invocada, hashes de entrada/salida, JWS) y descargar el comprobante como ZIP para presentarlo como respaldo ante una disputa.
 
 ## Características
 
