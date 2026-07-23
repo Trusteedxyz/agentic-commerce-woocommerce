@@ -94,6 +94,17 @@ Eine ausführliche Anleitung für Händler finden Sie unter [`docs/MERCHANT_INST
 
 ## Änderungsprotokoll
 
+### 2.1.0
+
+- **Rebranding** — interne Klassen, Options-Schlüssel und REST-Routen von `Amcp_`/`amcp_` zu `Trusteed_`/`trusteed_` umbenannt. Abwärtskompatibilität gewahrt: bestehende Installationen funktionieren weiter (Legacy-Optionen `amcp_{key}` werden weiterhin als Fallback gelesen, Legacy-REST-Namespaces bleiben neben den neuen registriert, das Legacy-Präfix verschlüsselter Werte wird weiterhin entschlüsselt).
+- **Fix** — die R043-HITL-Payload wird nun durchgängig weitergereicht, sodass ein BLOCK eine Human-in-the-Loop-Pause anzeigen kann, statt eines harten Blocks, der die Kaufabsicht verliert.
+- **Kritischer Fix** — das kompilierte Admin-SPA-Bundle (`assets/admin-spa/`) fehlte komplett im verteilten Paket; das Trusteed-Admin-Panel zeigte bei jeder Installation einen Fehler "Bundle nicht kompiliert". Das Bundle wird jetzt korrekt mitgeliefert.
+- Härtung bei Abrechnungs-Webhooks, Checkout-Durchsetzung, Katalog-Synchronisation und Warenkorb-Signalen.
+
+### 2.0.2
+
+Fix für die Durchsetzung von Checkout-Regeln. Händlerregeln (Höchstbetrag, gesperrte Länder, Geschäftszeiten) wurden bei organischen Checkouts ohne Agenten komplett übersprungen — sie gelten jetzt universell. Ein Offline-Sicherheitsventil-Evaluator wurde hinzugefügt, der diese Regeln lokal durchsetzt, wenn die entfernte Regel-API nicht erreichbar ist.
+
 ### 2.0.1
 
 Kritischer Aktivierungs- und Sicherheits-Hotfix (Codex-Audit). Behebt eine halbfertige `AGENTICMCP_*` → `TRUSTEED_*`-Umbenennung, die die Aktivierung in 2.0.0 verhinderte; `create_cart` leitet nun das JWS-Token des Agenten weiter, sodass die R002-Verifizierung ausgeführt wird; der REST-Client validiert den API-Basis-Host gegen eine exakte Allowlist.
