@@ -94,6 +94,14 @@ Un guide détaillé destiné aux marchands se trouve dans [`docs/MERCHANT_INSTAL
 
 ## Journal des modifications
 
+### 2.2.0
+
+- **Correctif de sécurité** — le vérificateur de jetons d'agent traitait `exp` et `iat` comme facultatifs : les deux contrôles dépendaient de `> 0`, si bien qu'un jeton omettant simplement le claim échappait entièrement à la vérification. Sans `exp` il n'expirait jamais ; sans `iat` il n'avait aucune ancienneté maximale. Les deux sont désormais obligatoires, et une valeur non numérique est rejetée plutôt que convertie. La protection anti-rejeu était déjà fail-closed ici (un `jti` absent ou mal formé est rejeté) : ceci ferme la moitié restante.
+- **Correctif de sécurité** — un `iat` dans le futur est désormais rejeté (30s de dérive d'horloge tolérées). Combiné à la fenêtre d'ancienneté maximale, il donnait une durée de vie glissante : `maintenant - iat` reste petit tant que l'émetteur pousse le claim en avant, si bien que le jeton ne vieillissait jamais.
+- **Correctif** — la règle R036 (valeur maximale par ligne) lisait son plafond dans un paramètre nommé `maxCents`, copié de R035. Le nom canonique est `maxCentsPerLine`, seul accepté par le schéma strict du panneau marchand : un plafond configuré par le marchand n'aurait jamais atteint le contrôle. La clé canonique est maintenant lue en premier ; `maxCents` reste accepté en repli.
+- **Correctif** — le test de conformité inter-langages résolvait son fixture via un chemin qui n'existe que dans le monorepo de développement, et échouait donc dans ce dépôt. Il lit désormais la copie fournie dans `tests/fixtures/`.
+- **Reçus de confiance** — le bundle du panneau d'administration est reconstruit avec le bouton de téléchargement du reçu, qui l'exporte en ZIP via le même point d'accès que le tableau de bord hébergé. Le bouton dit clairement ce qu'est cet export : une preuve d'intégrité de l'agent, pas une preuve de litige.
+
 ### 2.1.0
 
 - **Rebranding** — classes internes, clés d'options et routes REST renommées de `Amcp_`/`amcp_` vers `Trusteed_`/`trusteed_`. Rétrocompatibilité préservée : les installations existantes continuent de fonctionner (les options héritées `amcp_{key}` sont toujours lues en repli, les espaces de noms REST hérités restent enregistrés aux côtés des nouveaux, le préfixe hérité des valeurs chiffrées se déchiffre toujours).
