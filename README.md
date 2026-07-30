@@ -94,6 +94,14 @@ A detailed merchant walkthrough lives in [`docs/MERCHANT_INSTALLATION_GUIDE.md`]
 
 ## Changelog
 
+### 2.2.0
+
+- **Security fix** — the agent token verifier treated `exp` and `iat` as optional: both guards hung off `> 0`, so a token that simply omitted the claim skipped the check entirely. Without `exp` it never expired; without `iat` it had no maximum age. Both claims are now mandatory, and a non-numeric value is rejected rather than cast. Replay protection was already fail-closed here (a missing or malformed `jti` is rejected), so this closes the remaining half.
+- **Security fix** — an `iat` in the future is now rejected (30s of clock skew tolerated). Combined with the max-age window it gave a sliding lifetime: `now - iat` stays small for as long as the issuer pushes the claim forward, so the token effectively never grew old.
+- **Fix** — rule R036 (max line-item value) read its cap from a parameter named `maxCents`, copied from R035. The canonical name is `maxCentsPerLine`, and it is the only one the merchant panel's strict schema accepts, so a merchant-configured cap would never have reached the check. The canonical key is now read first; `maxCents` stays accepted as a fallback.
+- **Fix** — the cross-language conformance test resolved its fixture through a path that only exists in the development monorepo, so it failed in this repository. It now reads the copy shipped in `tests/fixtures/`.
+- **Trust receipts** — the admin SPA bundle is rebuilt with the receipt download button, which exports a receipt as a ZIP through the same endpoint the hosted dashboard uses. The button states plainly what the export is: proof of agent integrity, not dispute evidence.
+
 ### 2.1.0
 
 - **Rebrand** — internal classes, option keys, and REST routes renamed `Amcp_`/`amcp_` → `Trusteed_`/`trusteed_`. Back-compat preserved: existing installs keep working (legacy `amcp_{key}` options are still read as a fallback, legacy REST namespaces stay registered alongside the new ones, legacy encrypted-value prefix still decrypts).
