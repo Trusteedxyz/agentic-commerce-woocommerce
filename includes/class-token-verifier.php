@@ -193,13 +193,36 @@ class Trusteed_Token_Verifier {
 		}
 
 		$now = time();
-		$exp = isset( $payload['exp'] ) ? (int) $payload['exp'] : 0;
-		if ( $exp > 0 && $now > $exp + 30 ) {
+
+		// H4 (2026-07-30) — `exp` and `iat` are MANDATORY. The canonical token
+		// schema requires both as positive integers, but both guards below used
+		// to hang off `> 0`, so a token that simply OMITTED the claim skipped
+		// the check entirely: without `exp` it never expired, without `iat` it
+		// had no maximum age. Rejecting is fail-closed and matches the
+		// PrestaShop, Magento and Odoo verifiers.
+		if ( ! isset( $payload['exp'] ) || ! is_numeric( $payload['exp'] ) ) {
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'missing_exp' );
+		}
+		if ( ! isset( $payload['iat'] ) || ! is_numeric( $payload['iat'] ) ) {
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'missing_iat' );
+		}
+
+		$exp = (int) $payload['exp'];
+		if ( $now > $exp + 30 ) {
 			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'expired' );
 		}
 
-		$iat = isset( $payload['iat'] ) ? (int) $payload['iat'] : 0;
-		if ( $iat > 0 && ( $now - $iat ) > self::MAX_AGE_SECONDS ) {
+		$iat = (int) $payload['iat'];
+
+		// A future `iat` combined with the max-age window below gives a sliding
+		// lifetime: `now - iat` stays small for as long as the issuer pushed the
+		// claim forward, so the token effectively never grows old. 30s of clock
+		// skew is tolerated, the same grace used on `exp`.
+		if ( ( $iat - 30 ) > $now ) {
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'iat_in_future' );
+		}
+
+		if ( ( $now - $iat ) > self::MAX_AGE_SECONDS ) {
 			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'too_old' );
 		}
 

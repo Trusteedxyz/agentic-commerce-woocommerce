@@ -236,6 +236,73 @@ class TokenVerifierTest extends TestCase
         $this->assertSame('too_old', $result->error);
     }
 
+    // ── TV-11b: mandatory temporal claims (H4, 2026-07-30) ───────────────────
+
+    /**
+     * A token that simply OMITS `exp` used to sail past the expiry check,
+     * because the guard hung off `$exp > 0`. It was valid forever.
+     */
+    public function testMissingExpReturnsInvalid(): void
+    {
+        $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
+        $claims   = $this->baseClaims();
+        unset($claims['exp']);
+        $jws = $this->signToken($this->defaultHeader(), $claims);
+
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
+        $this->assertSame('missing_exp', $result->error);
+    }
+
+    /**
+     * Same hole on the other side: without `iat` there was no maximum age, so
+     * a token minted at any point in the past stayed acceptable.
+     */
+    public function testMissingIatReturnsInvalid(): void
+    {
+        $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
+        $claims   = $this->baseClaims();
+        unset($claims['iat']);
+        $jws = $this->signToken($this->defaultHeader(), $claims);
+
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
+        $this->assertSame('missing_iat', $result->error);
+    }
+
+    /** A non-numeric `exp` is as good as absent — reject rather than cast. */
+    public function testNonNumericExpReturnsInvalid(): void
+    {
+        $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
+        $jws      = $this->makeToken(['exp' => 'not-a-timestamp']);
+
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
+        $this->assertSame('missing_exp', $result->error);
+    }
+
+    /**
+     * A future `iat` combined with the max-age window gives a sliding
+     * lifetime: `now - iat` stays small for as long as the issuer pushed the
+     * claim forward. Same guard the PrestaShop verifier applies.
+     */
+    public function testFutureIatReturnsInvalid(): void
+    {
+        $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
+        $jws      = $this->makeToken([
+            'iat' => time() + 3600,
+            'exp' => time() + 3700,
+        ]);
+
+        $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
+        $this->assertSame('iat_in_future', $result->error);
+    }
+
     // ── TV-12: tampered payload ──────────────────────────────────────────────
 
     /**

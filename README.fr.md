@@ -59,10 +59,10 @@ Trusteed for WooCommerce est un **connecteur léger** qui relie votre catalogue 
 ### Téléversement manuel (recommandé)
 
 1. **Téléchargez le `.zip` installable** depuis la dernière Release GitHub :
-   [**⬇ trusteed-agentic-commerce-woocommerce-2.1.0.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest/download/trusteed-agentic-commerce-woocommerce-2.1.0.zip)
+   [**⬇ trusteed-agentic-commerce-woocommerce-2.2.0.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest/download/trusteed-agentic-commerce-woocommerce-2.2.0.zip)
    — ou parcourez toutes les versions sur la [page des Releases](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
 2. Dans votre administration WordPress : **Extensions → Ajouter → Téléverser une extension**.
-3. Sélectionnez le fichier téléchargé `trusteed-agentic-commerce-woocommerce-2.1.0.zip` et cliquez sur **Installer maintenant**.
+3. Sélectionnez le fichier téléchargé `trusteed-agentic-commerce-woocommerce-2.2.0.zip` et cliquez sur **Installer maintenant**.
 4. Cliquez sur **Activer**.
 
 ### Depuis les sources (compiler le zip vous-même)

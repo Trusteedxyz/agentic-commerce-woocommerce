@@ -427,9 +427,26 @@ final class CartSignalsTest extends TestCase
             ['product_id' => 42, 'line_total' => 250.0], // 25000 cents
             ['product_id' => 99, 'line_total' => 10.0],
         ];
-        $result = Trusteed_Cart_Signals::evaluateR036MaxLineItemValue($cart, ['maxCents' => 20000]);
+        $result = Trusteed_Cart_Signals::evaluateR036MaxLineItemValue($cart, ['maxCentsPerLine' => 20000]);
         $this->assertTrue($result['hit']);
         $this->assertSame('line item 42 value 25000 exceeds cap 20000', $result['reason']);
+    }
+
+    /**
+     * The canonical parameter name is `maxCentsPerLine` — the only key the
+     * merchant panel's strict schema accepts. This helper used to read
+     * `maxCents` (R035's key), so a merchant-configured cap never reached it.
+     */
+    public function test_r036_reads_the_canonical_parameter_name(): void
+    {
+        $cart = new WC_Cart();
+        $cart->items = [['product_id' => 7, 'line_total' => 250.0]];
+
+        $canonical = Trusteed_Cart_Signals::evaluateR036MaxLineItemValue($cart, ['maxCentsPerLine' => 20000]);
+        $legacy    = Trusteed_Cart_Signals::evaluateR036MaxLineItemValue($cart, ['maxCents' => 20000]);
+
+        $this->assertTrue($canonical['hit'], 'canonical maxCentsPerLine must be honoured');
+        $this->assertTrue($legacy['hit'], 'legacy maxCents stays accepted as a fallback');
     }
 
     public function test_r036_passes_when_all_lines_within_cap(): void
