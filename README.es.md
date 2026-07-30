@@ -94,6 +94,14 @@ Encontrarás una guía detallada para comercios en [`docs/MERCHANT_INSTALLATION_
 
 ## Historial de cambios
 
+### 2.2.0
+
+- **Corrección de seguridad** — el verificador de tokens de agente trataba `exp` e `iat` como opcionales: ambas comprobaciones colgaban de `> 0`, así que un token que simplemente OMITÍA el claim se saltaba la comprobación entera. Sin `exp` no caducaba nunca; sin `iat` no tenía antigüedad máxima. Ahora los dos son obligatorios, y un valor no numérico se rechaza en vez de convertirse. La protección anti-replay ya era fail-closed aquí (un `jti` ausente o mal formado se rechaza), así que esto cierra la mitad que faltaba.
+- **Corrección de seguridad** — un `iat` en el futuro se rechaza (se toleran 30s de desfase de reloj). Combinado con la ventana de antigüedad máxima daba una vida deslizante: `ahora - iat` se mantiene pequeño mientras el emisor siga empujando el claim hacia adelante, así que el token no envejecía nunca.
+- **Corrección** — la regla R036 (valor máximo por línea) leía su tope de un parámetro llamado `maxCents`, copiado de R035. El nombre canónico es `maxCentsPerLine`, y es el único que acepta el esquema estricto del panel del comerciante, así que un tope configurado por el comerciante nunca habría llegado a la comprobación. Ahora se lee primero la clave canónica; `maxCents` se sigue aceptando como reserva.
+- **Corrección** — el test de conformidad entre lenguajes resolvía su fixture por una ruta que sólo existe en el monorepo de desarrollo, así que fallaba en este repositorio. Ahora lee la copia incluida en `tests/fixtures/`.
+- **Recibos de confianza** — el bundle del panel se reconstruye con el botón de descarga del recibo, que lo exporta en ZIP por el mismo endpoint que usa el panel alojado. El botón dice sin rodeos qué es esa exportación: prueba de integridad del agente, no evidencia de disputa.
+
 ### 2.1.0
 
 - **Rebrand** — clases internas, claves de opciones y rutas REST renombradas de `Amcp_`/`amcp_` a `Trusteed_`/`trusteed_`. Compatibilidad retroactiva preservada: las instalaciones existentes siguen funcionando (las opciones legacy `amcp_{key}` se siguen leyendo como respaldo, las rutas REST legacy se mantienen registradas junto a las nuevas, el prefijo de valores cifrados legacy se sigue descifrando).
