@@ -130,6 +130,23 @@ Privacy Policy: [https://trusteed.xyz/privacy](https://trusteed.xyz/privacy)
 
 == Changelog ==
 
+= 2.2.0 =
+**Agent token hardening + rule parameter fix.**
+
+* Security fix: the agent token verifier treated `exp` and `iat` as optional — both guards hung off `> 0`, so a token that simply omitted the claim skipped the check entirely. Without `exp` it never expired; without `iat` it had no maximum age. Both are now mandatory, and a non-numeric value is rejected rather than cast.
+* Security fix: an `iat` in the future is now rejected (30s clock skew tolerated). Combined with the max-age window it gave a sliding lifetime, so the token effectively never grew old.
+* Fixed: rule R036 (max line-item value) read its cap from `maxCents`, copied from R035. The canonical parameter is `maxCentsPerLine` — the only key the merchant panel accepts — so a merchant-configured cap never reached the check.
+* Fixed: the cross-language conformance test resolved its fixture through a development-only path and failed in the published repository.
+* Trust receipts: admin SPA bundle rebuilt with the receipt ZIP download button, which states plainly that the export is proof of agent integrity, not dispute evidence.
+
+= 2.1.0 =
+**Rebrand + admin panel fix.**
+
+* Internal classes, option keys, and REST routes renamed `Amcp_`/`amcp_` to `Trusteed_`/`trusteed_`. Back-compat preserved: existing installs keep working (legacy options are still read as a fallback, legacy REST namespaces stay registered, legacy encrypted values still decrypt).
+* Fixed: R043 HITL payload is now plumbed through end-to-end, so a BLOCK can surface a human-in-the-loop freeze instead of a hard block that loses buyer intent.
+* Fixed (critical): the compiled admin SPA bundle was missing from the distributed package entirely; the Trusteed admin panel rendered a "bundle not compiled" error on every install.
+* Hardening in billing webhooks, checkout enforcer, catalog sync, and cart signals.
+
 = 2.0.2 =
 **Checkout enforcement fix (Shopify App Store review remediation, 2026-07-11/12)** — closes an agent-gating gap surfaced by cross-platform verification after an unrelated Shopify App Store suspension.
 
