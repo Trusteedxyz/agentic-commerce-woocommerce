@@ -94,6 +94,14 @@ Eine ausführliche Anleitung für Händler finden Sie unter [`docs/MERCHANT_INST
 
 ## Änderungsprotokoll
 
+### 2.2.0
+
+- **Sicherheitsfix** — der Agent-Token-Verifizierer behandelte `exp` und `iat` als optional: beide Prüfungen hingen an `> 0`, sodass ein Token, das den Claim schlicht wegließ, die Prüfung vollständig umging. Ohne `exp` lief es nie ab; ohne `iat` hatte es kein Höchstalter. Beide sind jetzt verpflichtend, und ein nicht-numerischer Wert wird zurückgewiesen statt gecastet. Der Replay-Schutz war hier bereits fail-closed (ein fehlendes oder fehlerhaftes `jti` wird abgelehnt) — dies schließt die verbleibende Hälfte.
+- **Sicherheitsfix** — ein `iat` in der Zukunft wird nun abgelehnt (30s Uhrenabweichung werden toleriert). Zusammen mit dem Höchstalter-Fenster ergab sich eine gleitende Lebensdauer: `jetzt - iat` bleibt klein, solange der Aussteller den Claim nach vorne schiebt — das Token alterte also nie.
+- **Fix** — Regel R036 (maximaler Positionswert) las ihre Obergrenze aus einem Parameter namens `maxCents`, von R035 übernommen. Der kanonische Name lautet `maxCentsPerLine` und ist der einzige, den das strikte Schema des Händlerpanels akzeptiert — eine vom Händler konfigurierte Obergrenze hätte die Prüfung nie erreicht. Der kanonische Schlüssel wird jetzt zuerst gelesen; `maxCents` bleibt als Rückfall akzeptiert.
+- **Fix** — der sprachübergreifende Konformitätstest löste sein Fixture über einen Pfad auf, den es nur im Entwicklungs-Monorepo gibt, und schlug daher in diesem Repository fehl. Er liest nun die in `tests/fixtures/` mitgelieferte Kopie.
+- **Trust Receipts** — das Admin-SPA-Bundle wurde mit der Beleg-Download-Schaltfläche neu gebaut, die einen Beleg über denselben Endpunkt als ZIP exportiert, den auch das gehostete Dashboard nutzt. Die Schaltfläche benennt klar, was dieser Export ist: ein Nachweis der Agenten-Integrität, kein Streitfall-Beweis.
+
 ### 2.1.0
 
 - **Rebranding** — interne Klassen, Options-Schlüssel und REST-Routen von `Amcp_`/`amcp_` zu `Trusteed_`/`trusteed_` umbenannt. Abwärtskompatibilität gewahrt: bestehende Installationen funktionieren weiter (Legacy-Optionen `amcp_{key}` werden weiterhin als Fallback gelesen, Legacy-REST-Namespaces bleiben neben den neuen registriert, das Legacy-Präfix verschlüsselter Werte wird weiterhin entschlüsselt).
