@@ -77,7 +77,7 @@ bash build-zip.sh        # outputs dist/trusteed-agentic-commerce-woocommerce-<v
 
 1. Inicia sesión en tu **panel de administración** de WordPress.
 2. Ve a **WooCommerce → Trusteed** (o al elemento de menú **Trusteed**).
-3. Introduce tu **API Key** desde [app.trusteed.xyz/settings](https://app.trusteed.xyz/settings).
+3. Introduce tu **API Key** desde [trusteed.xyz/dashboard/settings](https://trusteed.xyz/dashboard/settings).
 4. Haz clic en **Guardar y conectar** — el plugin comprueba la conectividad, registra tu tienda y sincroniza tu catálogo automáticamente.
 
 Una vez conectado, cualquier agente compatible con MCP (Claude, ChatGPT o agentes personalizados construidos con LangChain, CrewAI, Vercel AI SDK, etc.) puede buscar tus productos, explorar categorías, ver detalles de producto y construir carritos. Cuando el cliente está listo para comprar, el agente lo redirige a tu checkout nativo de WooCommerce, donde tus pasarelas de pago existentes (Stripe, PayPal, …) gestionan el pago.
