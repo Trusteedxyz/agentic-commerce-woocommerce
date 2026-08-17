@@ -20,8 +20,9 @@ declare(strict_types=1);
  * the same `$GLOBALS` keys each file's setUp() already resets — so per-test
  * isolation keeps working unchanged.
  *
- * Classes with a single definition (WP_Error, WC_Order) stay in their owning
- * test file: only FUNCTIONS collided, not classes.
+ * Classes with a single definition (WC_Order) stay in their owning test file:
+ * only FUNCTIONS collided, not classes. WP_Error graduated to this file once a
+ * second test file needed it (see its declaration below).
  */
 
 if (!defined('ABSPATH')) {
@@ -47,6 +48,9 @@ $GLOBALS['__amcp_wp_remote_post_calls']           = $GLOBALS['__amcp_wp_remote_p
 $GLOBALS['__amcp_wp_remote_post_last_url']        = $GLOBALS['__amcp_wp_remote_post_last_url']        ?? null;
 $GLOBALS['__amcp_wp_remote_post_last_args']       = $GLOBALS['__amcp_wp_remote_post_last_args']       ?? null;
 $GLOBALS['__amcp_wp_schedule_single_event_calls'] = $GLOBALS['__amcp_wp_schedule_single_event_calls'] ?? [];
+$GLOBALS['__amcp_transients_store']               = $GLOBALS['__amcp_transients_store']               ?? [];
+$GLOBALS['__amcp_deleted_options']                = $GLOBALS['__amcp_deleted_options']                ?? [];
+$GLOBALS['__amcp_deleted_transients']             = $GLOBALS['__amcp_deleted_transients']             ?? [];
 
 if (!function_exists('add_action')) {
     function add_action(string $hook, callable $cb, int $prio = 10, int $args = 1): void
@@ -73,6 +77,33 @@ if (!function_exists('get_option')) {
     function get_option($key, $default = false)
     {
         return $GLOBALS['__amcp_options_store'][$key] ?? $default;
+    }
+}
+
+if (!function_exists('delete_option')) {
+    function delete_option($key): bool
+    {
+        $existed = array_key_exists($key, $GLOBALS['__amcp_options_store']);
+        unset($GLOBALS['__amcp_options_store'][$key], $GLOBALS['__amcp_option_calls'][$key]);
+        $GLOBALS['__amcp_deleted_options'][] = $key;
+        return $existed;
+    }
+}
+
+if (!function_exists('delete_transient')) {
+    function delete_transient($key): bool
+    {
+        $existed = array_key_exists($key, $GLOBALS['__amcp_transients_store']);
+        unset($GLOBALS['__amcp_transients_store'][$key]);
+        $GLOBALS['__amcp_deleted_transients'][] = $key;
+        return $existed;
+    }
+}
+
+if (!function_exists('get_transient')) {
+    function get_transient($key)
+    {
+        return $GLOBALS['__amcp_transients_store'][$key] ?? false;
     }
 }
 
@@ -139,5 +170,37 @@ if (!function_exists('wp_schedule_single_event')) {
             'args'      => $args,
         ];
         return true;
+    }
+}
+
+// WP_Error moved here from CatalogSyncErrorHandlingTest once a SECOND test file
+// (ApiClientSsrfGuardTest) needed it: the owning-file convention only holds
+// while exactly one file declares a class, and PHPUnit's process isolation
+// means a child process may load a test file WITHOUT its former owner. That
+// file's `class_exists` guard now simply skips. Keep the API in sync with the
+// subset of WP_Error the plugin actually calls.
+if (!class_exists('WP_Error')) {
+    class WP_Error
+    {
+        /** @var string */
+        private $code;
+        /** @var string */
+        private $message;
+
+        public function __construct(string $code = '', string $message = '')
+        {
+            $this->code    = $code;
+            $this->message = $message;
+        }
+
+        public function get_error_code(): string
+        {
+            return $this->code;
+        }
+
+        public function get_error_message(): string
+        {
+            return $this->message;
+        }
     }
 }

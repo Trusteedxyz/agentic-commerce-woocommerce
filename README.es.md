@@ -5,7 +5,7 @@
 Permite que los nuevos compradores online, los agentes de IA, realicen compras en tu tienda de forma segura y fiable gracias a Trusteed: la red que fomenta la confianza entre negocios y agentes.
 
 - **Define tus reglas de negocio**: a quién permites comprar, hasta qué importe, qué categorías no quieres ofrecer a agentes, límites de precio, mantener niveles de stock para protegerte de posibles agentes fraudulentos, y más.
-- **Recibos a prueba de manipulación**: generamos recibos firmados electrónicamente y criptográficamente a prueba de manipulación que sirven como prueba de la transacción real en caso de disputa. Compatible con las regulaciones eIDAS (UE, Reino Unido) y eSIGN (EE. UU.).
+- **Recibos con evidencia de manipulación**: generamos recibos firmados electrónicamente y criptográficamente resistentes a la manipulación que registran lo que el agente hizo realmente — una prueba verificable de la integridad del agente. Están diseñados para seguir el estándar europeo de firma electrónica (eIDAS) y eSIGN (EE. UU.), pero todavía no son una firma ni un sello de tiempo *cualificados*, así que por sí solos no son evidencia de disputa lista para un banco o un tribunal.
 - **Analítica de agentes**: consulta estadísticas de las compras de agentes — cuánto gastan, qué productos compran y con qué frecuencia.
 - **Bloqueo de agentes**: bloquea agentes potencialmente peligrosos o problemáticos.
 - **Divisas digitales**: permite compras en divisas digitales gracias al protocolo X402.
@@ -27,7 +27,7 @@ Cada panel de abajo corresponde a un elemento del menú **Trusteed** dentro de W
 |--------------------------------------|
 | ![Trust Receipts](assets/screenshots/ai-receipts.png) |
 
-Cada transacción de un agente genera un **recibo de confianza** firmado criptográficamente — un registro a prueba de manipulación (compatible con eIDAS / eSIGN) que aparece en **Mis Ventas → Ventas IA**. Haz clic en cualquier fila para ver el detalle completo (ID del agente, herramienta invocada, hashes de entrada/salida, JWS) y descargar el comprobante como ZIP para presentarlo como respaldo ante una disputa.
+Cada transacción de un agente genera un **recibo de confianza** firmado criptográficamente — un registro a prueba de manipulación (compatible con eIDAS / eSIGN) que aparece en **Mis Ventas → Ventas IA**. Haz clic en cualquier fila para ver el detalle completo (ID del agente, herramienta invocada, hashes de entrada/salida, JWS) y descargar el comprobante como ZIP. La exportación es una prueba verificable de la integridad del agente: es un respaldo útil si un comprador afirma que nunca hizo el pedido, pero por sí sola no sustituye la evidencia que un banco o un tribunal pueda exigir en una disputa.
 
 ## Características
 
@@ -37,7 +37,7 @@ Trusteed for WooCommerce es un **conector ligero** que conecta tu catálogo de p
 - **Sincronización automática del catálogo** — los productos se sincronizan mediante hooks de WooCommerce al crear/actualizar/eliminar, incluyendo cambios de stock; también hay sincronización manual completa disponible desde la página de ajustes. Solo se envían datos públicos del catálogo (títulos, descripciones, precios, imágenes, categorías, stock) — nunca PII de clientes, pedidos ni información de pago
 - **Verificación de token del agente** — `create_cart` reenvía el token JWS del agente al checkout, de modo que la verificación de firma/repetición (R002) se ejecuta en el flujo normal
 - **Puerta de aplicación (HITL)** — aprobación humana en el bucle (human-in-the-loop) configurable para pedidos de agentes de alto valor
-- **Endurecimiento SSRF** — las URLs de la tienda/API se validan contra una lista blanca exacta de hosts y listas de bloqueo RFC1918 / IPv6 ULA / IMDS de la nube
+- **Endurecimiento SSRF** — la URL base de la API con credenciales debe ser HTTPS y estar en una lista blanca exacta de hosts; el IMDS de la nube (`169.254.0.0/16`, `100.100.100.200`, `metadata.google.internal`), el IPv6 unique-local (`fc00::/7`) y el link-local (`fe80::/10`) se bloquean en todos los entornos, y loopback / RFC1918 solo funcionan tras activar explícitamente `TRUSTEED_ALLOW_LOCAL_API_BASE` (desactivado por defecto)
 - **Valores por defecto de fallo cerrado (fail-closed)** — no hay envío si el secreto de aplicación está vacío; se requiere prueba de propiedad del dominio al reconectar (protección contra apropiación entre comercios)
 
 ## Compatibilidad
@@ -59,10 +59,10 @@ Trusteed for WooCommerce es un **conector ligero** que conecta tu catálogo de p
 ### Subida manual (recomendado)
 
 1. **Descarga el `.zip` instalable** desde el último Release de GitHub:
-   [**⬇ trusteed-agentic-commerce-woocommerce-2.2.0.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest/download/trusteed-agentic-commerce-woocommerce-2.2.0.zip)
+   [**⬇ Último release — trusteed-agentic-commerce-woocommerce-&lt;versión&gt;.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest)
    — o consulta todas las versiones en la [página de Releases](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
 2. En tu panel de administración de WordPress: **Plugins → Añadir nuevo → Subir plugin**.
-3. Selecciona el archivo descargado `trusteed-agentic-commerce-woocommerce-2.2.0.zip` y haz clic en **Instalar ahora**.
+3. Selecciona el archivo `.zip` descargado y haz clic en **Instalar ahora**.
 4. Haz clic en **Activar**.
 
 ### Desde el código fuente (compilar el zip tú mismo)
@@ -93,6 +93,18 @@ Encontrarás una guía detallada para comercios en [`docs/MERCHANT_INSTALLATION_
 **¿Ralentiza mi tienda?** No. El plugin solo se comunica con Trusteed cuando hay cambios en el catálogo — no añade sobrecarga a la carga de páginas de la tienda ni al checkout del cliente.
 
 ## Historial de cambios
+
+### 2.2.2
+
+- **Corrección de seguridad** — el cliente de la API aceptaba una URL base en loopback o en rango privado RFC1918 (`10.*`, `172.16–31.*`, `192.168.*`, `localhost`, `127.*`) en **todos** los entornos, incluso por HTTP plano. Una instalación cuya URL de API hubiese sido redirigida enviaría su credencial `X-AgenticMCP-Key` a una dirección interna. Ese modo de desarrollo ahora hay que activarlo a propósito y viene desactivado: sólo se habilita con `TRUSTEED_ALLOW_LOCAL_API_BASE` o con el tipo de entorno `local` de WordPress — la misma puerta que `Trusteed_Token_Broker` ya aplicaba con `WP_DEBUG` y que este cliente había perdido.
+- **Corrección de seguridad** — los metadatos de instancia en la nube y los rangos internos de IPv6 quedan bloqueados en todos los entornos, *incluido* el modo de desarrollo, que antes los reabría todos: `169.254.0.0/16` (IMDS), Alibaba `100.100.100.200`, `metadata.google.internal`, unique-local `fc00::/7` y link-local `fe80::/10`. Además devuelven su propio código de error en lugar del engañoso «configura una URL HTTPS».
+- **Corregido** — los hosts IPv6 no coincidían con ninguna comprobación: `parse_url()` los devuelve entre corchetes (`[::1]`), así que la entrada de loopback `::1` era código muerto.
+- **Corrección de privacidad** — al desinstalar quedaban 21 filas de opciones, entre ellas tres secretos cifrados (`trusteed_embed_wp_secret`, `trusteed_enforcement_hmac_secret`, `trusteed_woo_webhook_secret`) y los alias heredados `amcp_*` que el accesor de opciones sigue leyendo como reserva, de modo que una reinstalación podía resucitar un secreto viejo. `uninstall.php` ahora limpia los tres espacios de nombres más los transitorios de snapshot y JWKS. Un test nuevo recorre el código buscando toda clave de opción escribible y falla si la lista de desinstalación se queda atrás.
+- **Corrección de documentación** — los recibos de confianza se describían como «prueba de la transacción real en caso de disputa». El propio producto dice lo contrario: una prueba verificable de integridad, no evidencia de disputa lista para un banco o un tribunal. Corregido para que coincida.
+- **Corrección de documentación** — la FAQ de desactivación afirmaba que desactivar desconecta la tienda y que no quedan datos residuales en nuestros servidores. Desactivar no hace nada, y desconectar conserva el registro de la tienda y los productos sincronizados. Corregido, documentando la vía para solicitar el borrado.
+- **Corrección de documentación** — se decía que el catálogo sincronizaba «variantes y reseñas»; no se envía ninguna de las dos. La lista de campos transmitidos ahora es exacta.
+- **Corrección de documentación** — `Tested up to` / `WC tested up to` no coincidían entre `readme.txt` (6.9 / 10.6) y la cabecera del plugin (6.7 / 9.5). Ambos dicen ya 6.9 / 10.6. Los tests automáticos se ejecutan contra WordPress 6.8 con la última WooCommerce estable en PHP 8.1–8.2.
+- **Corrección de documentación** — arreglados enlaces que daban 404: `/developers`, `/privacy` y `/terms` necesitan el prefijo `/en/`, y `/support` no existe (sustituido por el formulario de contacto y las issues de GitHub).
 
 ### 2.2.1
 

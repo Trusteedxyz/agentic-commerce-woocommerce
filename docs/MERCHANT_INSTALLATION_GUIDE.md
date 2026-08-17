@@ -50,21 +50,22 @@ You will also need:
 
 ## 2. Installation
 
-### Option A: Install from the Woo Marketplace (recommended)
+> **The plugin is not listed in the official WordPress.org plugin directory.** Searching for it
+> under **Plugins > Add New** in your WordPress admin will not find it. Install it by uploading the
+> `.zip` file from GitHub Releases, as described below.
 
-1. Log in to your WordPress admin dashboard
-2. Go to **Plugins > Add New**
-3. Search for **"AgenticMCPStores for WooCommerce"**
-4. Click **Install Now** on the plugin card
-5. Once installed, click **Activate**
+### Install the `.zip` from GitHub Releases (recommended)
 
-### Option B: Manual upload
+1. Open the [latest release page](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest) on GitHub
+2. Under **Assets**, download the `trusteed-agentic-commerce-woocommerce-<version>.zip` file
+3. Log in to your WordPress admin dashboard
+4. Go to **Plugins > Add New > Upload Plugin**
+5. Click **Choose File** and select the `.zip` file you just downloaded
+6. Click **Install Now**
+7. Once installed, click **Activate**
 
-1. Download the `agenticmcpstores-for-woocommerce.zip` file from [trusteed.xyz/downloads](https://trusteed.xyz/downloads)
-2. In your WordPress admin, go to **Plugins > Add New > Upload Plugin**
-3. Click **Choose File**, select the downloaded `.zip` file
-4. Click **Install Now**
-5. Once installed, click **Activate**
+If you need a specific older version instead of the newest one, every published version is listed on
+the [Releases page](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
 
 After activation, you will see a new menu item: **WooCommerce > AgenticMCPStores**.
 
@@ -252,4 +253,4 @@ When contacting support, please include:
 
 ---
 
-_Last updated: 2026-03-28_
+_Last updated: 2026-08-17_

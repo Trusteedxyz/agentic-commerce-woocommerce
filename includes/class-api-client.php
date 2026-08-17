@@ -152,30 +152,133 @@ class Trusteed_Api_Client {
 	}
 
 	/**
+	 * Normalise a host as returned by wp_parse_url() for comparison.
+	 *
+	 * PHP's parse_url() returns IPv6 literals wrapped in brackets (`[::1]`),
+	 * so a bare `::1` comparison never matches. Strip the brackets and
+	 * lowercase before any allow/deny decision.
+	 *
+	 * @since 2.2.2
+	 *
+	 * @param string $host Host extracted from the API base URL.
+	 * @return string Normalised host.
+	 */
+	private static function normalize_host( string $host ): string {
+		return strtolower( trim( $host, '[]' ) );
+	}
+
+	/**
+	 * Determine whether the plain-HTTP local/dev override is enabled.
+	 *
+	 * Opt-in, defaulting to OFF. Mirrors the gate that
+	 * Trusteed_Token_Broker::is_allowed_api_base() has always applied
+	 * (WP_DEBUG); this client previously applied none, so a production install
+	 * whose `trusteed_api_base_url` had been redirected at an RFC1918 address
+	 * would happily ship `X-AgenticMCP-Key` there.
+	 *
+	 * Enable in `wp-config.php` with either:
+	 *   define( 'TRUSTEED_ALLOW_LOCAL_API_BASE', true );
+	 *   define( 'WP_ENVIRONMENT_TYPE', 'local' );
+	 *
+	 * The explicit constant wins in both directions, so an install can hard-off
+	 * the override even under a `local` environment type.
+	 *
+	 * @since 2.2.2
+	 *
+	 * @return bool True when local/private API bases may be used.
+	 */
+	private static function local_api_base_allowed(): bool {
+		if ( defined( 'TRUSTEED_ALLOW_LOCAL_API_BASE' ) ) {
+			return (bool) TRUSTEED_ALLOW_LOCAL_API_BASE;
+		}
+
+		return ( function_exists( 'wp_get_environment_type' ) && 'local' === wp_get_environment_type() );
+	}
+
+	/**
+	 * Hosts that must never receive plugin credentials, in ANY environment.
+	 *
+	 * Unlike loopback/RFC1918 — which are legitimate dev targets — these ranges
+	 * have no valid use as a Trusteed API base and exist only as SSRF pivots:
+	 *
+	 *   - 169.254.0.0/16   IPv4 link-local, i.e. cloud instance metadata (IMDS):
+	 *                      169.254.169.254 (AWS/GCP/Azure/DigitalOcean/Hetzner),
+	 *                      169.254.170.2 (ECS task metadata).
+	 *   - 100.100.100.200  Alibaba Cloud metadata.
+	 *   - metadata.google.internal / metadata.goog  GCP metadata by name.
+	 *   - fc00::/7         IPv6 unique-local (covers fc00::/8 and fd00::/8).
+	 *   - fe80::/10        IPv6 link-local, the IPv6 face of IMDS.
+	 *
+	 * Checked BEFORE the dev override, so enabling local development never
+	 * re-opens the metadata service.
+	 *
+	 * @since 2.2.2
+	 *
+	 * @param string $host Host extracted from the API base URL.
+	 * @return bool True when the host is denied outright.
+	 */
+	private function is_blocked_host( string $host ): bool {
+		$normalized = self::normalize_host( $host );
+
+		if ( in_array( $normalized, array( 'metadata.google.internal', 'metadata.goog', '100.100.100.200' ), true ) ) {
+			return true;
+		}
+
+		// IPv4 link-local 169.254.0.0/16 (cloud IMDS).
+		if ( 1 === preg_match( '/^169\.254\./', $normalized ) ) {
+			return true;
+		}
+
+		// IPv6 unique-local fc00::/7 and link-local fe80::/10.
+		if ( 1 === preg_match( '/^(f[cd][0-9a-f]{2}:|fe[89ab][0-9a-f]:)/', $normalized ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Determine whether the parsed host is a local/dev host.
 	 *
 	 * Loopback and private addresses cannot be reached by external attackers,
-	 * so the dev/staging override (`trusteed_api_base_url`) keeps working against a
-	 * local API even over plain HTTP.
+	 * so the dev/staging override (`trusteed_api_base_url`) keeps working
+	 * against a local API even over plain HTTP — but only when the install has
+	 * opted in via local_api_base_allowed(). In production a private-range API
+	 * base means the credential is being redirected at internal infrastructure,
+	 * which is exactly what this guard exists to stop.
 	 *
 	 * @since 2.0.0
 	 *
 	 * @param string $host Host extracted from the API base URL.
-	 * @return bool True when the host is local/dev.
+	 * @return bool True when the host is local/dev AND the override is enabled.
 	 */
 	private function is_local_host( string $host ): bool {
+		if ( $this->is_blocked_host( $host ) ) {
+			return false;
+		}
+
+		if ( ! self::local_api_base_allowed() ) {
+			return false;
+		}
+
+		$normalized  = self::normalize_host( $host );
 		$local_hosts = array( 'localhost', '127.0.0.1', '::1', 'host.docker.internal' );
 
-		if ( in_array( $host, $local_hosts, true ) ) {
+		if ( in_array( $normalized, $local_hosts, true ) ) {
+			return true;
+		}
+
+		// Loopback 127.0.0.0/8 beyond the canonical 127.0.0.1.
+		if ( 1 === preg_match( '/^127\./', $normalized ) ) {
 			return true;
 		}
 
 		// Private IPv4 ranges: 10.x.x.x, 172.16–31.x.x, 192.168.x.x.
-		if ( preg_match( '/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/', $host ) ) {
+		if ( 1 === preg_match( '/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/', $normalized ) ) {
 			return true;
 		}
 
-		return ( function_exists( 'wp_get_environment_type' ) && 'local' === wp_get_environment_type() );
+		return false;
 	}
 
 	/**
@@ -199,12 +302,23 @@ class Trusteed_Api_Client {
 		$host     = (string) wp_parse_url( $this->api_base, PHP_URL_HOST );
 		$is_https = ( 0 === stripos( (string) $this->api_base, 'https://' ) );
 
+		// Deny-first: metadata/link-local/unique-local hosts are never valid,
+		// so they get their own error instead of the misleading "use HTTPS"
+		// message that would invite an operator to retry over TLS.
+		if ( '' !== $host && $this->is_blocked_host( $host ) ) {
+			return new WP_Error(
+				'trusteed_blocked_api_base',
+				__( 'Refusing to send credentials to a link-local, unique-local or cloud metadata address.', 'trusteed-for-woocommerce' )
+			);
+		}
+
 		// Production path: HTTPS + exact-match Trusteed-owned host.
 		if ( $is_https && '' !== $host && in_array( $host, self::ALLOWED_API_HOSTS, true ) ) {
 			return true;
 		}
 
-		// Dev/local path: loopback or private host (HTTP tolerated).
+		// Dev/local path: loopback or private host (HTTP tolerated), gated by
+		// TRUSTEED_ALLOW_LOCAL_API_BASE / environment type `local`.
 		if ( '' !== $host && $this->is_local_host( $host ) ) {
 			return true;
 		}

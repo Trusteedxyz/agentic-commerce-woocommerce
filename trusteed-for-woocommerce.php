@@ -3,7 +3,7 @@
  * Plugin Name:       Trusteed for WooCommerce
  * Plugin URI:        https://trusteed.xyz/integrations/woocommerce
  * Description:       Connect your WooCommerce store to AI agents via MCP (Model Context Protocol). Enable Claude, ChatGPT, and any MCP-compatible agent to search your catalog and create carts.
- * Version:           2.2.1
+ * Version:           2.2.2
  * Author:            Trusteed
  * Author URI:        https://trusteed.xyz
  * License:           GPL-2.0-or-later
@@ -11,9 +11,9 @@
  * Text Domain:       trusteed-for-woocommerce
  * Domain Path:       /languages
  * Requires at least: 6.0
- * Tested up to:      6.7
+ * Tested up to:      7.0
  * WC requires at least: 8.0
- * WC tested up to:   9.5
+ * WC tested up to:   11.0
  * Requires PHP:      7.4
  *
  * @package Trusteed
@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @var string
  */
-define( 'TRUSTEED_VERSION', '2.2.1' );
+define( 'TRUSTEED_VERSION', '2.2.2' );
 
 /**
  * Plugin directory path (with trailing slash).

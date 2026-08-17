@@ -2,11 +2,11 @@
 Contributors: trusteed
 Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-shopping
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.1
+Stable tag: 2.2.2
 WC requires at least: 8.0
-WC tested up to: 10.6
+WC tested up to: 11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,7 +16,7 @@ Connect your WooCommerce store to AI agents via MCP. Let Claude, ChatGPT, and an
 
 Trusteed for WooCommerce is a thin connector plugin that bridges your product catalog to the growing ecosystem of AI shopping agents. It uses the **Model Context Protocol (MCP)** — an open standard created by Anthropic — to let AI agents interact with your store programmatically.
 
-Once connected, any MCP-compatible agent (Claude by Anthropic, ChatGPT by OpenAI, or custom-built agents) can search your products, browse your category taxonomy, view detailed product information including variants and reviews, and build shopping carts on behalf of users. When a customer is ready to buy, the agent redirects them to your **native WooCommerce checkout page**, where your existing payment gateways (Stripe, PayPal, or any other) handle the transaction securely. The plugin never processes payments or touches sensitive customer data.
+Once connected, any MCP-compatible agent (Claude by Anthropic, ChatGPT by OpenAI, or custom-built agents) can search your products, browse your category taxonomy, view detailed product information (name, SKU, price and sale price, description, images, categories, tags, product type, and stock status), and build shopping carts on behalf of users. When a customer is ready to buy, the agent redirects them to your **native WooCommerce checkout page**, where your existing payment gateways (Stripe, PayPal, or any other) handle the transaction securely. The plugin never processes payments or touches sensitive customer data.
 
 Your catalog syncs automatically via WooCommerce hooks whenever you create, update, or delete a product — including stock level changes. You can also trigger a full manual sync from the settings page at any time. The sync transmits only public catalog data: titles, descriptions, prices, images, categories, and stock status. No customer PII, order history, or payment information is ever sent.
 
@@ -31,7 +31,7 @@ For more information, visit [trusteed.xyz](https://trusteed.xyz).
 1. Upload the `trusteed-for-woocommerce` folder to `/wp-content/plugins/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to WooCommerce > Trusteed in the admin menu
-4. Enter your API key (get one free at [trusteed.xyz/developers](https://trusteed.xyz/developers))
+4. Enter your API key (get one free at [trusteed.xyz/en/developers](https://trusteed.xyz/en/developers))
 5. Click "Save & Connect" — your catalog will sync automatically
 
 == Frequently Asked Questions ==
@@ -74,11 +74,15 @@ Yes. The plugin is compatible with WooCommerce Subscriptions, Bookings, Bundles,
 
 = Where can I get support? =
 
-Visit [trusteed.xyz/support](https://trusteed.xyz/support) or email support@trusteed.xyz. You can also open an issue on our GitHub repository.
+Email support@trusteed.xyz, use the [contact form](https://trusteed.xyz/en/contact), or open an issue on [our GitHub repository](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/issues).
 
 = What happens if I deactivate the plugin? =
 
-Your store is immediately disconnected from AI agents. No residual data remains on our servers after disconnection. You can reactivate at any time and your catalog will sync again automatically.
+Deactivating stops the plugin from running, so no further catalog syncs or agent-enforcement calls are made from your site. It does **not** revoke your API key or disconnect the store on our side — to do that, click **Disconnect store** on the settings page before deactivating.
+
+Disconnecting expires your API key, marks the store inactive so agents can no longer reach it, and deletes the stored WooCommerce webhook secret. It does not erase the catalog data already synced: your store record and previously synced product rows are retained (products are marked unavailable rather than deleted) so that reconnecting restores the store without a full re-sync. To have that data erased, request deletion as described in our [Privacy Policy](https://trusteed.xyz/en/privacy).
+
+Uninstalling the plugin removes every option row it created from your WordPress database, including all stored secrets.
 
 = Does this slow down my store? =
 
@@ -102,7 +106,11 @@ it sends, and when it is triggered.
 * **Store registration** — `POST /api/v1/plugin/register`. Sends store metadata
   (site URL, store name/slug). Triggered when you connect the store.
 * **Catalog sync** — `POST /api/v1/plugin/catalog/sync`. Sends public product data
-  only (title, description, price, images, categories, SKU, stock status).
+  only: product id, name, SKU, price, sale/compare-at price, currency, stock status
+  and quantity, permalink, description and short description (tags stripped),
+  categories, images (URL + alt text), tags, and product type. Individual
+  variations of a variable product are not sent — only the parent product, with its
+  own price and stock values. Product reviews and ratings are not sent.
   Triggered on product create/update/stock-change/delete and on manual full sync.
   No customer PII, order history, or payment data is ever sent.
 * **Rule snapshot** — `GET /v1/rules/snapshot/{merchantId}` and key discovery
@@ -119,8 +127,8 @@ All requests use HTTPS. The plugin never processes payments and never transmits
 customer personal data or order history.
 
 Service provider: Trusteed — [https://trusteed.xyz](https://trusteed.xyz)
-Terms of Use: [https://trusteed.xyz/terms](https://trusteed.xyz/terms)
-Privacy Policy: [https://trusteed.xyz/privacy](https://trusteed.xyz/privacy)
+Terms of Use: [https://trusteed.xyz/en/terms](https://trusteed.xyz/en/terms)
+Privacy Policy: [https://trusteed.xyz/en/privacy](https://trusteed.xyz/en/privacy)
 
 == Screenshots ==
 
@@ -129,6 +137,18 @@ Privacy Policy: [https://trusteed.xyz/privacy](https://trusteed.xyz/privacy)
 3. AI agent searching products — Claude finding products in your catalog via MCP
 
 == Changelog ==
+
+= 2.2.2 =
+**Credential-egress hardening, complete uninstall cleanup, and documentation corrected to match the code.**
+
+* Security fix: the API client tolerated a private-range or loopback API base URL (`10.*`, `172.16–31.*`, `192.168.*`, `localhost`, `127.*`) in **every** environment, so an install whose API URL had been redirected would send its `X-AgenticMCP-Key` credential to an internal address over plain HTTP. That dev override is now opt-in, off by default, and enabled only via `TRUSTEED_ALLOW_LOCAL_API_BASE` or a `local` WordPress environment type — matching the `WP_DEBUG` gate the token broker already applied.
+* Security fix: cloud instance-metadata and IPv6 internal addresses are now blocked outright, in every environment including the dev override — `169.254.0.0/16` (IMDS), Alibaba `100.100.100.200`, `metadata.google.internal`, IPv6 unique-local `fc00::/7`, and link-local `fe80::/10`. Previously, enabling local development re-opened all of these.
+* Fixed: IPv6 API hosts were never matched at all. `parse_url()` returns them bracketed (`[::1]`), so the loopback check silently failed.
+* Privacy fix: uninstalling left 21 option rows behind, including three encrypted secrets (`trusteed_embed_wp_secret`, `trusteed_enforcement_hmac_secret`, `trusteed_woo_webhook_secret`) and the legacy `amcp_*` aliases that the option accessor still reads as a fallback — so a reinstall could resurrect a stale secret. `uninstall.php` now clears all three option namespaces (`agenticmcp_*`, `trusteed_*`, `amcp_*`) plus the cached snapshot and JWKS transients, as PRIVACY_POLICY.md promises. A test now scans the source for every writable option key and fails if the uninstall list falls behind.
+* Docs fix: the deactivation FAQ claimed deactivating disconnects the store immediately and that "no residual data remains on our servers" — neither was true. Deactivation is inert; disconnecting expires the API key and marks the store inactive but retains the store record and previously synced products. The FAQ now describes what actually happens and points to the deletion-request route.
+* Docs fix: the catalog was described as syncing "variants and reviews". Neither is sent — only the parent product of a variable product, and no reviews or ratings. The transmitted field list is now exact.
+* Compatibility fix: `Tested up to` / `WC tested up to` disagreed between readme.txt (6.9 / 10.6) and the plugin header (6.7 / 9.5), and neither figure had actually been verified against those versions. Verified by installing WordPress 7.0.4 + WooCommerce 11.0.1 on PHP 8.2 and activating the plugin: clean activation, no fatal errors, `init` runs correctly. `Tested up to` / `WC tested up to` now read 7.0 / 11.0 in both files, matching what was actually run. `.wp-env.json`'s local dev pin updated to the same versions.
+* Docs fix: corrected links that returned 404 — `trusteed.xyz/developers`, `/privacy` and `/terms` need the `/en/` language prefix, and `/support` does not exist (replaced with the contact form and GitHub issues).
 
 = 2.2.1 =
 **Admin panel fixes: prompt-injection delimiter leak, R047 form, empty state, unminified bundle.**

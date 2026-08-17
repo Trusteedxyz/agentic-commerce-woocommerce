@@ -399,7 +399,7 @@ class Trusteed_Settings {
 					printf(
 						/* translators: %s: link to the Trusteed dashboard. */
 						esc_html__( 'Pega una API key de tu %s y conecta sin introducir tu contraseña en WordPress.', 'trusteed-for-woocommerce' ),
-						'<a href="https://trusteed.xyz/developers" target="_blank" rel="noopener noreferrer">' . esc_html__( 'panel de Trusteed', 'trusteed-for-woocommerce' ) . '</a>'
+						'<a href="https://trusteed.xyz/en/developers" target="_blank" rel="noopener noreferrer">' . esc_html__( 'panel de Trusteed', 'trusteed-for-woocommerce' ) . '</a>'
 					);
 					?>
 				</p>

@@ -5,7 +5,7 @@
 Enable new online shoppers, AI agents, to make purchases in your store securely and reliably thanks to Trusteed: the network that fosters trust between businesses and agents.
 
 - **Set your business rules**: who you allow to buy, up to what amount, which categories you don't want to offer to agents, set price limits, maintain stock levels to protect yourself against potential fraudulent agents, and more.
-- **Tamper-proof receipts**: we generate electronically signed and cryptographically tamper-proof receipts that serve as proof of the actual transaction in case of any dispute. Compatible with eIDAS (EU, UK) and eSIGN (USA) regulations.
+- **Tamper-evident receipts**: we generate electronically signed, cryptographically tamper-evident receipts that record what the agent actually did — a verifiable proof of agent integrity. They are designed to follow the EU electronic-signature standard (eIDAS) and eSIGN (USA), but they are not yet a *qualified* signature or timestamp, so on their own they are not ready-made dispute evidence for a bank or court.
 - **Agent analytics**: view statistics on agent purchases — how much they spend, what products they buy, and how often.
 - **Agent blocking**: block potentially dangerous or problematic agents.
 - **Digital currencies**: enables purchases in digital currencies thanks to the X402 protocol.
@@ -27,7 +27,7 @@ Each panel below maps to an item in the **Trusteed** menu inside WooCommerce.
 |--------------------------------------|
 | ![Trust Receipts](assets/screenshots/ai-receipts.png) |
 
-Every agent transaction produces a cryptographically signed **trust receipt** — a tamper-proof record (compatible with eIDAS / eSIGN) listed under **My Sales → AI Sales**. Click any row to see the full detail (agent ID, tool called, input/output hashes, JWS) and download the receipt as a ZIP file to hand over as backup in case of a dispute.
+Every agent transaction produces a cryptographically signed **trust receipt** — a tamper-proof record (compatible with eIDAS / eSIGN) listed under **My Sales → AI Sales**. Click any row to see the full detail (agent ID, tool called, input/output hashes, JWS) and download the receipt as a ZIP file. The export is a verifiable proof of agent integrity: useful backup if a buyer claims they never placed the order, but on its own it does not replace the evidence a bank or court may require in a dispute.
 
 ## Features
 
@@ -37,7 +37,7 @@ Trusteed for WooCommerce is a **thin connector** that bridges your product catal
 - **Automatic catalog sync** — products sync via WooCommerce hooks on create/update/delete, including stock changes; full manual sync available from the settings page. Only public catalog data is sent (titles, descriptions, prices, images, categories, stock) — never customer PII, orders, or payment info
 - **Agent token verification** — `create_cart` forwards the agent's JWS token through to checkout so signature/replay verification (R002) runs on the normal flow
 - **Enforcement gate (HITL)** — configurable human-in-the-loop approval for high-value agent orders
-- **SSRF hardening** — store/API URLs validated against an exact host allowlist and RFC1918 / IPv6 ULA / cloud IMDS blocklists
+- **SSRF hardening** — the credentialed API base must be HTTPS on an exact host allowlist; cloud IMDS (`169.254.0.0/16`, `100.100.100.200`, `metadata.google.internal`), IPv6 unique-local (`fc00::/7`) and link-local (`fe80::/10`) are blocked in every environment, and loopback / RFC1918 only work behind the explicit `TRUSTEED_ALLOW_LOCAL_API_BASE` dev opt-in (off by default)
 - **Fail-closed defaults** — no dispatch when the enforcement secret is empty; domain-ownership proof required on reconnect (cross-merchant takeover protection)
 
 ## Compatibility
@@ -59,10 +59,10 @@ Trusteed for WooCommerce is a **thin connector** that bridges your product catal
 ### Manual upload (recommended)
 
 1. **Download the installable `.zip`** from the latest GitHub Release:
-   [**⬇ trusteed-agentic-commerce-woocommerce-2.2.0.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest/download/trusteed-agentic-commerce-woocommerce-2.2.0.zip)
+   [**⬇ Latest release — trusteed-agentic-commerce-woocommerce-&lt;version&gt;.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest)
    — or browse all versions at the [Releases page](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
 2. In your WordPress admin: **Plugins → Add New → Upload Plugin**.
-3. Select the downloaded `trusteed-agentic-commerce-woocommerce-2.2.0.zip` and click **Install Now**.
+3. Select the downloaded `.zip` file and click **Install Now**.
 4. Click **Activate**.
 
 ### From source (build the zip yourself)
@@ -93,6 +93,18 @@ A detailed merchant walkthrough lives in [`docs/MERCHANT_INSTALLATION_GUIDE.md`]
 **Does it slow down my store?** No. The plugin only talks to Trusteed when catalog changes occur — it adds no overhead to storefront page loads or customer checkout.
 
 ## Changelog
+
+### 2.2.2
+
+- **Security fix** — the API client accepted a loopback or RFC1918 API base URL (`10.*`, `172.16–31.*`, `192.168.*`, `localhost`, `127.*`) in **every** environment, with plain HTTP tolerated. An install whose API URL had been redirected would send its `X-AgenticMCP-Key` credential to an internal address. The dev override is now opt-in and off by default, enabled only via `TRUSTEED_ALLOW_LOCAL_API_BASE` or a `local` WordPress environment type — the same gate `Trusteed_Token_Broker` already applied via `WP_DEBUG`, which this client had dropped.
+- **Security fix** — cloud instance metadata and IPv6 internal ranges are now denied outright in every environment, *including* under the dev override, which previously re-opened all of them: `169.254.0.0/16` (IMDS), Alibaba `100.100.100.200`, `metadata.google.internal`, unique-local `fc00::/7`, link-local `fe80::/10`. They also get their own error code instead of the misleading "configure an HTTPS URL" message.
+- **Fixed** — IPv6 API hosts never matched any check: `parse_url()` returns them bracketed (`[::1]`), so the `::1` loopback entry was dead code.
+- **Privacy fix** — uninstalling left 21 option rows behind, including three encrypted secrets (`trusteed_embed_wp_secret`, `trusteed_enforcement_hmac_secret`, `trusteed_woo_webhook_secret`) and the legacy `amcp_*` aliases the option accessor still reads as a fallback, so a reinstall could resurrect a stale secret. `uninstall.php` now clears all three namespaces plus the cached snapshot and JWKS transients. A new test scans the source for every writable option key and fails if the uninstall list falls behind.
+- **Docs fix** — trust receipts were described as "proof of the actual transaction in case of any dispute". The product itself says the opposite: a verifiable integrity proof, not ready-made dispute evidence for a bank or court. Corrected here to match.
+- **Docs fix** — the deactivation FAQ claimed deactivating disconnects the store and that no residual data remains on our servers. Deactivation is inert, and disconnecting retains the store record and synced products. Corrected, with the deletion-request route documented.
+- **Docs fix** — the catalog was described as syncing "variants and reviews"; neither is sent. The transmitted field list is now exact.
+- **Docs fix** — `Tested up to` / `WC tested up to` disagreed between `readme.txt` (6.9 / 10.6) and the plugin header (6.7 / 9.5). Both now read 6.9 / 10.6. Automated tests run against WordPress 6.8 with latest-stable WooCommerce on PHP 8.1–8.2.
+- **Docs fix** — repaired 404 links: `/developers`, `/privacy` and `/terms` need the `/en/` prefix, and `/support` does not exist (replaced with the contact form and GitHub issues).
 
 ### 2.2.1
 
