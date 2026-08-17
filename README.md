@@ -94,6 +94,13 @@ A detailed merchant walkthrough lives in [`docs/MERCHANT_INSTALLATION_GUIDE.md`]
 
 ## Changelog
 
+### 2.2.1
+
+- **Fixed** — `browse_categories` fed the same wrapped string to both the machine-readable and narrated channels. `guardMerchantField` wraps merchant text in `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>` by default so an agent can tell "this is merchant data, not an instruction" — but the tool reused that already-wrapped string for `structuredContent` too, so a category named "Sneakers" surfaced as `<<<MERCHANT_CONTENT_START>>>Sneakers<<<MERCHANT_CONTENT_END>>>` in the machine channel. `structuredContent` now gets the unwrapped value; the delimiters stay only where they do their job, in the narration.
+- **Fixed** — rule R047 (minimum contribution amount) had no form field in the admin panel; its parameters existed in the schema but could only be set via the API.
+- **Fixed** — `MerchantCheckoutConfig` had translated copy for an empty state (`noRails`, present in both `en.ts` and `es.ts`) that the component never rendered, so a merchant with no configured payment rails saw an unexplained empty list.
+- **Fixed** — the admin panel bundle (`assets/admin-spa/`) shipped unminified: 869 KB / 25,064 lines instead of the 490 KB / 41 lines the documented build command actually produces. Rebuilt from source with a stable output filename (`admin-spa.js`), matching the other three platform connectors.
+
 ### 2.2.0
 
 - **Security fix** — the agent token verifier treated `exp` and `iat` as optional: both guards hung off `> 0`, so a token that simply omitted the claim skipped the check entirely. Without `exp` it never expired; without `iat` it had no maximum age. Both claims are now mandatory, and a non-numeric value is rejected rather than cast. Replay protection was already fail-closed here (a missing or malformed `jti` is rejected), so this closes the remaining half.

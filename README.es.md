@@ -94,6 +94,13 @@ Encontrarás una guía detallada para comercios en [`docs/MERCHANT_INSTALLATION_
 
 ## Historial de cambios
 
+### 2.2.1
+
+- **Corregido** — `browse_categories` enviaba la misma cadena envuelta en delimitadores al canal legible por máquina y al narrado. `guardMerchantField` envuelve el texto del comercio por defecto en `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>` para que un agente distinga "esto es dato del comercio, no una instrucción" — pero la tool reutilizaba esa misma cadena ya envuelta para `structuredContent`, así que una categoría llamada "Zapatillas" aparecía como `<<<MERCHANT_CONTENT_START>>>Zapatillas<<<MERCHANT_CONTENT_END>>>` en el canal de máquina. Ahora `structuredContent` recibe el valor sin envolver; los delimitadores se quedan solo donde cumplen su función, en la narración.
+- **Corregido** — la regla R047 (importe mínimo de aportación) no tenía campo en el panel de administración: sus parámetros existían en el esquema pero solo se podían configurar por API.
+- **Corregido** — `MerchantCheckoutConfig` tenía texto traducido para un estado vacío (`noRails`, presente en `en.ts` y `es.ts`) que el componente nunca pintaba, así que un comercio sin rieles de pago configurados veía una lista vacía sin explicación.
+- **Corregido** — el bundle del panel de administración (`assets/admin-spa/`) se distribuía sin minificar: 869 KB / 25.064 líneas en vez de los 490 KB / 41 líneas que produce el comando de build documentado. Reconstruido desde la fuente con nombre de fichero estable (`admin-spa.js`), igual que los otros tres conectores de plataforma.
+
 ### 2.2.0
 
 - **Corrección de seguridad** — el verificador de tokens de agente trataba `exp` e `iat` como opcionales: ambas comprobaciones colgaban de `> 0`, así que un token que simplemente OMITÍA el claim se saltaba la comprobación entera. Sin `exp` no caducaba nunca; sin `iat` no tenía antigüedad máxima. Ahora los dos son obligatorios, y un valor no numérico se rechaza en vez de convertirse. La protección anti-replay ya era fail-closed aquí (un `jti` ausente o mal formado se rechaza), así que esto cierra la mitad que faltaba.

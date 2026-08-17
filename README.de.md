@@ -94,6 +94,13 @@ Eine ausführliche Anleitung für Händler finden Sie unter [`docs/MERCHANT_INST
 
 ## Änderungsprotokoll
 
+### 2.2.1
+
+- **Behoben** — `browse_categories` lieferte dieselbe mit Trennzeichen umschlossene Zeichenkette sowohl an den maschinenlesbaren als auch an den erzählenden Kanal. `guardMerchantField` umschließt Händlertext standardmäßig mit `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>`, damit ein Agent erkennt "das sind Händlerdaten, keine Anweisung" — aber das Tool verwendete diese bereits umschlossene Zeichenkette auch für `structuredContent`, sodass eine Kategorie namens "Sneakers" im Maschinenkanal als `<<<MERCHANT_CONTENT_START>>>Sneakers<<<MERCHANT_CONTENT_END>>>` erschien. `structuredContent` erhält jetzt den unumschlossenen Wert; die Trennzeichen bleiben nur dort, wo sie ihre Funktion erfüllen — in der Erzählung.
+- **Behoben** — die Regel R047 (Mindestbeitrag) hatte kein Formularfeld im Admin-Panel; ihre Parameter existierten im Schema, konnten aber nur über die API gesetzt werden.
+- **Behoben** — `MerchantCheckoutConfig` hatte übersetzten Text für einen Leerzustand (`noRails`, vorhanden in `en.ts` und `es.ts`), den die Komponente nie rendert hat, sodass ein Händler ohne konfigurierte Zahlungswege eine unerklärte leere Liste sah.
+- **Behoben** — das Admin-Panel-Bundle (`assets/admin-spa/`) wurde unminifiziert ausgeliefert: 869 KB / 25.064 Zeilen statt der 490 KB / 41 Zeilen, die der dokumentierte Build-Befehl tatsächlich erzeugt. Neu aus der Quelle gebaut mit stabilem Ausgabedateinamen (`admin-spa.js`), wie bei den anderen drei Plattform-Konnektoren.
+
 ### 2.2.0
 
 - **Sicherheitsfix** — der Agent-Token-Verifizierer behandelte `exp` und `iat` als optional: beide Prüfungen hingen an `> 0`, sodass ein Token, das den Claim schlicht wegließ, die Prüfung vollständig umging. Ohne `exp` lief es nie ab; ohne `iat` hatte es kein Höchstalter. Beide sind jetzt verpflichtend, und ein nicht-numerischer Wert wird zurückgewiesen statt gecastet. Der Replay-Schutz war hier bereits fail-closed (ein fehlendes oder fehlerhaftes `jti` wird abgelehnt) — dies schließt die verbleibende Hälfte.

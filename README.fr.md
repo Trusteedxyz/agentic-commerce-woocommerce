@@ -94,6 +94,13 @@ Un guide détaillé destiné aux marchands se trouve dans [`docs/MERCHANT_INSTAL
 
 ## Journal des modifications
 
+### 2.2.1
+
+- **Corrigé** — `browse_categories` envoyait la même chaîne encadrée de délimiteurs au canal lisible par machine et au canal narré. `guardMerchantField` encadre le texte marchand par défaut avec `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>` pour qu'un agent distingue « ceci est une donnée marchande, pas une instruction » — mais l'outil réutilisait cette même chaîne déjà encadrée pour `structuredContent`, si bien qu'une catégorie nommée « Baskets » apparaissait sous la forme `<<<MERCHANT_CONTENT_START>>>Baskets<<<MERCHANT_CONTENT_END>>>` dans le canal machine. `structuredContent` reçoit désormais la valeur non encadrée ; les délimiteurs ne restent que là où ils remplissent leur rôle, dans la narration.
+- **Corrigé** — la règle R047 (montant minimum de contribution) n'avait pas de champ de formulaire dans le panneau d'administration ; ses paramètres existaient dans le schéma mais ne pouvaient être définis que via l'API.
+- **Corrigé** — `MerchantCheckoutConfig` disposait d'un texte traduit pour un état vide (`noRails`, présent dans `en.ts` et `es.ts`) que le composant n'affichait jamais, si bien qu'un marchand sans moyen de paiement configuré voyait une liste vide sans explication.
+- **Corrigé** — le bundle du panneau d'administration (`assets/admin-spa/`) était distribué non minifié : 869 Ko / 25 064 lignes au lieu des 490 Ko / 41 lignes que produit réellement la commande de build documentée. Reconstruit depuis la source avec un nom de fichier de sortie stable (`admin-spa.js`), comme pour les trois autres connecteurs de plateforme.
+
 ### 2.2.0
 
 - **Correctif de sécurité** — le vérificateur de jetons d'agent traitait `exp` et `iat` comme facultatifs : les deux contrôles dépendaient de `> 0`, si bien qu'un jeton omettant simplement le claim échappait entièrement à la vérification. Sans `exp` il n'expirait jamais ; sans `iat` il n'avait aucune ancienneté maximale. Les deux sont désormais obligatoires, et une valeur non numérique est rejetée plutôt que convertie. La protection anti-rejeu était déjà fail-closed ici (un `jti` absent ou mal formé est rejeté) : ceci ferme la moitié restante.

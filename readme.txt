@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 WC requires at least: 8.0
 WC tested up to: 10.6
 License: GPLv2 or later
@@ -129,6 +129,14 @@ Privacy Policy: [https://trusteed.xyz/privacy](https://trusteed.xyz/privacy)
 3. AI agent searching products — Claude finding products in your catalog via MCP
 
 == Changelog ==
+
+= 2.2.1 =
+**Admin panel fixes: prompt-injection delimiter leak, R047 form, empty state, unminified bundle.**
+
+* Fixed: `browse_categories` fed the same delimiter-wrapped string to both the machine-readable and narrated response channels, so a category name surfaced with `<<<MERCHANT_CONTENT_START>>>` / `<<<MERCHANT_CONTENT_END>>>` markers in the machine channel. Now unwrapped there; the delimiters stay only in the narration, where they signal "this is merchant data" to the agent.
+* Fixed: rule R047 (minimum contribution amount) had no form field in the admin panel — its parameters existed in the schema but could only be set via the API.
+* Fixed: `MerchantCheckoutConfig` had translated copy for an empty state that was never rendered, so a merchant with no configured payment rails saw an unexplained empty list.
+* Fixed: the admin panel bundle shipped unminified (869 KB / 25,064 lines instead of the 490 KB / 41 lines the documented build command produces). Rebuilt from source.
 
 = 2.2.0 =
 **Agent token hardening + rule parameter fix.**
