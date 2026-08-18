@@ -165,9 +165,6 @@ class Trusteed_Settings {
 			<p>
 				<strong><?php esc_html_e( 'Trusteed — enforcement is not configured. Click Reconnect to enable agent verification.', 'trusteed-for-woocommerce' ); ?></strong>
 			</p>
-			<p>
-				<em><?php esc_html_e( 'Trusteed — el enforcement no está configurado. Haz clic en Reconectar para activar la verificación de agentes.', 'trusteed-for-woocommerce' ); ?></em>
-			</p>
 		</div>
 		<?php
 	}
@@ -197,11 +194,11 @@ class Trusteed_Settings {
 		}
 		?>
 		<div class="notice notice-error is-dismissible">
-			<p><strong><?php esc_html_e( 'Trusteed — integración incompleta', 'trusteed-for-woocommerce' ); ?></strong></p>
+			<p><strong><?php esc_html_e( 'Trusteed — incomplete integration', 'trusteed-for-woocommerce' ); ?></strong></p>
 			<p>
 				<?php
 				esc_html_e(
-					'No se ha podido firmar una llamada al backend porque falta el HMAC secret de la instalación. Tu integración Trusteed no está completamente configurada. Reconecta el plugin para restaurar la sincronización de eventos de agente.',
+					'Could not sign a backend call because the installation\'s HMAC secret is missing. Your Trusteed integration is not fully configured. Reconnect the plugin to restore agent-event sync.',
 					'trusteed-for-woocommerce'
 				);
 				?>
@@ -227,11 +224,11 @@ class Trusteed_Settings {
 		}
 		?>
 		<div class="notice notice-warning is-dismissible">
-			<p><strong><?php esc_html_e( 'Trusteed — posible configuración incorrecta', 'trusteed-for-woocommerce' ); ?></strong></p>
+			<p><strong><?php esc_html_e( 'Trusteed — possible misconfiguration', 'trusteed-for-woocommerce' ); ?></strong></p>
 			<p>
 				<?php
 				esc_html_e(
-					'El evaluador remoto está devolviendo errores 4xx con frecuencia. Esto suele indicar credenciales o identificadores incorrectos. Verifica los siguientes valores en la pestaña de Trusteed:',
+					'The remote evaluator is frequently returning 4xx errors. This usually indicates incorrect credentials or identifiers. Check the following values on the Trusteed tab:',
 					'trusteed-for-woocommerce'
 				);
 				?>
@@ -335,19 +332,19 @@ class Trusteed_Settings {
 		$is_connected = ! empty( $store_slug );
 		?>
 		<div class="wrap agenticmcp-settings">
-			<h1><?php esc_html_e( 'Trusteed para WooCommerce', 'trusteed-for-woocommerce' ); ?></h1>
+			<h1><?php esc_html_e( 'Trusteed for WooCommerce', 'trusteed-for-woocommerce' ); ?></h1>
 
 			<?php if ( ! $is_connected ) : ?>
 			<!-- ── Formulario de conexión ──────────────────────────────────── -->
-			<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Conectar tienda', 'trusteed-for-woocommerce' ); ?>">
-				<h2><?php esc_html_e( 'Conecta tu tienda a Trusteed', 'trusteed-for-woocommerce' ); ?></h2>
-				<p><?php esc_html_e( 'Introduce tu correo y contraseña de Trusteed. Si no tienes cuenta la crearemos automáticamente.', 'trusteed-for-woocommerce' ); ?></p>
+			<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Connect store', 'trusteed-for-woocommerce' ); ?>">
+				<h2><?php esc_html_e( 'Connect your store to Trusteed', 'trusteed-for-woocommerce' ); ?></h2>
+				<p><?php esc_html_e( 'Enter your Trusteed email and password. If you don\'t have an account, we\'ll create one automatically.', 'trusteed-for-woocommerce' ); ?></p>
 
 				<table class="form-table" role="presentation">
 					<tbody>
 						<tr>
 							<th scope="row">
-								<label for="amcp-onboard-email"><?php esc_html_e( 'Tu correo', 'trusteed-for-woocommerce' ); ?></label>
+								<label for="amcp-onboard-email"><?php esc_html_e( 'Your email', 'trusteed-for-woocommerce' ); ?></label>
 							</th>
 							<td>
 								<input
@@ -361,7 +358,7 @@ class Trusteed_Settings {
 						</tr>
 						<tr>
 							<th scope="row">
-								<label for="amcp-onboard-password"><?php esc_html_e( 'Contraseña', 'trusteed-for-woocommerce' ); ?></label>
+								<label for="amcp-onboard-password"><?php esc_html_e( 'Password', 'trusteed-for-woocommerce' ); ?></label>
 							</th>
 							<td>
 								<input
@@ -369,10 +366,10 @@ class Trusteed_Settings {
 									id="amcp-onboard-password"
 									class="regular-text"
 									autocomplete="new-password"
-									placeholder="<?php esc_attr_e( 'Mínimo 8 caracteres', 'trusteed-for-woocommerce' ); ?>"
+									placeholder="<?php esc_attr_e( 'Minimum 8 characters', 'trusteed-for-woocommerce' ); ?>"
 								/>
 								<p class="description">
-									<?php esc_html_e( 'Si ya tienes cuenta en Trusteed usa la misma contraseña.', 'trusteed-for-woocommerce' ); ?>
+									<?php esc_html_e( 'If you already have a Trusteed account, use the same password.', 'trusteed-for-woocommerce' ); ?>
 								</p>
 							</td>
 						</tr>
@@ -385,21 +382,21 @@ class Trusteed_Settings {
 						id="amcp-onboard-btn"
 						class="button button-primary"
 					>
-						<?php esc_html_e( 'Conectar mi tienda', 'trusteed-for-woocommerce' ); ?>
+						<?php esc_html_e( 'Connect my store', 'trusteed-for-woocommerce' ); ?>
 					</button>
 					<span id="amcp-onboard-result" class="agenticmcp-result" aria-live="polite"></span>
 				</div>
 			</div>
 
 			<!-- ── Alternativa: conectar con API key ────────────────────────── -->
-			<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Conectar con API key', 'trusteed-for-woocommerce' ); ?>">
-				<h2><?php esc_html_e( '¿Prefieres no usar contraseña?', 'trusteed-for-woocommerce' ); ?></h2>
+			<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Connect with API key', 'trusteed-for-woocommerce' ); ?>">
+				<h2><?php esc_html_e( 'Prefer not to use a password?', 'trusteed-for-woocommerce' ); ?></h2>
 				<p>
 					<?php
 					printf(
 						/* translators: %s: link to the Trusteed dashboard. */
-						esc_html__( 'Pega una API key de tu %s y conecta sin introducir tu contraseña en WordPress.', 'trusteed-for-woocommerce' ),
-						'<a href="https://trusteed.xyz/en/developers" target="_blank" rel="noopener noreferrer">' . esc_html__( 'panel de Trusteed', 'trusteed-for-woocommerce' ) . '</a>'
+						esc_html__( 'Paste an API key from your %s and connect without entering your password in WordPress.', 'trusteed-for-woocommerce' ),
+						'<a href="https://trusteed.xyz/en/developers" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Trusteed dashboard', 'trusteed-for-woocommerce' ) . '</a>'
 					);
 					?>
 				</p>
@@ -430,7 +427,7 @@ class Trusteed_Settings {
 						id="amcp-connect-key-btn"
 						class="button button-secondary"
 					>
-						<?php esc_html_e( 'Conectar con API key', 'trusteed-for-woocommerce' ); ?>
+						<?php esc_html_e( 'Connect with API key', 'trusteed-for-woocommerce' ); ?>
 					</button>
 					<span id="amcp-connect-key-result" class="agenticmcp-result" aria-live="polite"></span>
 				</div>
@@ -438,20 +435,20 @@ class Trusteed_Settings {
 
 			<?php else : ?>
 			<!-- ── Estado de conexión ──────────────────────────────────────── -->
-			<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Estado de conexión', 'trusteed-for-woocommerce' ); ?>">
-				<h2><?php esc_html_e( 'Estado de la conexión', 'trusteed-for-woocommerce' ); ?></h2>
+			<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Connection status', 'trusteed-for-woocommerce' ); ?>">
+				<h2><?php esc_html_e( 'Connection status', 'trusteed-for-woocommerce' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tbody>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Estado', 'trusteed-for-woocommerce' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'Status', 'trusteed-for-woocommerce' ); ?></th>
 							<td>
 								<span class="agenticmcp-badge agenticmcp-badge--success">
-									✓ <?php esc_html_e( 'Conectada', 'trusteed-for-woocommerce' ); ?>
+									✓ <?php esc_html_e( 'Connected', 'trusteed-for-woocommerce' ); ?>
 								</span>
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Plan activo', 'trusteed-for-woocommerce' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'Active plan', 'trusteed-for-woocommerce' ); ?></th>
 							<td>
 								<span class="agenticmcp-badge agenticmcp-badge--info">
 									<?php echo esc_html( strtoupper( $tier ) ); ?>
@@ -459,7 +456,7 @@ class Trusteed_Settings {
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Endpoint MCP', 'trusteed-for-woocommerce' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'MCP Endpoint', 'trusteed-for-woocommerce' ); ?></th>
 							<td>
 								<input
 									type="url"
@@ -471,14 +468,14 @@ class Trusteed_Settings {
 							</td>
 						</tr>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Última sincronización', 'trusteed-for-woocommerce' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'Last sync', 'trusteed-for-woocommerce' ); ?></th>
 							<td>
 								<?php if ( ! empty( $last_sync ) ) : ?>
 									<time datetime="<?php echo esc_attr( $last_sync ); ?>">
 										<?php echo esc_html( $last_sync ); ?>
 									</time>
 								<?php else : ?>
-									<em><?php esc_html_e( 'Nunca', 'trusteed-for-woocommerce' ); ?></em>
+									<em><?php esc_html_e( 'Never', 'trusteed-for-woocommerce' ); ?></em>
 								<?php endif; ?>
 							</td>
 						</tr>
@@ -487,23 +484,23 @@ class Trusteed_Settings {
 			</div>
 
 			<!-- ── Acciones ───────────────────────────────────────────────── -->
-			<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Acciones', 'trusteed-for-woocommerce' ); ?>">
-				<h2><?php esc_html_e( 'Acciones', 'trusteed-for-woocommerce' ); ?></h2>
+			<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Actions', 'trusteed-for-woocommerce' ); ?>">
+				<h2><?php esc_html_e( 'Actions', 'trusteed-for-woocommerce' ); ?></h2>
 				<div class="agenticmcp-actions">
 					<button type="button" id="agenticmcp-test-connection" class="button button-secondary">
-						<?php esc_html_e( 'Probar conexión', 'trusteed-for-woocommerce' ); ?>
+						<?php esc_html_e( 'Test connection', 'trusteed-for-woocommerce' ); ?>
 					</button>
 					<span id="agenticmcp-connection-result" class="agenticmcp-result" aria-live="polite"></span>
 				</div>
 				<div class="agenticmcp-actions">
 					<button type="button" id="agenticmcp-sync-catalog" class="button button-secondary">
-						<?php esc_html_e( 'Sincronizar catálogo ahora', 'trusteed-for-woocommerce' ); ?>
+						<?php esc_html_e( 'Sync catalog now', 'trusteed-for-woocommerce' ); ?>
 					</button>
 					<span id="agenticmcp-sync-result" class="agenticmcp-result" aria-live="polite"></span>
 				</div>
 				<div class="agenticmcp-actions" style="margin-top:16px;border-top:1px solid #ddd;padding-top:16px;">
 					<button type="button" id="amcp-disconnect-btn" class="button button-link-delete">
-						<?php esc_html_e( 'Desconectar tienda', 'trusteed-for-woocommerce' ); ?>
+						<?php esc_html_e( 'Disconnect store', 'trusteed-for-woocommerce' ); ?>
 					</button>
 					<span id="amcp-disconnect-result" class="agenticmcp-result" aria-live="polite"></span>
 				</div>
@@ -546,7 +543,7 @@ class Trusteed_Settings {
 			$value     = 'observe' === $submitted ? 'observe' : 'enforce';
 			update_option( 'trusteed_failure_mode', $value );
 			echo '<div class="notice notice-success is-dismissible"><p>'
-				. esc_html__( 'Modo de fallo actualizado. Recarga el plugin (deactivate + activate) para aplicar.', 'trusteed-for-woocommerce' )
+				. esc_html__( 'Fallback mode updated. Reload the plugin (deactivate + activate) to apply.', 'trusteed-for-woocommerce' )
 				. '</p></div>';
 		}
 
@@ -554,31 +551,31 @@ class Trusteed_Settings {
 		$current = 'observe' === $current ? 'observe' : 'enforce';
 		?>
 		<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Enforcement', 'trusteed-for-woocommerce' ); ?>" style="margin-top:24px;">
-			<h2><?php esc_html_e( 'Enforcement de checkout (Spec-048)', 'trusteed-for-woocommerce' ); ?></h2>
-			<p><?php esc_html_e( 'Cuando el evaluador remoto no responde (timeout, 5xx, payload inválido), el plugin debe decidir si bloquear el checkout o permitirlo y registrar telemetría.', 'trusteed-for-woocommerce' ); ?></p>
+			<h2><?php esc_html_e( 'Checkout enforcement (Spec-048)', 'trusteed-for-woocommerce' ); ?></h2>
+			<p><?php esc_html_e( 'When the remote evaluator doesn\'t respond (timeout, 5xx, invalid payload), the plugin must decide whether to block checkout or allow it and log telemetry.', 'trusteed-for-woocommerce' ); ?></p>
 			<form method="post" action="">
 				<?php wp_nonce_field( 'trusteed_failure_mode_save', 'trusteed_failure_mode_nonce' ); ?>
 				<table class="form-table" role="presentation">
 					<tbody>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Modo de fallo', 'trusteed-for-woocommerce' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'Fallback mode', 'trusteed-for-woocommerce' ); ?></th>
 							<td>
 								<label style="display:block;margin-bottom:8px;">
 									<input type="radio" name="trusteed_failure_mode" value="enforce" <?php checked( $current, 'enforce' ); ?> />
-									<strong><?php esc_html_e( 'Enforce (recomendado)', 'trusteed-for-woocommerce' ); ?></strong> —
-									<?php esc_html_e( 'fallos del evaluador bloquean el checkout (fail-closed).', 'trusteed-for-woocommerce' ); ?>
+									<strong><?php esc_html_e( 'Enforce (recommended)', 'trusteed-for-woocommerce' ); ?></strong> —
+									<?php esc_html_e( 'evaluator failures block checkout (fail-closed).', 'trusteed-for-woocommerce' ); ?>
 								</label>
 								<label style="display:block;">
 									<input type="radio" name="trusteed_failure_mode" value="observe" <?php checked( $current, 'observe' ); ?> />
-									<strong><?php esc_html_e( 'Observe (solo canary)', 'trusteed-for-woocommerce' ); ?></strong> —
-									<?php esc_html_e( 'permite el checkout y envía telemetría a Prometheus (enforcement_api_fail_total). Usar solo durante burn-in.', 'trusteed-for-woocommerce' ); ?>
+									<strong><?php esc_html_e( 'Observe (canary only)', 'trusteed-for-woocommerce' ); ?></strong> —
+									<?php esc_html_e( 'allows checkout through and sends telemetry to Prometheus (enforcement_api_fail_total). Use only during burn-in.', 'trusteed-for-woocommerce' ); ?>
 								</label>
 							</td>
 						</tr>
 					</tbody>
 				</table>
 				<p class="submit">
-					<button type="submit" class="button button-primary"><?php esc_html_e( 'Guardar modo', 'trusteed-for-woocommerce' ); ?></button>
+					<button type="submit" class="button button-primary"><?php esc_html_e( 'Save mode', 'trusteed-for-woocommerce' ); ?></button>
 				</p>
 			</form>
 		</div>
@@ -632,14 +629,14 @@ class Trusteed_Settings {
 		check_ajax_referer( self::ONBOARD_NONCE_ACTION );
 
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Sin permisos.', 'trusteed-for-woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'trusteed-for-woocommerce' ) ), 403 );
 		}
 
 		$email    = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 		$password = isset( $_POST['password'] ) ? wp_unslash( $_POST['password'] ) : '';
 
 		if ( empty( $email ) || empty( $password ) ) {
-			wp_send_json_error( array( 'message' => __( 'Correo y contraseña son obligatorios.', 'trusteed-for-woocommerce' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Email and password are required.', 'trusteed-for-woocommerce' ) ) );
 		}
 
 		$site_url   = get_site_url();
@@ -711,8 +708,8 @@ class Trusteed_Settings {
 		wp_send_json_success(
 			array(
 				'message'           => $result['already_connected']
-					? __( '¡Tienda reconectada con éxito!', 'trusteed-for-woocommerce' )
-					: __( '¡Tienda conectada con éxito!', 'trusteed-for-woocommerce' ),
+					? __( 'Store reconnected successfully!', 'trusteed-for-woocommerce' )
+					: __( 'Store connected successfully!', 'trusteed-for-woocommerce' ),
 				'tier'              => strtoupper( sanitize_text_field( $result['tier'] ) ),
 				'mcp_endpoint'      => esc_url_raw( $result['mcp_endpoint'] ),
 				'already_connected' => $result['already_connected'],
@@ -738,13 +735,13 @@ class Trusteed_Settings {
 		check_ajax_referer( self::CONNECT_KEY_NONCE_ACTION );
 
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Sin permisos.', 'trusteed-for-woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'trusteed-for-woocommerce' ) ), 403 );
 		}
 
 		$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
 
 		if ( empty( $api_key ) ) {
-			wp_send_json_error( array( 'message' => __( 'Introduce tu API key.', 'trusteed-for-woocommerce' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Enter your API key.', 'trusteed-for-woocommerce' ) ) );
 		}
 
 		$site_url   = get_site_url();
@@ -774,7 +771,7 @@ class Trusteed_Settings {
 
 		wp_send_json_success(
 			array(
-				'message'      => __( '¡Tienda conectada con tu API key!', 'trusteed-for-woocommerce' ),
+				'message'      => __( 'Store connected with your API key!', 'trusteed-for-woocommerce' ),
 				'tier'         => strtoupper( sanitize_text_field( $result['tier'] ) ),
 				'mcp_endpoint' => esc_url_raw( $result['mcp_endpoint'] ),
 			)
@@ -792,7 +789,7 @@ class Trusteed_Settings {
 		check_ajax_referer( self::DISCONNECT_NONCE_ACTION );
 
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Sin permisos.', 'trusteed-for-woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'trusteed-for-woocommerce' ) ), 403 );
 		}
 
 		// F3.T7 Gap #8 — Best-effort remote revoke BEFORE deleting local
@@ -823,7 +820,7 @@ class Trusteed_Settings {
 		Trusteed_Options::delete_option( 'enforcement_hmac_secret' );
 		Trusteed_Options::delete_option( 'woo_webhook_secret' );
 
-		wp_send_json_success( array( 'message' => __( 'Tienda desconectada.', 'trusteed-for-woocommerce' ) ) );
+		wp_send_json_success( array( 'message' => __( 'Store disconnected.', 'trusteed-for-woocommerce' ) ) );
 	}
 
 	/**
@@ -965,16 +962,16 @@ class Trusteed_Settings {
 				'connect_key_nonce' => wp_create_nonce( self::CONNECT_KEY_NONCE_ACTION ),
 				'disconnect_nonce' => wp_create_nonce( self::DISCONNECT_NONCE_ACTION ),
 				'i18n'             => array(
-					'testing'            => __( 'Probando...', 'trusteed-for-woocommerce' ),
-					'test_btn'           => __( 'Probar conexión', 'trusteed-for-woocommerce' ),
-					'syncing'            => __( 'Sincronizando...', 'trusteed-for-woocommerce' ),
-					'sync_btn'           => __( 'Sincronizar catálogo ahora', 'trusteed-for-woocommerce' ),
-					'connecting'         => __( 'Conectando...', 'trusteed-for-woocommerce' ),
-					'connect_btn'        => __( 'Conectar mi tienda', 'trusteed-for-woocommerce' ),
-					'disconnecting'      => __( 'Desconectando...', 'trusteed-for-woocommerce' ),
-					'disconnect_confirm' => __( '¿Seguro que quieres desconectar tu tienda?', 'trusteed-for-woocommerce' ),
-					'request_failed'     => __( 'Error en la solicitud', 'trusteed-for-woocommerce' ),
-					'connected'          => __( 'Conectada', 'trusteed-for-woocommerce' ),
+					'testing'            => __( 'Testing...', 'trusteed-for-woocommerce' ),
+					'test_btn'           => __( 'Test connection', 'trusteed-for-woocommerce' ),
+					'syncing'            => __( 'Syncing...', 'trusteed-for-woocommerce' ),
+					'sync_btn'           => __( 'Sync catalog now', 'trusteed-for-woocommerce' ),
+					'connecting'         => __( 'Connecting...', 'trusteed-for-woocommerce' ),
+					'connect_btn'        => __( 'Connect my store', 'trusteed-for-woocommerce' ),
+					'disconnecting'      => __( 'Disconnecting...', 'trusteed-for-woocommerce' ),
+					'disconnect_confirm' => __( 'Are you sure you want to disconnect your store?', 'trusteed-for-woocommerce' ),
+					'request_failed'     => __( 'Request error', 'trusteed-for-woocommerce' ),
+					'connected'          => __( 'Connected', 'trusteed-for-woocommerce' ),
 					'failed'             => __( 'Error', 'trusteed-for-woocommerce' ),
 				),
 			)

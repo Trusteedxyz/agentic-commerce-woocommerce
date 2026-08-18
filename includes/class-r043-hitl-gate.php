@@ -117,7 +117,7 @@ if ( ! class_exists( 'Trusteed_R043_Hitl_Gate' ) ) {
 			$order->update_meta_data( self::ORDER_META_RULE, (string) ( $payload['rule_code'] ?? '' ) );
 			$order->update_meta_data( self::ORDER_META_REASON, (string) ( $payload['reason'] ?? '' ) );
 			$order->update_meta_data( self::ORDER_META_EVAL_ID, (string) ( $payload['evaluation_id'] ?? '' ) );
-			$order->set_status( 'pending', __( 'Agent checkout requires merchant approval (R043 HITL).', 'agenticmcpstores' ) );
+			$order->set_status( 'pending', __( 'Agent checkout requires merchant approval (R043 HITL).', 'trusteed-for-woocommerce' ) );
 			$order->save();
 
 			WC()->session->set( self::SESSION_HITL_PENDING, null );

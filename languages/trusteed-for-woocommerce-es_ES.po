@@ -1,319 +1,572 @@
-# Spanish (Spain) translation for AgenticMCPStores for WooCommerce.
-# Copyright (C) 2026 AgenticMCPStores
-# This file is distributed under the same license as the AgenticMCPStores for WooCommerce package.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the Trusteed for WooCommerce package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: AgenticMCPStores for WooCommerce 1.0.0\n"
-"Report-Msgid-Bugs-To: https://agenticmcpstores.com/support\n"
-"POT-Creation-Date: 2026-03-28 00:00+0000\n"
-"PO-Revision-Date: 2026-03-28 00:00+0000\n"
-"Last-Translator: AgenticMCPStores <info@agenticmcpstores.com>\n"
+"Project-Id-Version: Trusteed for WooCommerce 2.2.2\n"
+"Report-Msgid-Bugs-To: https://github.com/Trusteedxyz/agentic-commerce-woocommerce/issues\n"
+"POT-Creation-Date: 2026-08-18 14:05+0000\n"
+"PO-Revision-Date: 2026-08-18 00:00+0000\n"
+"Last-Translator: Trusteed <support@trusteed.xyz>\n"
 "Language-Team: Spanish (Spain) <es@li.org>\n"
 "Language: es_ES\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#. Plugin Name of the plugin
-#: agenticmcpstores.php:3
-msgid "AgenticMCPStores for WooCommerce"
-msgstr "AgenticMCPStores para WooCommerce"
+#: includes/class-multi-add-handler.php:88
+#, php-format
+msgid "AgenticMCP multi-add: too many line items (max %d)."
+msgstr "AgenticMCP multi-add: demasiadas líneas (máx. %d)."
 
-#. Description of the plugin
-#: agenticmcpstores.php:5
-msgid "Connect your WooCommerce store to AI agents via MCP (Model Context Protocol). Enable Claude, ChatGPT, and any MCP-compatible agent to search your catalog and create carts."
-msgstr "Conecta tu tienda WooCommerce a agentes de IA mediante MCP (Model Context Protocol). Permite que Claude, ChatGPT y cualquier agente compatible con MCP busquen en tu catálogo y creen carritos."
-
-#: agenticmcpstores.php:87
-msgid "requires WooCommerce to be installed and active."
-msgstr "requiere que WooCommerce esté instalado y activo."
-
-#: includes/class-settings.php:117
-#: includes/class-settings.php:118
-msgid "AgenticMCPStores"
-msgstr "AgenticMCPStores"
-
-#: includes/class-settings.php:145
-msgid "API Connection"
-msgstr "Conexión API"
-
-#: includes/class-settings.php:152
-msgid "API Key"
-msgstr "Clave API"
-
-#. translators: %s: link to AgenticMCPStores dashboard
-#: includes/class-settings.php:173
-msgid "Enter your API key from the %s to connect your store."
-msgstr "Introduce tu clave API del %s para conectar tu tienda."
-
-#: includes/class-settings.php:175
-msgid "AgenticMCPStores Dashboard"
-msgstr "Panel de AgenticMCPStores"
-
-#: includes/class-settings.php:207
-msgid "Toggle API key visibility"
-msgstr "Alternar visibilidad de la clave API"
-
-#: includes/class-settings.php:212
-msgid "Your AgenticMCPStores API key. Keep this secret."
-msgstr "Tu clave API de AgenticMCPStores. Mantenla en secreto."
-
-#: includes/class-settings.php:250
-msgid "Save &amp; Connect"
-msgstr "Guardar y conectar"
-
-#: includes/class-settings.php:255
-#: includes/class-settings.php:256
-msgid "Connection Status"
-msgstr "Estado de conexión"
-
-#: includes/class-settings.php:260
-msgid "Status"
-msgstr "Estado"
-
-#: includes/class-settings.php:264
-#: includes/class-settings.php:533
-msgid "Connected"
-msgstr "Conectado"
-
-#: includes/class-settings.php:268
-msgid "Not Connected"
-msgstr "No conectado"
-
-#: includes/class-settings.php:275
-msgid "Store Slug"
-msgstr "Slug de la tienda"
-
-#: includes/class-settings.php:290
-msgid "MCP Endpoint"
-msgstr "Endpoint MCP"
-
-#: includes/class-settings.php:304
-msgid "Current Tier"
-msgstr "Plan actual"
-
-#: includes/class-settings.php:312
-msgid "Last Sync"
-msgstr "Última sincronización"
-
-#: includes/class-settings.php:319
-msgid "Never"
-msgstr "Nunca"
-
-#: includes/class-settings.php:328
-#: includes/class-settings.php:329
-msgid "Actions"
-msgstr "Acciones"
-
-#: includes/class-settings.php:337
-#: includes/class-settings.php:529
-msgid "Test Connection"
-msgstr "Probar conexión"
-
-#: includes/class-settings.php:348
-#: includes/class-settings.php:531
-msgid "Sync Catalog Now"
-msgstr "Sincronizar catálogo ahora"
-
-#: includes/class-settings.php:372
-msgid "Upgrade your plan"
-msgstr "Mejora tu plan"
-
-#: includes/class-settings.php:374
-msgid "Unlock More Features"
-msgstr "Desbloquea más funcionalidades"
-
-#: includes/class-settings.php:376
-msgid "Upgrade to a paid plan to get higher rate limits, advanced analytics, and priority support for your AI agent integrations."
-msgstr "Actualiza a un plan de pago para obtener límites de peticiones más altos, analíticas avanzadas y soporte prioritario para tus integraciones con agentes de IA."
-
-#: includes/class-settings.php:384
-msgid "View Plans &amp; Pricing"
-msgstr "Ver planes y precios"
-
-#: includes/class-settings.php:385
-msgid "(opens in new tab)"
-msgstr "(se abre en una nueva pestaña)"
-
-#: includes/class-settings.php:407
-#: includes/class-settings.php:451
-msgid "Permission denied."
-msgstr "Permiso denegado."
-
-#: includes/class-settings.php:482
-msgid "Catalog sync completed successfully."
-msgstr "Sincronización del catálogo completada correctamente."
-
-#: includes/class-settings.php:528
-msgid "Testing..."
-msgstr "Probando..."
-
-#: includes/class-settings.php:530
-msgid "Syncing..."
-msgstr "Sincronizando..."
-
-#: includes/class-settings.php:532
-msgid "Request failed"
-msgstr "Solicitud fallida"
-
-#: includes/class-settings.php:534
-msgid "Failed"
-msgstr "Fallido"
-
-#: includes/class-settings.php:535
-msgid "Show API key"
-msgstr "Mostrar clave API"
-
-#: includes/class-settings.php:536
-msgid "Hide API key"
-msgstr "Ocultar clave API"
-
-#. translators: 1: endpoint path, 2: timeout in seconds
-#: includes/class-api-client.php:149
-msgid "Request to %1$s timed out after %2$d seconds."
-msgstr "La solicitud a %1$s ha expirado tras %2$d segundos."
-
-#. translators: 1: endpoint path, 2: error message
-#: includes/class-api-client.php:160
-msgid "Transport error requesting %1$s: %2$s"
-msgstr "Error de transporte al solicitar %1$s: %2$s"
-
-#. translators: 1: endpoint path, 2: HTTP status code, 3: max retries
-#: includes/class-api-client.php:186
-msgid "Request to %1$s failed with status %2$d after %3$d attempts."
-msgstr "La solicitud a %1$s falló con estado %2$d tras %3$d intentos."
-
-#: includes/class-api-client.php:196
-msgid "Unexpected error during API request."
-msgstr "Error inesperado durante la solicitud a la API."
-
-#. translators: 1: HTTP status code
-#: includes/class-api-client.php:261
-msgid "API health check returned status %1$d. Expected 200 with status \"ok\"."
-msgstr "La comprobación de salud de la API devolvió estado %1$d. Se esperaba 200 con estado \"ok\"."
-
-#: includes/class-api-client.php:308
-msgid "Unknown error during store registration."
-msgstr "Error desconocido durante el registro de la tienda."
-
-#: includes/class-api-client.php:325
-msgid "Registration response missing expected data field."
-msgstr "La respuesta de registro no contiene el campo de datos esperado."
-
-#. translators: 1: endpoint path, 2: JSON error message
-#: includes/class-api-client.php:363
-msgid "Invalid JSON response from %1$s: %2$s"
-msgstr "Respuesta JSON inválida de %1$s: %2$s"
-
-#. translators: 1: HTTP status code, 2: error message
-#: includes/class-api-client.php:388
-msgid "API error %1$d: %2$s"
-msgstr "Error de API %1$d: %2$s"
-
-#: includes/class-catalog-sync.php:259
+#: includes/class-catalog-sync.php:290
 msgid "Invalid security token."
-msgstr "Token de seguridad inválido."
+msgstr "Token de seguridad no válido."
 
-#: includes/class-catalog-sync.php:267
+#: includes/class-catalog-sync.php:299
 msgid "Insufficient permissions."
 msgstr "Permisos insuficientes."
 
-#: includes/class-cart-bridge.php:90
+#: includes/class-cart-bridge.php:147
 msgid "line_items must be a non-empty array."
 msgstr "line_items debe ser un array no vacío."
 
-#. translators: %d: maximum number of line items
-#: includes/class-cart-bridge.php:100
+#: includes/class-cart-bridge.php:157
+#, php-format
 msgid "Maximum %d line items allowed per cart."
-msgstr "Se permiten un máximo de %d artículos por carrito."
+msgstr "Se permite un máximo de %d líneas por carrito."
 
-#. translators: %d: line item index (0-based)
-#: includes/class-cart-bridge.php:120
+#: includes/class-cart-bridge.php:177
+#, php-format
 msgid "Invalid product_id at line item index %d."
-msgstr "product_id inválido en el índice de artículo %d."
+msgstr "product_id no válido en la línea número %d."
 
-#. translators: %d: line item index (0-based)
-#: includes/class-cart-bridge.php:131
+#: includes/class-cart-bridge.php:189
+#, php-format
 msgid "Quantity must be greater than 0 at line item index %d."
-msgstr "La cantidad debe ser mayor que 0 en el índice de artículo %d."
+msgstr "La cantidad debe ser mayor que 0 en la línea número %d."
 
-#. translators: %d: product ID
-#: includes/class-cart-bridge.php:148
+#: includes/class-cart-bridge.php:204
+#, php-format
 msgid "Product with ID %d not found."
-msgstr "Producto con ID %d no encontrado."
+msgstr "No se encontró el producto con ID %d."
 
-#. translators: %s: product name
-#: includes/class-cart-bridge.php:159
+#: includes/class-cart-bridge.php:216
+#, php-format
 msgid "Product \"%s\" is not available for purchase."
-msgstr "El producto \"%s\" no está disponible para compra."
+msgstr "El producto \"%s\" no está disponible para su compra."
 
-#. translators: %s: product name
-#: includes/class-cart-bridge.php:170
+#: includes/class-cart-bridge.php:228
+#, php-format
 msgid "Product \"%s\" is out of stock."
 msgstr "El producto \"%s\" está agotado."
 
-#: includes/class-cart-bridge.php:216
+#: includes/class-cart-bridge.php:273
 msgid "Plugin API key is not configured."
-msgstr "La clave API del plugin no está configurada."
+msgstr "La API key del plugin no está configurada."
 
-#: includes/class-cart-bridge.php:224
+#: includes/class-cart-bridge.php:281
 msgid "Invalid or missing API key."
-msgstr "Clave API inválida o no proporcionada."
+msgstr "API key no válida o ausente."
 
-#: includes/class-billing-webhooks.php:370
-msgid "AgenticMCPStores:"
-msgstr "AgenticMCPStores:"
+#: includes/admin/class-admin-spa-loader.php:189
+msgid ""
+"Trusteed: the admin-spa bundle has not been built. Run pnpm build in "
+"packages/wp-plugin."
+msgstr ""
+"Trusteed: el bundle admin-spa no ha sido compilado. Ejecuta pnpm build en "
+"packages/wp-plugin."
 
-#. translators: 1: previous tier name, 2: link to pricing page
-#: includes/class-billing-webhooks.php:374
-msgid "Your %1$s subscription has expired. Your store is now on the FREE tier with limited features. %2$s to restore full functionality."
-msgstr "Tu suscripción %1$s ha expirado. Tu tienda está ahora en el plan GRATUITO con funcionalidades limitadas. %2$s para restaurar la funcionalidad completa."
+#: includes/admin/views/spa-mount.php:40
+msgid "Loading Trusteed..."
+msgstr "Cargando Trusteed..."
 
-#: includes/class-billing-webhooks.php:377
-msgid "Upgrade now"
-msgstr "Actualizar ahora"
+#: includes/admin/class-token-broker.php:202
+msgid "You do not have sufficient permissions."
+msgstr "No tienes permisos suficientes."
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-token-broker.php:212
+msgid "Invalid or missing nonce."
+msgstr "Nonce no válido o ausente."
+
+#: includes/admin/class-token-broker.php:237
+msgid "Plugin not configured: merchant_id is missing."
+msgstr "Plugin no configurado: falta el merchant_id."
+
+#: includes/admin/class-token-broker.php:249
+msgid "Plugin not configured: embed secret is missing."
+msgstr "Plugin no configurado: falta el secret embed."
+
+#: includes/admin/class-token-broker.php:262
+msgid "The API URL is not in the allowed hosts list."
+msgstr "La URL de la API no está en la lista de hosts permitidos."
+
+#: includes/admin/class-token-broker.php:293
+msgid "Could not connect to the Trusteed API."
+msgstr "No se pudo conectar con la API de Trusteed."
+
+#: includes/admin/class-token-broker.php:306
+msgid "Error issuing the session token."
+msgstr "Error al emitir el token de sesión."
+
+#: includes/admin/class-admin-router.php:156
+#: includes/admin/class-admin-router.php:157 includes/class-settings.php:257
+#: includes/class-settings.php:258
 msgid "Trusteed"
 msgstr "Trusteed"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:168
+#: includes/admin/class-admin-router.php:169
 msgid "Home"
 msgstr "Inicio"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:178
+#: includes/admin/class-admin-router.php:179
 msgid "Trust Center"
-msgstr "Centro de Confianza"
+msgstr "Centro de confianza"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:188
+#: includes/admin/class-admin-router.php:189
 msgid "My Sales"
-msgstr "Mis Ventas"
+msgstr "Mis ventas"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:198
+#: includes/admin/class-admin-router.php:199
 msgid "My Rules"
-msgstr "Mis Reglas"
+msgstr "Mis reglas"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:208
+#: includes/admin/class-admin-router.php:209
 msgid "Agents"
 msgstr "Agentes"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:218
+#: includes/admin/class-admin-router.php:219
 msgid "Security"
 msgstr "Seguridad"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:228
+#: includes/admin/class-admin-router.php:229
 msgid "Merchant Center"
-msgstr "Centro del Comercio"
+msgstr "Centro de comercio"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:238
+#: includes/admin/class-admin-router.php:239
 msgid "Settings"
 msgstr "Ajustes"
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:344
 msgid "You do not have sufficient permissions to access this page."
 msgstr "No tienes permisos suficientes para acceder a esta página."
 
-#: includes/admin/class-admin-router.php
+#: includes/admin/class-admin-router.php:350
 msgid "Internal error: SPA view not found."
 msgstr "Error interno: vista SPA no encontrada."
+
+#: includes/class-checkout-enforcer.php:226
+#: includes/class-checkout-enforcer.php:269
+msgid ""
+"Your order could not be completed because it did not pass the store's agent "
+"verification rules. Please contact the store if you believe this is an "
+"error."
+msgstr ""
+"Tu pedido no se pudo completar porque no superó las reglas de verificación "
+"de agentes de la tienda. Contacta con la tienda si crees que esto es un "
+"error."
+
+#: includes/class-checkout-enforcer.php:278
+msgid ""
+"Your order could not be completed because it did not pass the store's agent "
+"verification rules."
+msgstr ""
+"Tu pedido no se pudo completar porque no superó las reglas de verificación "
+"de agentes de la tienda."
+
+#: includes/class-api-client.php:311
+msgid ""
+"Refusing to send credentials to a link-local, unique-local or cloud metadata"
+" address."
+msgstr ""
+"Se rechaza el envío de credenciales a una dirección link-local, unique-local"
+" o de metadatos de nube."
+
+#: includes/class-api-client.php:329
+msgid ""
+"Refusing to send credentials over an insecure (non-HTTPS) connection. "
+"Configure an HTTPS API URL."
+msgstr ""
+"Se rechaza el envío de credenciales por una conexión insegura (no HTTPS). "
+"Configura una URL de API con HTTPS."
+
+#: includes/class-api-client.php:335
+msgid ""
+"Refusing to send credentials to an untrusted API host. Configure a Trusteed "
+"API URL."
+msgstr ""
+"Se rechaza el envío de credenciales a un host de API no confiable. Configura"
+" una URL de API de Trusteed."
+
+#: includes/class-api-client.php:392
+#, php-format
+msgid "Request to %1$s timed out after %2$d seconds."
+msgstr "La solicitud a %1$s superó el tiempo de espera tras %2$d segundos."
+
+#: includes/class-api-client.php:403
+#, php-format
+msgid "Transport error requesting %1$s: %2$s"
+msgstr "Error de transporte al solicitar %1$s: %2$s"
+
+#: includes/class-api-client.php:430
+#, php-format
+msgid "Request to %1$s failed with status %2$d after %3$d attempts."
+msgstr "La solicitud a %1$s falló con estado %2$d tras %3$d intentos."
+
+#: includes/class-api-client.php:440
+msgid "Unexpected error during API request."
+msgstr "Error inesperado durante la solicitud a la API."
+
+#: includes/class-api-client.php:505
+#, php-format
+msgid "API health check returned status %1$d. Expected 200 with status \"ok\"."
+msgstr ""
+"La comprobación de salud de la API devolvió el estado %1$d. Se esperaba 200 "
+"con estado \"ok\"."
+
+#: includes/class-api-client.php:588
+msgid "Incorrect email or password."
+msgstr "Correo o contraseña incorrectos."
+
+#: includes/class-api-client.php:595
+msgid "Error connecting to Trusteed."
+msgstr "Error al conectar con Trusteed."
+
+#: includes/class-api-client.php:647
+msgid "Unknown error during store registration."
+msgstr "Error desconocido durante el registro de la tienda."
+
+#: includes/class-api-client.php:664
+msgid "Registration response missing expected data field."
+msgstr "La respuesta de registro no incluye el campo de datos esperado."
+
+#: includes/class-api-client.php:702
+#, php-format
+msgid "Invalid JSON response from %1$s: %2$s"
+msgstr "Respuesta JSON no válida de %1$s: %2$s"
+
+#: includes/class-api-client.php:726
+#, php-format
+msgid "API error %1$d: %2$s"
+msgstr "Error de API %1$d: %2$s"
+
+#: includes/class-billing-webhooks.php:380
+msgid "AgenticMCPStores:"
+msgstr "AgenticMCPStores:"
+
+#: includes/class-billing-webhooks.php:384
+#, php-format
+msgid ""
+"Your %1$s subscription has expired. Your store is now on the FREE tier with "
+"limited features. %2$s to restore full functionality."
+msgstr ""
+"Tu suscripción %1$s ha caducado. Tu tienda está ahora en el plan gratuito "
+"con funciones limitadas. %2$s para restaurar la funcionalidad completa."
+
+#: includes/class-billing-webhooks.php:387
+msgid "Upgrade now"
+msgstr "Mejorar plan ahora"
+
+#: includes/class-settings.php:166
+msgid ""
+"Trusteed — enforcement is not configured. Click Reconnect to enable agent "
+"verification."
+msgstr ""
+"Trusteed — el enforcement no está configurado. Haz clic en Reconectar para "
+"activar la verificación de agentes."
+
+#: includes/class-settings.php:197
+msgid "Trusteed — incomplete integration"
+msgstr "Trusteed — integración incompleta"
+
+#: includes/class-settings.php:201
+msgid ""
+"Could not sign a backend call because the installation's HMAC secret is "
+"missing. Your Trusteed integration is not fully configured. Reconnect the "
+"plugin to restore agent-event sync."
+msgstr ""
+"No se ha podido firmar una llamada al backend porque falta el HMAC secret de"
+" la instalación. Tu integración Trusteed no está completamente configurada. "
+"Reconecta el plugin para restaurar la sincronización de eventos de agente."
+
+#: includes/class-settings.php:227
+msgid "Trusteed — possible misconfiguration"
+msgstr "Trusteed — posible configuración incorrecta"
+
+#: includes/class-settings.php:231
+msgid ""
+"The remote evaluator is frequently returning 4xx errors. This usually "
+"indicates incorrect credentials or identifiers. Check the following values "
+"on the Trusteed tab:"
+msgstr ""
+"El evaluador remoto está devolviendo errores 4xx con frecuencia. Esto suele "
+"indicar credenciales o identificadores incorrectos. Verifica los siguientes "
+"valores en la pestaña de Trusteed:"
+
+#: includes/class-settings.php:335 trusteed-for-woocommerce.php:105
+msgid "Trusteed for WooCommerce"
+msgstr "Trusteed para WooCommerce"
+
+#: includes/class-settings.php:339
+msgid "Connect store"
+msgstr "Conectar tienda"
+
+#: includes/class-settings.php:340
+msgid "Connect your store to Trusteed"
+msgstr "Conecta tu tienda a Trusteed"
+
+#: includes/class-settings.php:341
+msgid ""
+"Enter your Trusteed email and password. If you don't have an account, we'll "
+"create one automatically."
+msgstr ""
+"Introduce tu correo y contraseña de Trusteed. Si no tienes cuenta la "
+"crearemos automáticamente."
+
+#: includes/class-settings.php:347
+msgid "Your email"
+msgstr "Tu correo"
+
+#: includes/class-settings.php:361
+msgid "Password"
+msgstr "Contraseña"
+
+#: includes/class-settings.php:369
+msgid "Minimum 8 characters"
+msgstr "Mínimo 8 caracteres"
+
+#: includes/class-settings.php:372
+msgid "If you already have a Trusteed account, use the same password."
+msgstr "Si ya tienes cuenta en Trusteed usa la misma contraseña."
+
+#: includes/class-settings.php:385 includes/class-settings.php:970
+msgid "Connect my store"
+msgstr "Conectar mi tienda"
+
+#: includes/class-settings.php:392 includes/class-settings.php:430
+msgid "Connect with API key"
+msgstr "Conectar con API key"
+
+#: includes/class-settings.php:393
+msgid "Prefer not to use a password?"
+msgstr "¿Prefieres no usar contraseña?"
+
+#: includes/class-settings.php:398
+#, php-format
+msgid ""
+"Paste an API key from your %s and connect without entering your password in "
+"WordPress."
+msgstr ""
+"Pega una API key de tu %s y conecta sin introducir tu contraseña en "
+"WordPress."
+
+#: includes/class-settings.php:399
+msgid "Trusteed dashboard"
+msgstr "panel de Trusteed"
+
+#: includes/class-settings.php:408
+msgid "API key"
+msgstr "API key"
+
+#: includes/class-settings.php:438 includes/class-settings.php:439
+msgid "Connection status"
+msgstr "Estado de conexión"
+
+#: includes/class-settings.php:443
+msgid "Status"
+msgstr "Estado"
+
+#: includes/class-settings.php:446 includes/class-settings.php:974
+msgid "Connected"
+msgstr "Conectada"
+
+#: includes/class-settings.php:451
+msgid "Active plan"
+msgstr "Plan activo"
+
+#: includes/class-settings.php:459
+msgid "MCP Endpoint"
+msgstr "Endpoint MCP"
+
+#: includes/class-settings.php:471
+msgid "Last sync"
+msgstr "Última sincronización"
+
+#: includes/class-settings.php:478
+msgid "Never"
+msgstr "Nunca"
+
+#: includes/class-settings.php:487 includes/class-settings.php:488
+msgid "Actions"
+msgstr "Acciones"
+
+#: includes/class-settings.php:491 includes/class-settings.php:966
+msgid "Test connection"
+msgstr "Probar conexión"
+
+#: includes/class-settings.php:497 includes/class-settings.php:968
+msgid "Sync catalog now"
+msgstr "Sincronizar catálogo ahora"
+
+#: includes/class-settings.php:503
+msgid "Disconnect store"
+msgstr "Desconectar tienda"
+
+#: includes/class-settings.php:546
+msgid ""
+"Fallback mode updated. Reload the plugin (deactivate + activate) to apply."
+msgstr ""
+"Modo de fallo actualizado. Recarga el plugin (deactivate + activate) para "
+"aplicar."
+
+#: includes/class-settings.php:553
+msgid "Enforcement"
+msgstr "Enforcement"
+
+#: includes/class-settings.php:554
+msgid "Checkout enforcement (Spec-048)"
+msgstr "Enforcement de checkout (Spec-048)"
+
+#: includes/class-settings.php:555
+msgid ""
+"When the remote evaluator doesn't respond (timeout, 5xx, invalid payload), "
+"the plugin must decide whether to block checkout or allow it and log "
+"telemetry."
+msgstr ""
+"Cuando el evaluador remoto no responde (timeout, 5xx, payload inválido), el "
+"plugin debe decidir si bloquear el checkout o permitirlo y registrar "
+"telemetría."
+
+#: includes/class-settings.php:561
+msgid "Fallback mode"
+msgstr "Modo de fallo"
+
+#: includes/class-settings.php:565
+msgid "Enforce (recommended)"
+msgstr "Enforce (recomendado)"
+
+#: includes/class-settings.php:566
+msgid "evaluator failures block checkout (fail-closed)."
+msgstr "fallos del evaluador bloquean el checkout (fail-closed)."
+
+#: includes/class-settings.php:570
+msgid "Observe (canary only)"
+msgstr "Observe (solo canary)"
+
+#: includes/class-settings.php:571
+msgid ""
+"allows checkout through and sends telemetry to Prometheus "
+"(enforcement_api_fail_total). Use only during burn-in."
+msgstr ""
+"permite el checkout y envía telemetría a Prometheus "
+"(enforcement_api_fail_total). Usar solo durante burn-in."
+
+#: includes/class-settings.php:578
+msgid "Save mode"
+msgstr "Guardar modo"
+
+#: includes/class-settings.php:598
+msgid "Upgrade your plan"
+msgstr "Mejora tu plan"
+
+#: includes/class-settings.php:600
+msgid "Unlock More Features"
+msgstr "Desbloquea más funciones"
+
+#: includes/class-settings.php:602
+msgid ""
+"Upgrade to a paid plan to get higher rate limits, advanced analytics, and "
+"priority support for your AI agent integrations."
+msgstr ""
+"Mejora a un plan de pago para obtener límites más altos, analíticas "
+"avanzadas y soporte prioritario para tus integraciones con agentes de IA."
+
+#: includes/class-settings.php:610
+msgid "View Plans &amp; Pricing"
+msgstr "Ver planes y precios"
+
+#: includes/class-settings.php:611
+msgid "(opens in new tab)"
+msgstr "(se abre en una pestaña nueva)"
+
+#: includes/class-settings.php:632 includes/class-settings.php:738
+#: includes/class-settings.php:792 includes/class-settings.php:841
+#: includes/class-settings.php:885
+msgid "Permission denied."
+msgstr "Sin permisos."
+
+#: includes/class-settings.php:639
+msgid "Email and password are required."
+msgstr "Correo y contraseña son obligatorios."
+
+#: includes/class-settings.php:711
+msgid "Store reconnected successfully!"
+msgstr "¡Tienda reconectada con éxito!"
+
+#: includes/class-settings.php:712
+msgid "Store connected successfully!"
+msgstr "¡Tienda conectada con éxito!"
+
+#: includes/class-settings.php:744
+msgid "Enter your API key."
+msgstr "Introduce tu API key."
+
+#: includes/class-settings.php:774
+msgid "Store connected with your API key!"
+msgstr "¡Tienda conectada con tu API key!"
+
+#: includes/class-settings.php:823
+msgid "Store disconnected."
+msgstr "Tienda desconectada."
+
+#: includes/class-settings.php:917
+msgid "Catalog sync completed successfully."
+msgstr "Sincronización del catálogo completada con éxito."
+
+#: includes/class-settings.php:965
+msgid "Testing..."
+msgstr "Probando..."
+
+#: includes/class-settings.php:967
+msgid "Syncing..."
+msgstr "Sincronizando..."
+
+#: includes/class-settings.php:969
+msgid "Connecting..."
+msgstr "Conectando..."
+
+#: includes/class-settings.php:971
+msgid "Disconnecting..."
+msgstr "Desconectando..."
+
+#: includes/class-settings.php:972
+msgid "Are you sure you want to disconnect your store?"
+msgstr "¿Seguro que quieres desconectar tu tienda?"
+
+#: includes/class-settings.php:973
+msgid "Request error"
+msgstr "Error en la solicitud"
+
+#: includes/class-settings.php:975
+msgid "Error"
+msgstr "Error"
+
+#: includes/class-r043-hitl-gate.php:120
+msgid "Agent checkout requires merchant approval (R043 HITL)."
+msgstr ""
+"El checkout del agente requiere aprobación del comerciante (R043 HITL)."
+
+#: trusteed-for-woocommerce.php:106
+msgid "requires WooCommerce to be installed and active."
+msgstr "requiere que WooCommerce esté instalado y activo."

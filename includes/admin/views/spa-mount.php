@@ -37,6 +37,6 @@ $safe_section     = in_array( $section ?? '', $allowed_sections, true ) ? $secti
 >
 	<?php /* Loading fallback — replaced by the React SPA on mount. */ ?>
 	<div class="amcp-loading" style="padding:20px;color:#666;font-family:sans-serif">
-		<?php esc_html_e( 'Loading Trusteed...', 'agenticmcpstores' ); ?>
+		<?php esc_html_e( 'Loading Trusteed...', 'trusteed-for-woocommerce' ); ?>
 	</div>
 </div>

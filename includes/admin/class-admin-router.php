@@ -153,8 +153,8 @@ class Trusteed_Admin_Router {
 
 		// Top-level menu page (renders Inicio/dashboard).
 		add_menu_page(
-			__( 'Trusteed', 'agenticmcpstores' ),
-			__( 'Trusteed', 'agenticmcpstores' ),
+			__( 'Trusteed', 'trusteed-for-woocommerce' ),
+			__( 'Trusteed', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_INICIO,
 			array( $this, 'render_inicio' ),
@@ -165,8 +165,8 @@ class Trusteed_Admin_Router {
 		// 1. Home — main dashboard (replaces auto-generated duplicate top-level entry).
 		add_submenu_page(
 			self::SLUG_INICIO,
-			__( 'Home', 'agenticmcpstores' ),
-			__( 'Home', 'agenticmcpstores' ),
+			__( 'Home', 'trusteed-for-woocommerce' ),
+			__( 'Home', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_INICIO,
 			array( $this, 'render_inicio' )
@@ -175,8 +175,8 @@ class Trusteed_Admin_Router {
 		// 2. Trust Center — store overview.
 		add_submenu_page(
 			self::SLUG_INICIO,
-			__( 'Trust Center', 'agenticmcpstores' ),
-			__( 'Trust Center', 'agenticmcpstores' ),
+			__( 'Trust Center', 'trusteed-for-woocommerce' ),
+			__( 'Trust Center', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_TRUST_CENTER,
 			array( $this, 'render_trust_center' )
@@ -185,8 +185,8 @@ class Trusteed_Admin_Router {
 		// 3. My Sales — orders + AI receipts combined.
 		add_submenu_page(
 			self::SLUG_INICIO,
-			__( 'My Sales', 'agenticmcpstores' ),
-			__( 'My Sales', 'agenticmcpstores' ),
+			__( 'My Sales', 'trusteed-for-woocommerce' ),
+			__( 'My Sales', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_MIS_VENTAS,
 			array( $this, 'render_mis_ventas' )
@@ -195,8 +195,8 @@ class Trusteed_Admin_Router {
 		// 4. My Rules — R001-R010 trust rule management.
 		add_submenu_page(
 			self::SLUG_INICIO,
-			__( 'My Rules', 'agenticmcpstores' ),
-			__( 'My Rules', 'agenticmcpstores' ),
+			__( 'My Rules', 'trusteed-for-woocommerce' ),
+			__( 'My Rules', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_MIS_REGLAS,
 			array( $this, 'render_mis_reglas' )
@@ -205,8 +205,8 @@ class Trusteed_Admin_Router {
 		// 5. Agents — buyer agents panel.
 		add_submenu_page(
 			self::SLUG_INICIO,
-			__( 'Agents', 'agenticmcpstores' ),
-			__( 'Agents', 'agenticmcpstores' ),
+			__( 'Agents', 'trusteed-for-woocommerce' ),
+			__( 'Agents', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_AGENTES,
 			array( $this, 'render_agentes' )
@@ -215,8 +215,8 @@ class Trusteed_Admin_Router {
 		// 6. Security — keys + audit log combined.
 		add_submenu_page(
 			self::SLUG_INICIO,
-			__( 'Security', 'agenticmcpstores' ),
-			__( 'Security', 'agenticmcpstores' ),
+			__( 'Security', 'trusteed-for-woocommerce' ),
+			__( 'Security', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_SEGURIDAD,
 			array( $this, 'render_seguridad' )
@@ -225,8 +225,8 @@ class Trusteed_Admin_Router {
 		// 7. Merchant Center — payment methods, orders, shops.
 		add_submenu_page(
 			self::SLUG_INICIO,
-			__( 'Merchant Center', 'agenticmcpstores' ),
-			__( 'Merchant Center', 'agenticmcpstores' ),
+			__( 'Merchant Center', 'trusteed-for-woocommerce' ),
+			__( 'Merchant Center', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_MERCHANT_CENTER,
 			array( $this, 'render_merchant_center' )
@@ -235,8 +235,8 @@ class Trusteed_Admin_Router {
 		// 8. Settings — fallback mode + payment configuration.
 		add_submenu_page(
 			self::SLUG_INICIO,
-			__( 'Settings', 'agenticmcpstores' ),
-			__( 'Settings', 'agenticmcpstores' ),
+			__( 'Settings', 'trusteed-for-woocommerce' ),
+			__( 'Settings', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_SETTINGS,
 			array( $this, 'render_settings' )
@@ -341,13 +341,13 @@ class Trusteed_Admin_Router {
 	 */
 	private function render_spa_shell( string $section ): void {
 		if ( ! current_user_can( self::REQUIRED_CAP ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'agenticmcpstores' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'trusteed-for-woocommerce' ) );
 		}
 
 		$view_path = $this->plugin_path . 'includes/admin/views/spa-mount.php';
 
 		if ( ! file_exists( $view_path ) ) {
-			wp_die( esc_html__( 'Internal error: SPA view not found.', 'agenticmcpstores' ) );
+			wp_die( esc_html__( 'Internal error: SPA view not found.', 'trusteed-for-woocommerce' ) );
 		}
 
 		// $section is available inside the included template.

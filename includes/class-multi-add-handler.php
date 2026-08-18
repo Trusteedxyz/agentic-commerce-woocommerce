@@ -85,7 +85,7 @@ class Trusteed_Multi_Add_Handler {
 				esc_html(
 					sprintf(
 						/* translators: %d: maximum allowed line items */
-						__( 'AgenticMCP multi-add: too many line items (max %d).', 'agenticmcpstores' ),
+						__( 'AgenticMCP multi-add: too many line items (max %d).', 'trusteed-for-woocommerce' ),
 						self::MAX_LINE_ITEMS
 					)
 				),

@@ -199,7 +199,7 @@ class Trusteed_Token_Broker {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
-				__( 'No tienes permisos suficientes.', 'agenticmcpstores' ),
+				__( 'You do not have sufficient permissions.', 'trusteed-for-woocommerce' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -209,7 +209,7 @@ class Trusteed_Token_Broker {
 		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
-				__( 'Nonce inválido o ausente.', 'agenticmcpstores' ),
+				__( 'Invalid or missing nonce.', 'trusteed-for-woocommerce' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -234,7 +234,7 @@ class Trusteed_Token_Broker {
 		if ( empty( $merchant_id ) ) {
 			return new \WP_Error(
 				'not_configured',
-				__( 'Plugin no configurado: falta el merchant_id.', 'agenticmcpstores' ),
+				__( 'Plugin not configured: merchant_id is missing.', 'trusteed-for-woocommerce' ),
 				array( 'status' => 503 )
 			);
 		}
@@ -246,7 +246,7 @@ class Trusteed_Token_Broker {
 		if ( empty( $embed_secret ) ) {
 			return new \WP_Error(
 				'not_configured',
-				__( 'Plugin no configurado: falta el secret embed.', 'agenticmcpstores' ),
+				__( 'Plugin not configured: embed secret is missing.', 'trusteed-for-woocommerce' ),
 				array( 'status' => 503 )
 			);
 		}
@@ -259,7 +259,7 @@ class Trusteed_Token_Broker {
 			error_log( '[amcp] S039-SEC-006: rejected API base URL (not in allowlist): ' . $this->api_base_url );
 			return new \WP_Error(
 				'configuration_error',
-				__( 'La URL de la API no está en la lista de hosts permitidos.', 'agenticmcpstores' ),
+				__( 'The API URL is not in the allowed hosts list.', 'trusteed-for-woocommerce' ),
 				array( 'status' => 503 )
 			);
 		}
@@ -290,7 +290,7 @@ class Trusteed_Token_Broker {
 			error_log( '[amcp] Token broker API error: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 			return new \WP_Error(
 				'api_unavailable',
-				__( 'No se pudo conectar con la API de Trusteed.', 'agenticmcpstores' ),
+				__( 'Could not connect to the Trusteed API.', 'trusteed-for-woocommerce' ),
 				array( 'status' => 503 )
 			);
 		}
@@ -303,7 +303,7 @@ class Trusteed_Token_Broker {
 			error_log( '[amcp] Token broker unexpected response: HTTP ' . $status_code ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 			return new \WP_Error(
 				'token_issue_failed',
-				__( 'Error al emitir el token de sesión.', 'agenticmcpstores' ),
+				__( 'Error issuing the session token.', 'trusteed-for-woocommerce' ),
 				array( 'status' => 502 )
 			);
 		}

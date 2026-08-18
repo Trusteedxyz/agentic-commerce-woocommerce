@@ -585,14 +585,14 @@ class Trusteed_Api_Client {
 		if ( $parsed['status'] === 401 ) {
 			return new WP_Error(
 				'agenticmcp_onboard_invalid_credentials',
-				__( 'Correo o contraseña incorrectos.', 'trusteed-for-woocommerce' )
+				__( 'Incorrect email or password.', 'trusteed-for-woocommerce' )
 			);
 		}
 
 		if ( $parsed['status'] < 200 || $parsed['status'] >= 300 ) {
 			$msg = isset( $parsed['body']['error'] )
 				? sanitize_text_field( $parsed['body']['error'] )
-				: __( 'Error al conectar con Trusteed.', 'trusteed-for-woocommerce' );
+				: __( 'Error connecting to Trusteed.', 'trusteed-for-woocommerce' );
 			return new WP_Error( 'agenticmcp_onboard_failed', $msg );
 		}
 
