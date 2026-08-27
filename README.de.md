@@ -151,6 +151,11 @@ genau die Selbsttäuschung, die diese Seite aufdecken soll.
 
 ## Änderungsprotokoll
 
+### 2.3.1
+
+- **Kritische Korrektur** — 2.3.0 enthielt einen PHP-Syntaxfehler im Admin-Router (`->render_spa_shell()` ohne `$this` sowie `array( , 'render_agent_readiness' )`). Die Aktivierung legte **den gesamten WordPress-Adminbereich** lahm, nicht nur die Trusteed-Seiten. Wer 2.3.0 einsetzt, sollte sofort aktualisieren. Alle PHP-Dateien des Plugins werden jetzt auf Syntax geprüft.
+- **Behoben** — die Seite «Agent Readiness» zeigte stattdessen das Trust Center. Das SPA-Mount prüft den Abschnitt gegen eine Positivliste, in der `agent-readiness` fehlte, und fiel still zurück: Der Händler klickte «Agent Readiness» und sah ein anderes Panel.
+
 ### 2.3.0
 
 - **Neu — Dashboard zur Agenten-Bereitschaft.** *Finden mich Agenten?* ist jetzt im Verwaltungsbereich verfügbar. Es vergleicht, was Ihr Shop ankündigt, mit dem, was er tatsächlich antwortet — in **16 Prüfungen**, und zeigt alle sechzehn, nicht nur die fehlgeschlagenen. Eine Prüfung, die nicht laufen konnte, nennt den **Grund** (Shop nicht verbunden, noch keine ausgelieferten Bestellungen, diesmal nichts zu vergleichen), statt eine Lücke zu lassen, die wie ein Defekt wirkt. Siehe «Das Dashboard zur Agenten-Bereitschaft» oben.

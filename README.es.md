@@ -150,6 +150,11 @@ esta página existe para cazar.
 
 ## Historial de cambios
 
+### 2.3.1
+
+- **Corrección crítica** — la 2.3.0 salió con un error de sintaxis PHP en el enrutador del admin (`->render_spa_shell()` sin `$this`, y `array( , 'render_agent_readiness' )`). Activarla tumbaba **todo el escritorio de WordPress**, no sólo las páginas de Trusteed. Si estás en 2.3.0, actualiza ya. Ahora se comprueba la sintaxis de todos los ficheros PHP del plugin.
+- **Corregido** — la página «Agent Readiness» enseñaba el Trust Center. El montaje de la SPA valida la sección contra una lista blanca y `agent-readiness` nunca se añadió, así que caía en silencio: el comerciante pulsaba «Agent Readiness» y veía otro panel.
+
 ### 2.3.0
 
 - **Nuevo — panel de preparación agéntica.** *¿Me encuentran los agentes?* llega al panel de administración. Contrasta lo que tu tienda anuncia con lo que responde de verdad, en **16 comprobaciones**, y las enseña las dieciséis, no sólo las que fallan. Una comprobación que no se ha podido hacer dice **por qué** (tienda sin conectar, todavía sin pedidos entregados, nada que comparar esta vez) en vez de dejar un hueco que se lee como avería. Ver «El panel de preparación agéntica» más arriba.

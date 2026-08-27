@@ -150,6 +150,11 @@ exists to catch.
 
 ## Changelog
 
+### 2.3.1
+
+- **Critical fix** — 2.3.0 shipped a PHP parse error in the admin router (`->render_spa_shell()` with no `$this`, and `array( , 'render_agent_readiness' )`). Activating it fataled the **entire WordPress admin**, not just the Trusteed pages. Anyone on 2.3.0 should upgrade immediately. Every PHP file in the plugin is now syntax-checked.
+- **Fixed** — the Agent Readiness page rendered the Trust Center instead. The SPA mount validates the section against an allowlist and `agent-readiness` had never been added to it, so it fell back silently: the merchant clicked "Agent Readiness" and got a different panel.
+
 ### 2.3.0
 
 - **New — agent readiness dashboard.** *Can agents find me?* now ships in the admin panel. It contrasts what your store advertises against what it actually answers, in **16 checks**, and shows all sixteen — not only the ones that fail. A check that could not run says **why** (store not connected, no delivered orders yet, nothing to compare this time) instead of leaving a gap that reads like a fault. See "The agent readiness dashboard" above.

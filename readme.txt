@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -137,6 +137,12 @@ Privacy Policy: [https://trusteed.xyz/en/privacy](https://trusteed.xyz/en/privac
 3. AI agent searching products — Claude finding products in your catalog via MCP
 
 == Changelog ==
+
+= 2.3.1 =
+**Critical: 2.3.0 fataled the WordPress admin. Upgrade immediately.**
+
+* Critical fix: 2.3.0 shipped a PHP parse error in the admin router, so activating it broke the entire WordPress admin, not only the Trusteed pages. Every PHP file in the plugin is now syntax-checked before release.
+* Fixed: the Agent Readiness page rendered the Trust Center instead — the SPA mount validates the section against an allowlist that `agent-readiness` had never been added to, so it fell back silently.
 
 = 2.3.0 =
 **The agent readiness dashboard arrives in the admin panel, and the diagnosis stops erring in your favour.**

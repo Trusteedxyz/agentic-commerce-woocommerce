@@ -227,7 +227,7 @@ class Trusteed_Admin_Router {
 			__( 'Agent Readiness', 'trusteed-for-woocommerce' ),
 			self::REQUIRED_CAP,
 			self::SLUG_AGENT_READINESS,
-			array( , 'render_agent_readiness' )
+			array( $this, 'render_agent_readiness' )
 		);
 
 		// 6. Security — keys + audit log combined.
@@ -324,7 +324,7 @@ class Trusteed_Admin_Router {
 	 * @return void
 	 */
 	public function render_agent_readiness(): void {
-		->render_spa_shell( 'agent-readiness' );
+		$this->render_spa_shell( 'agent-readiness' );
 	}
 
 	/**

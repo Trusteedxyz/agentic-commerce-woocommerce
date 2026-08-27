@@ -28,6 +28,9 @@ $allowed_sections = array(
 	'mis-reglas',
 	'seguridad',
 	'agentes',
+	// spec 065 F1 — sin esta entrada la página de readiness caía en silencio a
+	// 'trust-center': el comerciante entraba por «Agent Readiness» y veía otro panel.
+	'agent-readiness',
 );
 $safe_section     = in_array( $section ?? '', $allowed_sections, true ) ? $section : 'trust-center';
 ?>
