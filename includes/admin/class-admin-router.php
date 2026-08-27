@@ -79,6 +79,14 @@ class Trusteed_Admin_Router {
 	private const SLUG_SEGURIDAD = 'amcp-seguridad';
 
 	/**
+	 * Agent Readiness submenu slug (spec 065 F1).
+	 *
+	 * @since 1.3.0
+	 * @var string
+	 */
+	private const SLUG_AGENT_READINESS = 'amcp-agent-readiness';
+
+	/**
 	 * Merchant Center submenu slug.
 	 *
 	 * @since 1.1.0
@@ -212,6 +220,16 @@ class Trusteed_Admin_Router {
 			array( $this, 'render_agentes' )
 		);
 
+		// 5b. Agent Readiness — spec 065 F1: what agents did on this store.
+		add_submenu_page(
+			self::SLUG_INICIO,
+			__( 'Agent Readiness', 'trusteed-for-woocommerce' ),
+			__( 'Agent Readiness', 'trusteed-for-woocommerce' ),
+			self::REQUIRED_CAP,
+			self::SLUG_AGENT_READINESS,
+			array( , 'render_agent_readiness' )
+		);
+
 		// 6. Security — keys + audit log combined.
 		add_submenu_page(
 			self::SLUG_INICIO,
@@ -296,6 +314,17 @@ class Trusteed_Admin_Router {
 	 */
 	public function render_agentes(): void {
 		$this->render_spa_shell( 'agentes' );
+	}
+
+	/**
+	 * Render the Agent Readiness SPA shell (spec 065 F1).
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return void
+	 */
+	public function render_agent_readiness(): void {
+		->render_spa_shell( 'agent-readiness' );
 	}
 
 	/**

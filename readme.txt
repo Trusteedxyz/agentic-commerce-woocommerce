@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.2
+Stable tag: 2.3.0
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -137,6 +137,14 @@ Privacy Policy: [https://trusteed.xyz/en/privacy](https://trusteed.xyz/en/privac
 3. AI agent searching products — Claude finding products in your catalog via MCP
 
 == Changelog ==
+
+= 2.3.0 =
+**The agent readiness dashboard arrives in the admin panel, and the diagnosis stops erring in your favour.**
+
+* New: the agent readiness dashboard ships in the admin panel. It contrasts what your store advertises against what it actually answers, in 16 checks, and shows all sixteen — not only the failures. A check that could not run says why (store not connected, no delivered orders yet, nothing to compare this time) instead of leaving a gap that reads like a fault.
+* Fixed: the diagnosis was written in Spanish inside the API and shown verbatim, so a merchant using the panel in English read English headings above Spanish findings. The checks now emit language-neutral codes and the text is composed when served, in the language you are using.
+* Fixed: check C1 ("you advertise tools your store does not serve") counted the full public catalogue as served when no tool list was configured, reporting 46 of 48 answering when the server actually serves 12. It failed in the flattering direction, which is the one this panel exists to catch.
+* Fixed: check C6 ("you advertise as available something that is switched off") reported a capability as off whenever its flag was unset, including flags that are on by default. It was a false alarm on every store.
 
 = 2.2.2 =
 **Credential-egress hardening, complete uninstall cleanup, and documentation corrected to match the code.**
