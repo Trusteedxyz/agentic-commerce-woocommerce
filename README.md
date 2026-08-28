@@ -10,6 +10,7 @@ Enable new online shoppers, AI agents, to make purchases in your store securely 
 - **Agent blocking**: block potentially dangerous or problematic agents.
 - **Digital currencies**: enables purchases in digital currencies thanks to the X402 protocol.
 - **Peer-to-peer transactions**: enables direct peer-to-peer commerce between agents and merchants.
+- **Agent readiness dashboard**: a live check of whether AI agents can actually buy in your store today — three independent views (what others say, what you promise vs. what you do, what we've observed), so nothing is scored until it's actually verified.
 
 ## Screenshots
 
@@ -23,9 +24,9 @@ Each panel below maps to an item in the **Trusteed** menu inside WooCommerce.
 |----------|--------|-----------------|
 | ![My Rules](assets/screenshots/my-rules.png) | ![Agents](assets/screenshots/agents.png) | ![Merchant Center](assets/screenshots/merchant-center.png) |
 
-| Trust Receipts (My Sales → AI Sales) |
-|--------------------------------------|
-| ![Trust Receipts](assets/screenshots/ai-receipts.png) |
+| Trust Receipts (My Sales → AI Sales) | Agent Readiness |
+|--------------------------------------|------------------|
+| ![Trust Receipts](assets/screenshots/ai-receipts.png) | ![Agent Readiness](assets/screenshots/agent-readiness.png) |
 
 Every agent transaction produces a cryptographically signed **trust receipt** — a tamper-proof record (compatible with eIDAS / eSIGN) listed under **My Sales → AI Sales**. Click any row to see the full detail (agent ID, tool called, input/output hashes, JWS) and download the receipt as a ZIP file. The export is a verifiable proof of agent integrity: useful backup if a buyer claims they never placed the order, but on its own it does not replace the evidence a bank or court may require in a dispute.
 

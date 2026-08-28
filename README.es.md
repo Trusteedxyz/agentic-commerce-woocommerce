@@ -10,6 +10,7 @@ Permite que los nuevos compradores online, los agentes de IA, realicen compras e
 - **Bloqueo de agentes**: bloquea agentes potencialmente peligrosos o problemáticos.
 - **Divisas digitales**: permite compras en divisas digitales gracias al protocolo X402.
 - **Transacciones entre pares**: permite el comercio directo entre pares (peer-to-peer) entre agentes y comercios.
+- **Panel de preparación para agentes**: comprueba en vivo si los agentes de IA pueden comprar hoy en tu tienda — tres vistas independientes (lo que dicen otros, lo que prometes vs. lo que haces, lo que hemos observado), sin fusionarlas en una sola puntuación inventada.
 
 ## Capturas de pantalla
 
@@ -23,9 +24,9 @@ Cada panel de abajo corresponde a un elemento del menú **Trusteed** dentro de W
 |----------|--------|-----------------|
 | ![My Rules](assets/screenshots/my-rules.png) | ![Agents](assets/screenshots/agents.png) | ![Merchant Center](assets/screenshots/merchant-center.png) |
 
-| Recibos de confianza (Mis Ventas → Ventas IA) |
-|--------------------------------------|
-| ![Trust Receipts](assets/screenshots/ai-receipts.png) |
+| Recibos de confianza (Mis Ventas → Ventas IA) | Agent Readiness |
+|--------------------------------------|------------------|
+| ![Trust Receipts](assets/screenshots/ai-receipts.png) | ![Agent Readiness](assets/screenshots/agent-readiness.png) |
 
 Cada transacción de un agente genera un **recibo de confianza** firmado criptográficamente — un registro a prueba de manipulación (compatible con eIDAS / eSIGN) que aparece en **Mis Ventas → Ventas IA**. Haz clic en cualquier fila para ver el detalle completo (ID del agente, herramienta invocada, hashes de entrada/salida, JWS) y descargar el comprobante como ZIP. La exportación es una prueba verificable de la integridad del agente: es un respaldo útil si un comprador afirma que nunca hizo el pedido, pero por sí sola no sustituye la evidencia que un banco o un tribunal pueda exigir en una disputa.
 

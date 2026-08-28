@@ -10,6 +10,7 @@ Permettez aux nouveaux acheteurs en ligne, les agents IA, d'effectuer des achats
 - **Blocage d'agents** : bloquez les agents potentiellement dangereux ou problématiques.
 - **Monnaies numériques** : permet les achats en monnaies numériques grâce au protocole X402.
 - **Transactions pair-à-pair** : permet le commerce direct pair-à-pair entre agents et marchands.
+- **Tableau de bord Agent Readiness** : vérifie en direct si les agents IA peuvent réellement acheter dès aujourd'hui dans votre boutique — trois vues indépendantes (ce que disent les autres, ce que vous promettez vs. ce que vous faites, ce que nous avons observé), sans les fusionner en un score inventé.
 
 ## Captures d'écran
 
@@ -23,9 +24,9 @@ Chaque panneau ci-dessous correspond à un élément du menu **Trusteed** dans W
 |----------|--------|-----------------|
 | ![My Rules](assets/screenshots/my-rules.png) | ![Agents](assets/screenshots/agents.png) | ![Merchant Center](assets/screenshots/merchant-center.png) |
 
-| Reçus de confiance (Mes Ventes → Ventes IA) |
-|--------------------------------------|
-| ![Trust Receipts](assets/screenshots/ai-receipts.png) |
+| Reçus de confiance (Mes Ventes → Ventes IA) | Agent Readiness |
+|--------------------------------------|------------------|
+| ![Trust Receipts](assets/screenshots/ai-receipts.png) | ![Agent Readiness](assets/screenshots/agent-readiness.png) |
 
 Chaque transaction d'un agent génère un **reçu de confiance** signé cryptographiquement — un enregistrement infalsifiable (compatible eIDAS / eSIGN) répertorié sous **Mes Ventes → Ventes IA**. Cliquez sur une ligne pour voir le détail complet (ID de l'agent, outil appelé, hachages d'entrée/sortie, JWS) et télécharger le reçu au format ZIP. L'export est une preuve vérifiable de l'intégrité de l'agent : un appui utile si un acheteur affirme n'avoir jamais passé la commande, mais seul, il ne remplace pas les preuves qu'une banque ou un tribunal peut exiger en cas de litige.
 

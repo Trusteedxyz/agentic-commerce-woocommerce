@@ -10,6 +10,7 @@ Ermöglichen Sie es den neuen Online-Käufern, den KI-Agenten, sicher und zuverl
 - **Agentensperrung**: potenziell gefährliche oder problematische Agenten blockieren.
 - **Digitale Währungen**: ermöglicht Käufe in digitalen Währungen dank des X402-Protokolls.
 - **Peer-to-Peer-Transaktionen**: ermöglicht direkten Peer-to-Peer-Handel zwischen Agenten und Händlern.
+- **Agent-Readiness-Dashboard**: prüft live, ob KI-Agenten heute wirklich in Ihrem Shop einkaufen können — drei unabhängige Ansichten (was andere sagen, was Sie versprechen vs. was Sie tun, was wir beobachtet haben), ohne sie zu einem erfundenen Gesamtwert zu verschmelzen.
 
 ## Screenshots
 
@@ -23,9 +24,9 @@ Jedes Panel unten entspricht einem Eintrag im **Trusteed**-Menü innerhalb von W
 |----------|--------|-----------------|
 | ![My Rules](assets/screenshots/my-rules.png) | ![Agents](assets/screenshots/agents.png) | ![Merchant Center](assets/screenshots/merchant-center.png) |
 
-| Vertrauensbelege (Meine Verkäufe → KI-Verkäufe) |
-|--------------------------------------|
-| ![Trust Receipts](assets/screenshots/ai-receipts.png) |
+| Vertrauensbelege (Meine Verkäufe → KI-Verkäufe) | Agent Readiness |
+|--------------------------------------|------------------|
+| ![Trust Receipts](assets/screenshots/ai-receipts.png) | ![Agent Readiness](assets/screenshots/agent-readiness.png) |
 
 Jede Agententransaktion erzeugt einen kryptografisch signierten **Vertrauensbeleg (Trust Receipt)** — einen manipulationssicheren Datensatz (kompatibel mit eIDAS / eSIGN), der unter **Meine Verkäufe → KI-Verkäufe** aufgeführt wird. Klicke auf eine Zeile, um alle Details zu sehen (Agenten-ID, aufgerufenes Tool, Input-/Output-Hashes, JWS) und den Beleg als ZIP herunterzuladen. Der Export ist ein überprüfbarer Nachweis der Agentenintegrität: eine nützliche Absicherung, wenn ein Käufer behauptet, die Bestellung nie aufgegeben zu haben — er ersetzt jedoch für sich allein nicht die Nachweise, die eine Bank oder ein Gericht im Streitfall verlangen kann.
 
