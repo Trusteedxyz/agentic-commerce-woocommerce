@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.3.1
+Stable tag: 2.3.2
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -137,6 +137,14 @@ Privacy Policy: [https://trusteed.xyz/en/privacy](https://trusteed.xyz/en/privac
 3. AI agent searching products — Claude finding products in your catalog via MCP
 
 == Changelog ==
+
+= 2.3.2 =
+**The agent readiness page had its markup but no stylesheet, and the diagnosis could come back in the wrong language.**
+
+* Fixed: the agent readiness page shipped without its stylesheet, so the panel rendered unstyled.
+* Fixed: the panel could show its shell in one language and the diagnosis in another. The resolved language now travels with the texts instead of being detected twice.
+* New: findings now carry a link to where each one is fixed, and the merchant's own claims (delivery promise and the rest) appear with the backing each one has.
+* Changed: a store with no run yet reads as "checking" instead of "checked once a day" — opening the panel already triggers the first run in the background.
 
 = 2.3.1 =
 **Critical: 2.3.0 fataled the WordPress admin. Upgrade immediately.**

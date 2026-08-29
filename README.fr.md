@@ -151,6 +151,13 @@ que cette page existe pour débusquer.
 
 ## Journal des modifications
 
+### 2.3.2
+
+- Corrigé : la page de disponibilité pour les agents était publiée sans sa feuille de style, le panneau s'affichait donc sans mise en forme.
+- Corrigé : le panneau pouvait afficher son interface dans une langue et le diagnostic dans une autre. La langue résolue accompagne désormais les textes au lieu d'être détectée deux fois.
+- Nouveau : chaque constat renvoie vers l'endroit où le corriger, et les affirmations du marchand — le délai de livraison et les autres — apparaissent avec les éléments qui les étayent.
+- Modifié : une boutique sans aucune vérification affiche « vérification en cours » au lieu de « vérifié une fois par jour » : ouvrir le panneau déclenche déjà la première vérification en arrière-plan.
+
 ### 2.3.1
 
 - **Correction critique** — la 2.3.0 comportait une erreur de syntaxe PHP dans le routeur d'administration (`->render_spa_shell()` sans `$this`, et `array( , 'render_agent_readiness' )`). Son activation mettait en panne **tout l'administration WordPress**, pas seulement les pages Trusteed. Si vous êtes en 2.3.0, mettez à jour immédiatement. Tous les fichiers PHP du plugin sont désormais vérifiés syntaxiquement.

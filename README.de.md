@@ -152,6 +152,13 @@ genau die Selbsttäuschung, die diese Seite aufdecken soll.
 
 ## Änderungsprotokoll
 
+### 2.3.2
+
+- Behoben: Die Seite zur Agenten-Bereitschaft wurde ohne ihr Stylesheet ausgeliefert, sodass das Panel unformatiert dargestellt wurde.
+- Behoben: Das Panel konnte die Oberfläche in einer Sprache und die Diagnose in einer anderen anzeigen. Die ermittelte Sprache wird jetzt zusammen mit den Texten weitergereicht, statt zweimal getrennt erkannt zu werden.
+- Neu: Jeder Befund enthält einen Link dorthin, wo er behoben wird, und die Zusagen des Händlers — die Lieferzeit und die übrigen — erscheinen mit dem jeweils vorhandenen Beleg.
+- Geändert: Ein Shop ohne bisherige Prüfung wird als „wird geprüft“ angezeigt statt als „wird einmal täglich geprüft“: Das Öffnen des Panels startet die erste Prüfung bereits im Hintergrund.
+
 ### 2.3.1
 
 - **Kritische Korrektur** — 2.3.0 enthielt einen PHP-Syntaxfehler im Admin-Router (`->render_spa_shell()` ohne `$this` sowie `array( , 'render_agent_readiness' )`). Die Aktivierung legte **den gesamten WordPress-Adminbereich** lahm, nicht nur die Trusteed-Seiten. Wer 2.3.0 einsetzt, sollte sofort aktualisieren. Alle PHP-Dateien des Plugins werden jetzt auf Syntax geprüft.

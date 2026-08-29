@@ -151,6 +151,13 @@ exists to catch.
 
 ## Changelog
 
+### 2.3.2
+
+- Fixed: the agent readiness page shipped without its stylesheet, so the panel rendered unstyled.
+- Fixed: the panel could show its shell in one language and the diagnosis in another. The resolved language now travels with the texts instead of being detected twice.
+- New: every finding carries a link to where it is fixed, and the merchant's own claims — the delivery promise and the rest — appear with the backing each one has.
+- Changed: a store with no run yet reads as "checking" instead of "checked once a day": opening the panel already triggers the first run in the background.
+
 ### 2.3.1
 
 - **Critical fix** — 2.3.0 shipped a PHP parse error in the admin router (`->render_spa_shell()` with no `$this`, and `array( , 'render_agent_readiness' )`). Activating it fataled the **entire WordPress admin**, not just the Trusteed pages. Anyone on 2.3.0 should upgrade immediately. Every PHP file in the plugin is now syntax-checked.

@@ -151,6 +151,13 @@ esta página existe para cazar.
 
 ## Historial de cambios
 
+### 2.3.2
+
+- Corregido: la página de disponibilidad para agentes se publicaba sin su hoja de estilos, así que el panel salía sin formato.
+- Corregido: el panel podía mostrar la carcasa en un idioma y el diagnóstico en otro. El idioma resuelto viaja ahora junto a los textos, en vez de detectarse dos veces por separado.
+- Nuevo: cada hallazgo lleva un enlace a donde se corrige, y las afirmaciones del comercio —el plazo de entrega y las demás— aparecen con el respaldo que tiene cada una.
+- Cambiado: una tienda sin ninguna comprobación todavía se lee como «comprobando» en lugar de «se comprueba una vez al día»: abrir el panel ya lanza la primera comprobación en segundo plano.
+
 ### 2.3.1
 
 - **Corrección crítica** — la 2.3.0 salió con un error de sintaxis PHP en el enrutador del admin (`->render_spa_shell()` sin `$this`, y `array( , 'render_agent_readiness' )`). Activarla tumbaba **todo el escritorio de WordPress**, no sólo las páginas de Trusteed. Si estás en 2.3.0, actualiza ya. Ahora se comprueba la sintaxis de todos los ficheros PHP del plugin.
