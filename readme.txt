@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.3.2
+Stable tag: 2.3.3
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -137,6 +137,13 @@ Privacy Policy: [https://trusteed.xyz/en/privacy](https://trusteed.xyz/en/privac
 3. AI agent searching products — Claude finding products in your catalog via MCP
 
 == Changelog ==
+
+= 2.3.3 =
+**Settings now lets you choose which tools your store serves to agents.**
+
+* New: Settings now lets you choose which tools your store serves to agents. If you never saved a list, the panel tells you that what you serve is the basic set the platform ships with — not a choice of yours.
+* New: a button to re-run the readiness check without waiting for the daily sweep, and the panel remembers what changed since the previous run.
+* Changed: our own outages no longer count as your store's mismatches. The panel keeps them separate, because there is nothing you can do about them.
 
 = 2.3.2 =
 **The agent readiness page had its markup but no stylesheet, and the diagnosis could come back in the wrong language.**
