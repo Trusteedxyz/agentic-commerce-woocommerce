@@ -151,6 +151,11 @@ exists to catch.
 
 ## Changelog
 
+### 2.3.4
+
+- New: a check that could not run now says why in one of four groups — nothing to do, needs configuration, waiting for data, or one of our own checks failed — instead of one flat list of unexplained grays.
+- New: the panel now shows which of our servers answered your request, a short opaque label. Useful when comparing what you see here with what support sees; it never reveals a hostname or service name.
+
 ### 2.3.3
 
 - New: Settings now lets you choose which tools your store serves to agents. If you never saved a list, the panel tells you that what you serve is the basic set the platform ships with — not a choice of yours.
