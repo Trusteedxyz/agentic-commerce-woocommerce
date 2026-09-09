@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.3.4
+Stable tag: 2.3.5
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -137,6 +137,11 @@ Privacy Policy: [https://trusteed.xyz/en/privacy](https://trusteed.xyz/en/privac
 3. AI agent searching products — Claude finding products in your catalog via MCP
 
 == Changelog ==
+
+= 2.3.5 =
+**Error messages from Trusteed now reach you as sentences, not codes.**
+
+* Fixed: when Trusteed rejected a request, the plugin showed you its machine code instead of the explanation that came with it — you saw "API error 409: wrong_deployment" where the server had actually sent a sentence telling you what happened and what to do about it. The sentence now wins; the code is still available to the plugin.
 
 = 2.3.4 =
 **When a readiness check can't run, the panel now says what would unlock it.**

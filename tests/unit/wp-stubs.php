@@ -186,11 +186,22 @@ if (!class_exists('WP_Error')) {
         private $code;
         /** @var string */
         private $message;
+        /**
+         * Tercer argumento del WP_Error real. Este stub lo DESCARTABA, así que
+         * cualquier aserto sobre los datos de un error miraba a la nada — y el
+         * plugin sí los usa: `parse_response()` mete ahí `status`, `body` y
+         * `headers`, que es de donde debe leer el código de error quien
+         * ramifique por él (2026-09-09).
+         *
+         * @var mixed
+         */
+        private $data;
 
-        public function __construct(string $code = '', string $message = '')
+        public function __construct(string $code = '', string $message = '', $data = '')
         {
             $this->code    = $code;
             $this->message = $message;
+            $this->data    = $data;
         }
 
         public function get_error_code(): string
@@ -201,6 +212,14 @@ if (!class_exists('WP_Error')) {
         public function get_error_message(): string
         {
             return $this->message;
+        }
+
+        /**
+         * @return mixed
+         */
+        public function get_error_data()
+        {
+            return $this->data;
         }
     }
 }

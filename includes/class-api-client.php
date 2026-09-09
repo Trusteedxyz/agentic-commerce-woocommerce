@@ -711,11 +711,21 @@ class Trusteed_Api_Client {
 		}
 
 		if ( $status_code >= 400 ) {
+			// 2026-09-09 (auditoría de onboarding, hueco A5) — este orden estaba
+			// invertido: `error` es el código estable por el que ramifica una
+			// máquina (`wrong_deployment`, `invalid_store_url`…) y `message` es
+			// la frase escrita para una persona. Con `error` primero, un rechazo
+			// que explica que la tienda NO quedó registrada y a qué instalación
+			// ir se le enseñaba al comerciante como «API error 409:
+			// wrong_deployment».
+			//
+			// El código NO se pierde: el cuerpo entero sigue viajando en los
+			// datos del WP_Error, que es de donde debe leerlo el que ramifique.
 			$error_message = '';
-			if ( is_array( $decoded_body ) && isset( $decoded_body['error'] ) ) {
-				$error_message = sanitize_text_field( $decoded_body['error'] );
-			} elseif ( is_array( $decoded_body ) && isset( $decoded_body['message'] ) ) {
+			if ( is_array( $decoded_body ) && ! empty( $decoded_body['message'] ) ) {
 				$error_message = sanitize_text_field( $decoded_body['message'] );
+			} elseif ( is_array( $decoded_body ) && isset( $decoded_body['error'] ) ) {
+				$error_message = sanitize_text_field( $decoded_body['error'] );
 			}
 
 			if ( ! empty( $error_message ) ) {
