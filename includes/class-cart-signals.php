@@ -428,16 +428,21 @@ final class Trusteed_Cart_Signals
      * qty × unit price in store currency. Converts to integer cents (×100).
      * HIT first line where line_total_cents > $maxCents. Missing/null cap → PASS.
      *
-     * Note: catalog source-of-truth uses `maxCentsPerLine`; this WC helper
-     * accepts `maxCents` per task spec (Sprint E.3 gap closure).
+     * Parameter key (corrected 2026-07-30, same fix as the Magento and
+     * PrestaShop connectors): the canonical name is `maxCentsPerLine`, and it
+     * is the only one the merchant panel's strict schema accepts. This helper
+     * read `maxCents` — copied from R035, whose cap really is called that — so
+     * a merchant-configured cap would never have reached it. `maxCents` is
+     * still honoured as a fallback so any caller passing the old key keeps
+     * working.
      *
      * @param WC_Cart $cart
-     * @param array{maxCents?:int|null} $params
+     * @param array{maxCentsPerLine?:int|null,maxCents?:int|null} $params
      * @return array{hit:bool,reason?:string}
      */
     public static function evaluateR036MaxLineItemValue(WC_Cart $cart, array $params): array
     {
-        $cap = $params['maxCents'] ?? null;
+        $cap = $params['maxCentsPerLine'] ?? ($params['maxCents'] ?? null);
         if ($cap === null) {
             return ['hit' => false];
         }

@@ -5,11 +5,12 @@
 Les agents IA sont un nouveau type d'acheteur en ligne. Avec Trusteed, le réseau qui met en relation les entreprises et les agents, ils peuvent acheter dans votre boutique selon vos conditions.
 
 - Définissez vos règles métier : qui peut acheter, jusqu'à quel montant, quelles catégories vous ne proposez pas aux agents, des limites de prix, des niveaux de stock qui vous protègent des agents frauduleux, et plus encore.
-- Recevez des reçus signés. Chaque transaction produit un reçu signé cryptographiquement, dont toute altération est détectable, et que vous pouvez utiliser comme preuve de l'achat en cas de litige. Aligné sur eIDAS (UE) et sur eSIGN (États-Unis).
+- Recevez des reçus signés. Chaque transaction produit un reçu signé cryptographiquement, dont toute altération est détectable, et qui enregistre ce que l'agent a réellement fait, une preuve vérifiable de l'intégrité de l'agent. Aligné sur eIDAS (UE) et sur eSIGN (États-Unis), mais pas encore une signature ni un horodatage *qualifiés* : seul, il n'est donc pas une preuve de litige prête à être présentée à une banque ou à un tribunal.
 - Voyez ce que font les agents : combien ils dépensent, ce qu'ils achètent et à quelle fréquence.
 - Bloquez les agents qui semblent dangereux ou qui posent problème.
 - Acceptez des achats en monnaies numériques grâce au protocole X402.
 - Laissez agents et marchands échanger directement, de pair à pair.
+- Vérifiez si les agents peuvent acheter chez vous. Le tableau de bord Agent Readiness teste en direct si les agents IA peuvent réellement acheter dans votre boutique aujourd'hui. Il donne trois vues indépendantes (ce que disent les autres, ce que vous promettez par rapport à ce que vous faites, ce que nous avons observé), et rien n'est noté tant que ce n'est pas vérifié.
 
 ## Captures d'écran
 
@@ -23,11 +24,11 @@ Chaque panneau ci-dessous correspond à un élément du menu **Trusteed** dans W
 |----------|--------|-----------------|
 | ![My Rules](assets/screenshots/my-rules.png) | ![Agents](assets/screenshots/agents.png) | ![Merchant Center](assets/screenshots/merchant-center.png) |
 
-| Reçus de confiance (Mes Ventes → Ventes IA) |
-|--------------------------------------|
-| ![Trust Receipts](assets/screenshots/ai-receipts.png) |
+| Reçus de confiance (Mes Ventes → Ventes IA) | Agent Readiness |
+|--------------------------------------|------------------|
+| ![Trust Receipts](assets/screenshots/ai-receipts.png) | ![Agent Readiness](assets/screenshots/agent-readiness.png) |
 
-Chaque transaction d'un agent génère un reçu de confiance signé, un enregistrement dont toute altération est détectable (aligné sur eIDAS et sur eSIGN) répertorié sous **Mes Ventes → Ventes IA**. Cliquez sur une ligne pour voir le détail : ID de l'agent, outil appelé, hachages d'entrée et de sortie, JWS. Vous pouvez aussi télécharger le reçu au format ZIP et le conserver en cas de litige.
+Chaque transaction d'un agent génère un reçu de confiance signé, un enregistrement dont toute altération est détectable (aligné sur eIDAS et sur eSIGN) répertorié sous **Mes Ventes → Ventes IA**. Cliquez sur une ligne pour voir le détail : ID de l'agent, outil appelé, hachages d'entrée et de sortie, JWS. Vous pouvez aussi télécharger le reçu au format ZIP. L'export est une preuve vérifiable de l'intégrité de l'agent. Il sert d'appui si un acheteur affirme n'avoir jamais passé la commande, mais seul, il ne remplace pas les preuves qu'une banque ou un tribunal peut exiger en cas de litige.
 
 ## Fonctionnalités
 
@@ -37,15 +38,15 @@ Le plugin relie votre catalogue de produits aux agents d'achat IA grâce au **Mo
 - Synchronisation automatique du catalogue. Les produits se synchronisent via les hooks WooCommerce lorsque vous les créez, les modifiez ou les supprimez, y compris les changements de stock, et vous pouvez lancer une synchronisation complète manuelle depuis la page des réglages. Seules les données publiques du catalogue quittent votre boutique (titres, descriptions, prix, images, catégories, stock), jamais les données personnelles des clients, les commandes ni les informations de paiement.
 - Vérification du token de l'agent : `create_cart` transmet le token JWS de l'agent au checkout, de sorte que la vérification de la signature et du rejeu (R002) s'exécute dans le flux normal.
 - Porte d'application (HITL) : approbation humaine (human-in-the-loop) configurable pour les commandes d'agents de forte valeur.
-- Renforcement SSRF : les URLs de la boutique et de l'API sont vérifiées par rapport à une liste blanche exacte d'hôtes et aux listes de blocage RFC1918, IPv6 ULA et IMDS cloud.
+- Renforcement SSRF : l'URL de base de l'API qui porte vos identifiants doit être en HTTPS et figurer sur une liste blanche exacte d'hôtes. Les adresses IMDS du cloud (`169.254.0.0/16`, `100.100.100.200`, `metadata.google.internal`), IPv6 unique-local (`fc00::/7`) et link-local (`fe80::/10`) sont bloquées dans tous les environnements. Loopback et RFC1918 ne fonctionnent qu'après activation explicite de `TRUSTEED_ALLOW_LOCAL_API_BASE`, désactivé par défaut.
 - Comportements par défaut fail-closed : rien n'est envoyé si le secret d'application est vide, et pour vous reconnecter il faut prouver que vous êtes propriétaire du domaine, ce qui protège contre le détournement entre marchands.
 
 ## Compatibilité
 
 | Composant | Compatible avec |
 |-----------|-----------|
-| WordPress | 6.0 – 6.9 |
-| WooCommerce | 8.0 – 10.6 |
+| WordPress | 6.0 – 7.0 |
+| WooCommerce | 8.0 – 11.0 |
 | PHP | 7.4+ (testé sur 8.0–8.3) |
 
 ## Prérequis
@@ -59,10 +60,10 @@ Le plugin relie votre catalogue de produits aux agents d'achat IA grâce au **Mo
 ### Téléversement manuel (recommandé)
 
 1. **Téléchargez le `.zip` installable** depuis la dernière Release GitHub :
-   [**⬇ trusteed-agentic-commerce-woocommerce-2.1.0.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest/download/trusteed-agentic-commerce-woocommerce-2.1.0.zip)
+   [**⬇ Dernière release : trusteed-agentic-commerce-woocommerce-&lt;version&gt;.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest)
    ou parcourez toutes les versions sur la [page des Releases](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
 2. Dans votre administration WordPress : **Extensions → Ajouter → Téléverser une extension**.
-3. Sélectionnez le fichier téléchargé `trusteed-agentic-commerce-woocommerce-2.1.0.zip` et cliquez sur **Installer maintenant**.
+3. Sélectionnez le fichier `.zip` téléchargé et cliquez sur **Installer maintenant**.
 4. Cliquez sur **Activer**.
 
 ### Depuis les sources (compiler le zip vous-même)
@@ -76,9 +77,9 @@ bash build-zip.sh        # outputs dist/trusteed-agentic-commerce-woocommerce-<v
 ## Configuration
 
 1. Connectez-vous à votre **administration** WordPress.
-2. Allez dans **WooCommerce → Trusteed** (ou dans l'élément de menu **Trusteed**).
-3. Saisissez votre **clé API** depuis [app.trusteed.xyz/settings](https://app.trusteed.xyz/settings).
-4. Cliquez sur **Enregistrer et connecter**. Le plugin teste la connexion, enregistre votre boutique et synchronise votre catalogue.
+2. Allez dans **WooCommerce → Trusteed** (ou l'élément de menu **Trusteed**).
+3. Saisissez votre e-mail et votre mot de passe Trusteed, puis cliquez sur **Connect my store**. Si vous n'avez pas encore de compte, il est créé pour vous. Si vous préférez ne pas utiliser de mot de passe, cliquez sur **Connect with API key** et collez votre clé API depuis [trusteed.xyz/dashboard/settings](https://trusteed.xyz/dashboard/settings). L'interface du plugin est en anglais, sauf sur un site WordPress en espagnol.
+4. Le plugin enregistre votre boutique et synchronise votre catalogue. **Test connection** vérifie la liaison et **Sync catalog now** lance une synchronisation complète quand vous le souhaitez.
 
 Une fois connecté, tout agent compatible MCP (Claude, ChatGPT, ou un agent personnalisé créé avec LangChain, CrewAI, Vercel AI SDK et des outils similaires) peut rechercher vos produits, parcourir les catégories, lire les fiches produit et constituer des paniers. Lorsque le client est prêt à acheter, l'agent l'envoie vers votre checkout natif WooCommerce, et vos passerelles de paiement existantes (Stripe, PayPal, …) encaissent le paiement.
 
@@ -90,9 +91,122 @@ Le guide complet destiné aux marchands se trouve dans [`docs/MERCHANT_INSTALLAT
 
 **Quels agents sont pris en charge ?** Tout agent compatible MCP : Claude (Anthropic), ChatGPT (OpenAI), et des agents personnalisés créés avec LangChain, CrewAI, Vercel AI SDK ou tout autre framework qui prend en charge le Model Context Protocol.
 
-**Cela ralentit-il ma boutique ?** Il ajoute une requête au checkout. Le plugin communique aussi avec Trusteed quand votre catalogue change et quand un agent agit sur votre boutique. Quand un client passe une commande, agent ou personne, le plugin demande à Trusteed d'évaluer vos règles. Cette requête expire au bout de 5 secondes. Si Trusteed est injoignable, le plugin applique vos règles issues du dernier snapshot signé qu'il a récupéré. Si cela n'est pas possible non plus, le résultat suit le mode d'échec que vous avez choisi dans les réglages du plugin : bloquer la commande ou l'autoriser.
+**Cela ralentit-il ma boutique ?** Il ajoute une requête au checkout. Le plugin communique aussi avec Trusteed quand votre catalogue change et quand un agent agit sur votre boutique. Quand un client passe une commande, agent ou personne, le plugin demande à Trusteed d'évaluer vos règles. Cette requête expire au bout de 5 secondes. Si Trusteed est injoignable, le plugin applique vos règles issues du dernier snapshot signé qu'il a récupéré. Si cela n'est pas possible non plus, le résultat suit l'option `trusteed_failure_mode` : `enforce` (la valeur par défaut) bloque la commande et `observe` l'autorise.
+
+## Le tableau de bord de préparation agentique
+
+**Les agents me trouvent-ils ?** est une page de votre panneau d'administration
+qui répond à une seule question : lorsqu'un agent d'achat IA visite votre
+boutique, obtient-il ce que vous croyez qu'il obtient ?
+
+Aucune note unique n'est affichée. Trois colonnes, jamais moyennées, car elles
+répondent à des questions différentes et peuvent légitimement se contredire :
+
+| Colonne | Ce que c'est |
+| --- | --- |
+| **Ce que dit un tiers** | Le verdict d'un scanner externe, cité tel quel. Jamais réinterprété dans une échelle qui serait la nôtre : dès que l'on convertit la note d'un autre, on corrige sa propre copie |
+| **Ce que vous dites correspond-il à ce que vous faites ?** | 16 vérifications qui confrontent ce que votre boutique **annonce** à ce qu'elle **répond réellement**. C'est la partie qu'aucun scanner externe ne peut faire : elle exige vos identifiants |
+| **Ce que nous avons vu passer** | Le trafic agentique réel sur la période choisie : quels agents sont venus, quels outils ils ont utilisés, jusqu'où ils sont allés et où ils ont échoué |
+
+Une vérification qui n'a pas pu être faite est signalée comme **non vérifiée**,
+avec son motif. Elle n'est jamais écartée en silence ni comptée comme réussie.
+« Nous n'avons pas pu regarder » et « nous avons regardé et tout allait bien »
+sont deux réponses distinctes, et la page indique laquelle s'applique.
+
+### Ce que vérifie chaque contrôle
+
+| Contrôle | Ce qu'il détecte |
+| --- | --- |
+| C1 | Vous annoncez des outils que votre boutique ne sert pas |
+| C2 | Vous annoncez un protocole de paiement dont le point de terminaison ne répond pas |
+| C3 | Le prix du catalogue n'est pas le prix facturé |
+| C4 | Annoncé disponible alors que ce n'est pas le cas |
+| C5 | Votre politique de retour dit des choses différentes selon la source |
+| C6 | Vous annoncez comme disponible quelque chose qui est désactivé |
+| C7 | Des règles activées qui ne peuvent pas agir faute de données |
+| C8 | Vos règles observent mais ne bloquent pas |
+| C9 | La méthode d'identification que vous annoncez ne fonctionne pas |
+| C10 | Un agent peut acheter n'importe quel montant sans votre confirmation |
+| C11 | Le point de vente utilise des règles expirées |
+| C12 | Des opérations sans reçu signé |
+| C13 | Des adresses annoncées qui ne fonctionnent pas |
+| C14 | Les agents voient des données périmées de votre boutique |
+| C15 | Des justificatifs d'identité sur le point d'expirer |
+| C16 | Le délai de livraison promis n'est pas celui que vous tenez |
+
+Certains contrôles ont besoin de plus que vos réglages, et la page le dit au lieu
+de laisser un vide :
+
+- **Nécessite une boutique connectée** (C3, C4, C5, C14) : ils comparent avec
+  votre catalogue réel, et sans identifiants il n'y a rien à comparer.
+- **Nécessite des commandes livrées** (C16) : il compare ce que vous promettez à
+  ce que vous avez réellement tenu, ce qui est impossible sans historique.
+- **Rien à comparer cette fois** : C12, par exemple, n'a rien à vérifier tant
+  qu'un agent n'a pas réellement finalisé un achat. Ce n'est pas un échec.
+
+Les contrôles s'exécutent une fois par jour et la page affiche le résultat **avec
+sa date**, pour qu'un verdict d'hier ressemble à un verdict d'hier. Un « tout va
+bien » mis en cache et présenté comme actuel serait exactement l'auto-illusion
+que cette page existe pour débusquer.
 
 ## Journal des modifications
+
+### 2.3.4
+
+- Nouveau : lorsqu'une vérification n'a pas pu s'exécuter, le panneau explique désormais ce qui la débloquerait — rien à faire, configuration nécessaire, en attente de données, ou l'une de nos propres vérifications a échoué — au lieu d'une liste plate de gris inexpliqués.
+- Nouveau : le panneau indique désormais quel serveur a répondu à votre requête, une étiquette courte et opaque. Utile pour comparer ce que vous voyez ici avec ce que voit le support ; elle ne révèle jamais un nom d'hôte ou de service.
+
+### 2.3.3
+
+- Nouveau : les Réglages vous permettent désormais de choisir les outils que votre boutique propose aux agents. Si vous n'avez jamais enregistré de liste, le panneau vous indique que ce qui est proposé est l'ensemble de base fourni par la plateforme, et non votre choix.
+- Nouveau : un bouton pour relancer la vérification sans attendre le balayage quotidien, et le panneau retient ce qui a changé depuis la vérification précédente.
+- Modifié : nos propres pannes ne comptent plus comme des incohérences de votre boutique. Le panneau les sépare, car vous n'y pouvez rien.
+
+### 2.3.2
+
+- Corrigé : la page de disponibilité pour les agents était publiée sans sa feuille de style, le panneau s'affichait donc sans mise en forme.
+- Corrigé : le panneau pouvait afficher son interface dans une langue et le diagnostic dans une autre. La langue résolue accompagne désormais les textes au lieu d'être détectée deux fois.
+- Nouveau : chaque constat renvoie vers l'endroit où le corriger, et les affirmations du marchand — le délai de livraison et les autres — apparaissent avec les éléments qui les étayent.
+- Modifié : une boutique sans aucune vérification affiche « vérification en cours » au lieu de « vérifié une fois par jour » : ouvrir le panneau déclenche déjà la première vérification en arrière-plan.
+
+### 2.3.1
+
+- Correction critique : la 2.3.0 comportait une erreur de syntaxe PHP dans le routeur d'administration (`->render_spa_shell()` sans `$this`, et `array( , 'render_agent_readiness' )`). Son activation mettait en panne **tout l'administration WordPress**, pas seulement les pages Trusteed. Si vous êtes en 2.3.0, mettez à jour immédiatement. Tous les fichiers PHP du plugin sont désormais vérifiés syntaxiquement.
+- Corrigé : la page « Agent Readiness » affichait le Trust Center. Le montage de la SPA valide la section contre une liste blanche où `agent-readiness` manquait, avec repli silencieux : le marchand cliquait « Agent Readiness » et voyait un autre panneau.
+
+### 2.3.0
+
+- **Nouveau — tableau de bord de préparation agentique.** *Les agents me trouvent-ils ?* arrive dans le panneau d'administration. Il confronte ce que votre boutique annonce à ce qu'elle répond réellement, en **16 vérifications**, et les affiche toutes les seize, pas seulement celles qui échouent. Une vérification impossible indique **pourquoi** (boutique non connectée, aucune commande livrée pour l'instant, rien à comparer cette fois) au lieu de laisser un vide qui ressemble à une panne. Voir « Le tableau de bord de préparation agentique » ci-dessus.
+- Corrigé : le diagnostic était rédigé en espagnol dans l'API et affiché tel quel : un marchand utilisant le panneau en anglais lisait des titres anglais au-dessus de constats espagnols. Les vérifications émettent désormais des codes neutres et le texte est composé au moment de servir, dans votre langue.
+- Corrigé : la vérification C1 (« vous annoncez des outils que votre boutique ne sert pas ») considérait tout le catalogue public comme servi en l'absence de liste configurée : elle annonçait 46 sur 48 alors que le serveur en sert 12. L'erreur allait dans le sens flatteur, précisément celui que ce tableau de bord doit débusquer.
+- Corrigé : la vérification C6 (« vous annoncez comme disponible quelque chose qui est désactivé ») signalait une capacité comme désactivée dès que son indicateur n'était pas défini, y compris pour ceux activés par défaut. C'était une fausse alerte sur toutes les boutiques.
+
+### 2.2.2
+
+- Correctif de sécurité : le client API acceptait une URL de base en loopback ou dans une plage privée RFC1918 (`10.*`, `172.16–31.*`, `192.168.*`, `localhost`, `127.*`) dans **tous** les environnements, y compris en HTTP simple. Une installation dont l'URL d'API aurait été redirigée enverrait ses identifiants `X-AgenticMCP-Key` vers une adresse interne. Ce mode développement doit désormais être activé explicitement et est désactivé par défaut : uniquement via `TRUSTEED_ALLOW_LOCAL_API_BASE` ou le type d'environnement WordPress `local` — la même protection que `Trusteed_Token_Broker` appliquait déjà via `WP_DEBUG` et que ce client avait perdue.
+- Correctif de sécurité : les métadonnées d'instance cloud et les plages IPv6 internes sont maintenant bloquées dans tous les environnements, *y compris* sous le mode développement qui les réouvrait toutes : `169.254.0.0/16` (IMDS), Alibaba `100.100.100.200`, `metadata.google.internal`, unique-local `fc00::/7`, link-local `fe80::/10`. Elles renvoient en outre leur propre code d'erreur au lieu du message trompeur « configurez une URL HTTPS ».
+- Corrigé : les hôtes IPv6 ne correspondaient à aucune vérification : `parse_url()` les renvoie entre crochets (`[::1]`), l'entrée loopback `::1` était donc du code mort.
+- Correctif de confidentialité : la désinstallation laissait 21 lignes d'options derrière elle, dont trois secrets chiffrés (`trusteed_embed_wp_secret`, `trusteed_enforcement_hmac_secret`, `trusteed_woo_webhook_secret`) et les alias hérités `amcp_*` que l'accesseur d'options lit toujours en repli — une réinstallation pouvait ainsi ressusciter un ancien secret. `uninstall.php` nettoie désormais les trois espaces de noms ainsi que les transients de snapshot et JWKS. Un nouveau test parcourt les sources à la recherche de toute clé d'option inscriptible et échoue si la liste de désinstallation prend du retard.
+- Correctif de documentation : les reçus de confiance étaient présentés comme une « preuve de la transaction réelle en cas de litige ». Le produit lui-même dit l'inverse : une preuve vérifiable d'intégrité, pas une preuve de litige prête pour une banque ou un tribunal. Corrigé en conséquence.
+- Correctif de documentation : la FAQ de désactivation affirmait que désactiver déconnecte la boutique et qu'aucune donnée résiduelle ne reste sur nos serveurs. Désactiver n'a aucun effet, et la déconnexion conserve l'enregistrement de la boutique et les produits synchronisés. Corrigé, avec la procédure de demande de suppression documentée.
+- Correctif de documentation : le catalogue était décrit comme synchronisant « variantes et avis » ; ni l'un ni l'autre n'est envoyé. La liste des champs transmis est maintenant exacte.
+- Correctif de documentation : `Tested up to` / `WC tested up to` divergeaient entre `readme.txt` (6.9 / 10.6) et l'en-tête du plugin (6.7 / 9.5). Les deux indiquent désormais 6.9 / 10.6. Les tests automatisés s'exécutent sur WordPress 6.8 avec la dernière WooCommerce stable sur PHP 8.1–8.2.
+- Correctif de documentation : liens 404 réparés : `/developers`, `/privacy` et `/terms` nécessitent le préfixe `/en/`, et `/support` n'existe pas (remplacé par le formulaire de contact et les issues GitHub).
+
+### 2.2.1
+
+- Corrigé : `browse_categories` envoyait la même chaîne encadrée de délimiteurs au canal lisible par machine et au canal narré. `guardMerchantField` encadre le texte marchand par défaut avec `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>` pour qu'un agent distingue « ceci est une donnée marchande, pas une instruction » — mais l'outil réutilisait cette même chaîne déjà encadrée pour `structuredContent`, si bien qu'une catégorie nommée « Baskets » apparaissait sous la forme `<<<MERCHANT_CONTENT_START>>>Baskets<<<MERCHANT_CONTENT_END>>>` dans le canal machine. `structuredContent` reçoit désormais la valeur non encadrée ; les délimiteurs ne restent que là où ils remplissent leur rôle, dans la narration.
+- Corrigé : la règle R047 (montant minimum de contribution) n'avait pas de champ de formulaire dans le panneau d'administration ; ses paramètres existaient dans le schéma mais ne pouvaient être définis que via l'API.
+- Corrigé : `MerchantCheckoutConfig` disposait d'un texte traduit pour un état vide (`noRails`, présent dans `en.ts` et `es.ts`) que le composant n'affichait jamais, si bien qu'un marchand sans moyen de paiement configuré voyait une liste vide sans explication.
+- Corrigé : le bundle du panneau d'administration (`assets/admin-spa/`) était distribué non minifié : 869 Ko / 25 064 lignes au lieu des 490 Ko / 41 lignes que produit réellement la commande de build documentée. Reconstruit depuis la source avec un nom de fichier de sortie stable (`admin-spa.js`), comme pour les trois autres connecteurs de plateforme.
+
+### 2.2.0
+
+- Correctif de sécurité : le vérificateur de jetons d'agent traitait `exp` et `iat` comme facultatifs : les deux contrôles dépendaient de `> 0`, si bien qu'un jeton omettant simplement le claim échappait entièrement à la vérification. Sans `exp` il n'expirait jamais ; sans `iat` il n'avait aucune ancienneté maximale. Les deux sont désormais obligatoires, et une valeur non numérique est rejetée plutôt que convertie. La protection anti-rejeu était déjà fail-closed ici (un `jti` absent ou mal formé est rejeté) : ceci ferme la moitié restante.
+- Correctif de sécurité : un `iat` dans le futur est désormais rejeté (30s de dérive d'horloge tolérées). Combiné à la fenêtre d'ancienneté maximale, il donnait une durée de vie glissante : `maintenant - iat` reste petit tant que l'émetteur pousse le claim en avant, si bien que le jeton ne vieillissait jamais.
+- Correctif : la règle R036 (valeur maximale par ligne) lisait son plafond dans un paramètre nommé `maxCents`, copié de R035. Le nom canonique est `maxCentsPerLine`, seul accepté par le schéma strict du panneau marchand : un plafond configuré par le marchand n'aurait jamais atteint le contrôle. La clé canonique est maintenant lue en premier ; `maxCents` reste accepté en repli.
+- Correctif : le test de conformité inter-langages résolvait son fixture via un chemin qui n'existe que dans le monorepo de développement, et échouait donc dans ce dépôt. Il lit désormais la copie fournie dans `tests/fixtures/`.
+- Reçus de confiance : le bundle du panneau d'administration est reconstruit avec le bouton de téléchargement du reçu, qui l'exporte en ZIP via le même point d'accès que le tableau de bord hébergé. Le bouton dit clairement ce qu'est cet export : une preuve d'intégrité de l'agent, pas une preuve de litige.
 
 ### 2.1.0
 

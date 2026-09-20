@@ -1,7 +1,7 @@
 # Privacy Policy — Trusteed for WooCommerce
 
-**Last updated:** 2026-03-28
-**Plugin version:** 1.0.0
+**Last updated:** 2026-08-17
+**Plugin version:** 2.2.2
 
 ## What Data Is Sent to Trusteed
 
@@ -40,8 +40,9 @@ Product catalog data is stored on Trusteed servers hosted on Railway (US-East re
 ## Data Retention
 
 - Product catalog data is maintained on Trusteed servers for as long as the plugin is installed and active on your WooCommerce store.
-- When you uninstall the plugin, your catalog data is scheduled for deletion and permanently removed within **30 days**.
-- You can request immediate deletion at any time via the plugin settings page (disconnect your store) or by contacting the DPO.
+- Uninstalling the plugin removes every option row it created from your WordPress database, including all stored secrets. It does not by itself erase the catalog data already held on Trusteed servers.
+- Disconnecting your store from the plugin settings page expires your API key, marks the store inactive so agents can no longer reach it, and deletes the stored WooCommerce webhook secret. Your store record and previously synced products are **retained** (products are marked unavailable rather than deleted) so that reconnecting restores the store without a full re-sync.
+- To have that data erased, request deletion by contacting the DPO at the address below. Data covered by a deletion request is permanently removed within **30 days**.
 
 ## Third-Party Access
 
@@ -73,8 +74,8 @@ As a merchant using this plugin, you have the right to:
 - **Portability**: Request your catalog data in a machine-readable format
 - **Objection**: Object to the processing of your data by contacting the DPO
 
-To exercise any of these rights, use the plugin settings page to disconnect your store, or send an email to privacy@trusteed.xyz.
+To stop agents from reaching your store, use the plugin settings page to disconnect it. To have stored data erased, send an email to privacy@trusteed.xyz — disconnecting alone does not delete it.
 
 ## Disclaimer
 
-This privacy policy applies to the Trusteed for WooCommerce plugin. For the complete Trusteed privacy policy, visit https://trusteed.xyz/privacy
+This privacy policy applies to the Trusteed for WooCommerce plugin. For the complete Trusteed privacy policy, visit https://trusteed.xyz/en/privacy

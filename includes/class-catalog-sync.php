@@ -287,7 +287,7 @@ class Trusteed_Catalog_Sync {
 			'agenticmcp_sync_nonce'
 		) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Invalid security token.', 'agenticmcpstores' ) ),
+				array( 'message' => __( 'Invalid security token.', 'trusteed-for-woocommerce' ) ),
 				403
 			);
 			return;
@@ -296,7 +296,7 @@ class Trusteed_Catalog_Sync {
 		// Verify user capability.
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Insufficient permissions.', 'agenticmcpstores' ) ),
+				array( 'message' => __( 'Insufficient permissions.', 'trusteed-for-woocommerce' ) ),
 				403
 			);
 			return;

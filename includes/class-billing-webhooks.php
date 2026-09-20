@@ -377,14 +377,14 @@ class Trusteed_Billing_Webhooks {
 		?>
 		<div class="notice notice-warning is-dismissible">
 			<p>
-				<strong><?php esc_html_e( 'AgenticMCPStores:', 'agenticmcpstores' ); ?></strong>
+				<strong><?php esc_html_e( 'AgenticMCPStores:', 'trusteed-for-woocommerce' ); ?></strong>
 				<?php
 				printf(
 					/* translators: 1: previous tier name, 2: link to pricing page */
-					esc_html__( 'Your %1$s subscription has expired. Your store is now on the FREE tier with limited features. %2$s to restore full functionality.', 'agenticmcpstores' ),
+					esc_html__( 'Your %1$s subscription has expired. Your store is now on the FREE tier with limited features. %2$s to restore full functionality.', 'trusteed-for-woocommerce' ),
 					'<strong>' . esc_html( strtoupper( $previous_tier ) ) . '</strong>',
 					'<a href="' . esc_url( 'https://agenticmcpstores.com/en/pricing' ) . '" target="_blank" rel="noopener noreferrer">'
-					. esc_html__( 'Upgrade now', 'agenticmcpstores' )
+					. esc_html__( 'Upgrade now', 'trusteed-for-woocommerce' )
 					. '</a>'
 				);
 				?>

@@ -186,7 +186,7 @@ class Trusteed_Admin_Spa_Loader {
 			static function (): void {
 				printf(
 					'<div class="notice notice-warning"><p>%s</p></div>',
-					esc_html__( 'Trusteed: el bundle admin-spa no ha sido compilado. Ejecuta pnpm build en packages/wp-plugin.', 'agenticmcpstores' )
+					esc_html__( 'Trusteed: the admin-spa bundle has not been built. Run pnpm build in packages/wp-plugin.', 'trusteed-for-woocommerce' )
 				);
 			}
 		);
