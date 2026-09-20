@@ -2,14 +2,14 @@
 
 # Trusteed Agentic Commerce for WooCommerce
 
-Enable new online shoppers, AI agents, to make purchases in your store securely and reliably thanks to Trusteed: the network that fosters trust between businesses and agents.
+AI agents are a new kind of online shopper. With Trusteed, the network that connects businesses and agents, they can buy from your store on your terms.
 
-- **Set your business rules**: who you allow to buy, up to what amount, which categories you don't want to offer to agents, set price limits, maintain stock levels to protect yourself against potential fraudulent agents, and more.
-- **Tamper-proof receipts**: we generate electronically signed and cryptographically tamper-proof receipts that serve as proof of the actual transaction in case of any dispute. Compatible with eIDAS (EU, UK) and eSIGN (USA) regulations.
-- **Agent analytics**: view statistics on agent purchases — how much they spend, what products they buy, and how often.
-- **Agent blocking**: block potentially dangerous or problematic agents.
-- **Digital currencies**: enables purchases in digital currencies thanks to the X402 protocol.
-- **Peer-to-peer transactions**: enables direct peer-to-peer commerce between agents and merchants.
+- Set your business rules: who can buy, up to what amount, which categories you don't offer to agents, price limits, stock levels that protect you from fraudulent agents, and more.
+- Get signed receipts. Every transaction produces a cryptographically signed, tamper-evident receipt you can use as evidence of the purchase if there's a dispute. Aligned with eIDAS (EU) and with eSIGN (USA).
+- See what agents do: how much they spend, what they buy and how often.
+- Block agents that look dangerous or cause problems.
+- Accept purchases in digital currencies through the X402 protocol.
+- Let agents and merchants trade directly, peer to peer.
 
 ## Screenshots
 
@@ -27,18 +27,18 @@ Each panel below maps to an item in the **Trusteed** menu inside WooCommerce.
 |--------------------------------------|
 | ![Trust Receipts](assets/screenshots/ai-receipts.png) |
 
-Every agent transaction produces a cryptographically signed **trust receipt** — a tamper-proof record (compatible with eIDAS / eSIGN) listed under **My Sales → AI Sales**. Click any row to see the full detail (agent ID, tool called, input/output hashes, JWS) and download the receipt as a ZIP file to hand over as backup in case of a dispute.
+Every agent transaction produces a signed trust receipt, a tamper-evident record (aligned with eIDAS and with eSIGN) listed under **My Sales → AI Sales**. Click a row to see the details: agent ID, tool called, input and output hashes, JWS. You can also download the receipt as a ZIP file and keep it as backup in case of a dispute.
 
 ## Features
 
-Trusteed for WooCommerce is a **thin connector** that bridges your product catalog to the growing ecosystem of AI shopping agents using the **Model Context Protocol (MCP)** — an open standard created by Anthropic. The plugin never processes payments or touches sensitive customer data: checkout always happens in your **native WooCommerce checkout**.
+The plugin connects your product catalog to AI shopping agents through the **Model Context Protocol (MCP)**, an open standard created by Anthropic. It never processes payments or touches sensitive customer data. Checkout always happens in your native WooCommerce checkout.
 
-- **MCP tools for agents** — `search_products`, `browse_categories`, `get_product_details`, and `create_cart` (with native WooCommerce checkout redirect)
-- **Automatic catalog sync** — products sync via WooCommerce hooks on create/update/delete, including stock changes; full manual sync available from the settings page. Only public catalog data is sent (titles, descriptions, prices, images, categories, stock) — never customer PII, orders, or payment info
-- **Agent token verification** — `create_cart` forwards the agent's JWS token through to checkout so signature/replay verification (R002) runs on the normal flow
-- **Enforcement gate (HITL)** — configurable human-in-the-loop approval for high-value agent orders
-- **SSRF hardening** — store/API URLs validated against an exact host allowlist and RFC1918 / IPv6 ULA / cloud IMDS blocklists
-- **Fail-closed defaults** — no dispatch when the enforcement secret is empty; domain-ownership proof required on reconnect (cross-merchant takeover protection)
+- MCP tools for agents: `search_products`, `browse_categories`, `get_product_details` and `create_cart`, which sends the shopper to the native WooCommerce checkout.
+- Automatic catalog sync. Products sync through WooCommerce hooks when you create, update or delete them, stock changes included, and you can run a full manual sync from the settings page. Only public catalog data leaves your store (titles, descriptions, prices, images, categories, stock), never customer PII, orders or payment info.
+- Agent token verification: `create_cart` passes the agent's JWS token on to checkout, so signature and replay verification (R002) runs in the normal flow.
+- Enforcement gate (HITL): configurable human-in-the-loop approval for high-value agent orders.
+- SSRF hardening: store and API URLs are checked against an exact host allowlist and against RFC1918, IPv6 ULA and cloud IMDS blocklists.
+- Fail-closed defaults: nothing is dispatched when the enforcement secret is empty, and reconnecting requires proof that you own the domain, which protects against cross-merchant takeover.
 
 ## Compatibility
 
@@ -52,7 +52,7 @@ Trusteed for WooCommerce is a **thin connector** that bridges your product catal
 
 - WordPress 6.0+ with WooCommerce 8.0+
 - PHP 7.4 or newer
-- A Trusteed account — [sign up free at trusteed.xyz](https://trusteed.xyz)
+- A Trusteed account ([sign up free at trusteed.xyz](https://trusteed.xyz))
 
 ## Installation
 
@@ -60,9 +60,9 @@ Trusteed for WooCommerce is a **thin connector** that bridges your product catal
 
 1. **Download the installable `.zip`** from the latest GitHub Release:
    [**⬇ trusteed-agentic-commerce-woocommerce-2.1.0.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest/download/trusteed-agentic-commerce-woocommerce-2.1.0.zip)
-   — or browse all versions at the [Releases page](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
+   or browse all versions at the [Releases page](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
 2. In your WordPress admin: **Plugins → Add New → Upload Plugin**.
-3. Select the downloaded `trusteed-agentic-commerce-woocommerce-2.0.1.zip` and click **Install Now**.
+3. Select the downloaded `trusteed-agentic-commerce-woocommerce-2.1.0.zip` and click **Install Now**.
 4. Click **Activate**.
 
 ### From source (build the zip yourself)
@@ -78,40 +78,40 @@ bash build-zip.sh        # outputs dist/trusteed-agentic-commerce-woocommerce-<v
 1. Log in to your WordPress **Admin**.
 2. Go to **WooCommerce → Trusteed** (or the **Trusteed** menu item).
 3. Enter your **API Key** from [app.trusteed.xyz/settings](https://app.trusteed.xyz/settings).
-4. Click **Save & Connect** — the plugin tests connectivity, registers your store, and syncs your catalog automatically.
+4. Click **Save & Connect**. The plugin tests the connection, registers your store and syncs your catalog.
 
-Once connected, any MCP-compatible agent (Claude, ChatGPT, or custom agents built with LangChain, CrewAI, Vercel AI SDK, etc.) can search your products, browse categories, view product details, and build carts. When the customer is ready to buy, the agent redirects them to your native WooCommerce checkout, where your existing gateways (Stripe, PayPal, …) handle payment.
+Once connected, any MCP-compatible agent (Claude, ChatGPT, or a custom one built with LangChain, CrewAI, Vercel AI SDK and similar tools) can search your products, browse categories, read product details and build carts. When the customer is ready to buy, the agent sends them to your native WooCommerce checkout, and your existing gateways (Stripe, PayPal, …) take the payment.
 
-A detailed merchant walkthrough lives in [`docs/MERCHANT_INSTALLATION_GUIDE.md`](docs/MERCHANT_INSTALLATION_GUIDE.md).
+The full merchant walkthrough is in [`docs/MERCHANT_INSTALLATION_GUIDE.md`](docs/MERCHANT_INSTALLATION_GUIDE.md).
 
 ## FAQ
 
-**What data is sent?** Only your public product catalog (titles, prices, descriptions, images, categories, stock status). No customer PII, payment data, or order history. All communication uses HTTPS.
+**What data is sent?** Only your public product catalog: titles, prices, descriptions, images, categories and stock status. No customer PII, payment data or order history. All communication uses HTTPS.
 
-**Which agents are supported?** Any MCP-compatible agent: Claude (Anthropic), ChatGPT (OpenAI), and custom agents built with LangChain, CrewAI, Vercel AI SDK, or any framework that supports the Model Context Protocol.
+**Which agents are supported?** Any MCP-compatible agent: Claude (Anthropic), ChatGPT (OpenAI), and custom agents built with LangChain, CrewAI, Vercel AI SDK or any other framework that supports the Model Context Protocol.
 
-**Does it slow down my store?** No. The plugin only talks to Trusteed when catalog changes occur — it adds no overhead to storefront page loads or customer checkout.
+**Does it slow down my store?** It adds one request at checkout. The plugin also talks to Trusteed when your catalog changes and when an agent acts on your store. When a customer places an order, whether an agent or a person, the plugin asks Trusteed to evaluate your rules. That request times out after 5 seconds. If Trusteed can't be reached, the plugin applies your rules from the last signed snapshot it pulled. If that isn't possible either, the result follows the failure mode you set in the plugin settings: block the order or allow it.
 
 ## Changelog
 
 ### 2.1.0
 
-- **Rebrand** — internal classes, option keys, and REST routes renamed `Amcp_`/`amcp_` → `Trusteed_`/`trusteed_`. Back-compat preserved: existing installs keep working (legacy `amcp_{key}` options are still read as a fallback, legacy REST namespaces stay registered alongside the new ones, legacy encrypted-value prefix still decrypts).
-- **Fix** — R043 HITL payload is now plumbed through end-to-end, so a BLOCK can surface a human-in-the-loop freeze instead of a hard block that loses buyer intent.
-- **Fix (critical)** — the compiled admin SPA bundle (`assets/admin-spa/`) was missing from the distributed package entirely; the Trusteed admin panel rendered a "bundle not compiled" error on every install. Bundle now ships correctly.
-- Hardening in billing webhooks, checkout enforcer, catalog sync, and cart signals.
+- Rebrand: internal classes, option keys and REST routes are renamed from `Amcp_`/`amcp_` to `Trusteed_`/`trusteed_`. Existing installs keep working. Legacy `amcp_{key}` options are still read as a fallback, legacy REST namespaces stay registered next to the new ones, and the legacy encrypted-value prefix still decrypts.
+- Fix: the R043 HITL payload now passes through end to end, so a BLOCK can surface a human-in-the-loop freeze instead of a hard block that loses the buyer's intent.
+- Fix (critical): the compiled admin SPA bundle (`assets/admin-spa/`) was missing from the distributed package. The Trusteed admin panel showed a "bundle not compiled" error on every install. The bundle now ships correctly.
+- Hardening in billing webhooks, the checkout enforcer, catalog sync and cart signals.
 
 ### 2.0.2
 
-Checkout enforcement fix. Merchant rules (max order amount, blocked countries, business hours) were being skipped entirely for organic, non-agent checkouts — they now apply universally. Added an offline safety-valve evaluator that enforces these rules locally when the remote rules API is unreachable.
+Checkout enforcement fix. Merchant rules (max order amount, blocked countries, business hours) were skipped entirely for organic, non-agent checkouts. They now apply to every checkout. Added an offline safety-valve evaluator that enforces these rules locally when the remote rules API is unreachable.
 
 ### 2.0.1
 
-Critical activation + security hotfix (Codex audit). Fixes a half-finished `AGENTICMCP_*` → `TRUSTEED_*` rename that prevented activation in 2.0.0; `create_cart` now forwards the agent JWS token so R002 verification runs; REST client validates the API base host against an exact allowlist.
+Critical activation and security hotfix (Codex audit). Fixes a half-finished `AGENTICMCP_*` → `TRUSTEED_*` rename that prevented activation in 2.0.0. `create_cart` now forwards the agent JWS token so R002 verification runs. The REST client validates the API base host against an exact allowlist.
 
 ### 2.0.0
 
-Security & reliability sprint. 2-phase disconnect with confirmation token; reconnect requires domain-ownership proof (`/.well-known/amcp-verify.txt`); real cart-bridge endpoint for `create_cart`; agent-event webhook retries with exponential backoff; SSRF hardening; fail-closed enforcement defaults.
+Security and reliability sprint. Disconnecting is now a two-phase flow with a confirmation token. Reconnecting requires proof of domain ownership (`/.well-known/amcp-verify.txt`). `create_cart` gets a real cart-bridge endpoint. The agent-event webhook retries with exponential backoff. Also SSRF hardening and fail-closed enforcement defaults.
 
 ## Support
 

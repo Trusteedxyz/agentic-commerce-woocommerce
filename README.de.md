@@ -2,14 +2,14 @@
 
 # Trusteed Agentic Commerce für WooCommerce
 
-Ermöglichen Sie es den neuen Online-Käufern, den KI-Agenten, sicher und zuverlässig in Ihrem Shop einzukaufen — dank Trusteed: dem Netzwerk, das Vertrauen zwischen Unternehmen und Agenten fördert.
+KI-Agenten sind eine neue Art von Online-Käufern. Mit Trusteed, dem Netzwerk, das Unternehmen und Agenten verbindet, können sie zu Ihren Bedingungen in Ihrem Shop einkaufen.
 
-- **Legen Sie Ihre Geschäftsregeln fest**: wem Sie den Kauf erlauben, bis zu welchem Betrag, welche Kategorien Sie Agenten nicht anbieten möchten, legen Sie Preisgrenzen fest, halten Sie Lagerbestände aufrecht, um sich vor potenziell betrügerischen Agenten zu schützen, und mehr.
-- **Manipulationssichere Belege**: wir erstellen elektronisch signierte und kryptografisch manipulationssichere Belege, die im Streitfall als Nachweis der tatsächlichen Transaktion dienen. Kompatibel mit eIDAS (EU, UK) und eSIGN (USA).
-- **Agenten-Analysen**: Statistiken zu Agentenkäufen einsehen — wie viel sie ausgeben, welche Produkte sie kaufen und wie oft.
-- **Agentensperrung**: potenziell gefährliche oder problematische Agenten blockieren.
-- **Digitale Währungen**: ermöglicht Käufe in digitalen Währungen dank des X402-Protokolls.
-- **Peer-to-Peer-Transaktionen**: ermöglicht direkten Peer-to-Peer-Handel zwischen Agenten und Händlern.
+- Legen Sie Ihre Geschäftsregeln fest: wer kaufen darf, bis zu welchem Betrag, welche Kategorien Sie Agenten nicht anbieten, Preisgrenzen, Lagerbestände, die Sie vor betrügerischen Agenten schützen, und mehr.
+- Erhalten Sie signierte Belege. Jede Transaktion erzeugt einen kryptografisch signierten Beleg, an dem sich jede Manipulation erkennen lässt und den Sie im Streitfall als Nachweis des Kaufs verwenden können. An eIDAS (EU) und an eSIGN (USA) ausgerichtet.
+- Sehen Sie, was Agenten tun: wie viel sie ausgeben, was sie kaufen und wie oft.
+- Sperren Sie Agenten, die gefährlich wirken oder Probleme verursachen.
+- Nehmen Sie Käufe in digitalen Währungen über das X402-Protokoll an.
+- Lassen Sie Agenten und Händler direkt miteinander handeln, Peer-to-Peer.
 
 ## Screenshots
 
@@ -27,18 +27,18 @@ Jedes Panel unten entspricht einem Eintrag im **Trusteed**-Menü innerhalb von W
 |--------------------------------------|
 | ![Trust Receipts](assets/screenshots/ai-receipts.png) |
 
-Jede Agententransaktion erzeugt einen kryptografisch signierten **Vertrauensbeleg (Trust Receipt)** — einen manipulationssicheren Datensatz (kompatibel mit eIDAS / eSIGN), der unter **Meine Verkäufe → KI-Verkäufe** aufgeführt wird. Klicke auf eine Zeile, um alle Details zu sehen (Agenten-ID, aufgerufenes Tool, Input-/Output-Hashes, JWS) und den Beleg als ZIP herunterzuladen, um ihn im Streitfall als Nachweis vorzulegen.
+Jede Agententransaktion erzeugt einen signierten Vertrauensbeleg (Trust Receipt), einen Datensatz, an dem sich jede Manipulation erkennen lässt (an eIDAS und an eSIGN ausgerichtet), der unter **Meine Verkäufe → KI-Verkäufe** aufgeführt wird. Mit einem Klick auf eine Zeile sehen Sie die Details: Agenten-ID, aufgerufenes Tool, Input- und Output-Hashes, JWS. Den Beleg können Sie außerdem als ZIP-Datei herunterladen und für den Streitfall aufbewahren.
 
 ## Funktionen
 
-Trusteed for WooCommerce ist ein **schlanker Connector**, der Ihren Produktkatalog mit dem wachsenden Ökosystem von KI-Einkaufsagenten verbindet — mithilfe des **Model Context Protocol (MCP)**, einem offenen Standard von Anthropic. Das Plugin verarbeitet niemals Zahlungen und greift nie auf sensible Kundendaten zu: der Checkout findet immer in Ihrem **nativen WooCommerce-Checkout** statt.
+Das Plugin verbindet Ihren Produktkatalog über das **Model Context Protocol (MCP)**, einen offenen Standard von Anthropic, mit KI-Einkaufsagenten. Es verarbeitet nie Zahlungen und greift nicht auf sensible Kundendaten zu. Der Checkout findet immer in Ihrem nativen WooCommerce-Checkout statt.
 
-- **MCP-Tools für Agenten** — `search_products`, `browse_categories`, `get_product_details` und `create_cart` (mit Weiterleitung zum nativen WooCommerce-Checkout)
-- **Automatische Katalogsynchronisierung** — Produkte werden über WooCommerce-Hooks bei Erstellung/Aktualisierung/Löschung synchronisiert, einschließlich Lagerbestandsänderungen; eine vollständige manuelle Synchronisierung ist über die Einstellungsseite verfügbar. Es werden ausschließlich öffentliche Katalogdaten übermittelt (Titel, Beschreibungen, Preise, Bilder, Kategorien, Lagerbestand) — niemals personenbezogene Kundendaten, Bestellungen oder Zahlungsinformationen
-- **Verifizierung des Agenten-Tokens** — `create_cart` leitet das JWS-Token des Agenten an den Checkout weiter, sodass die Signatur-/Replay-Verifizierung (R002) im normalen Ablauf ausgeführt wird
-- **Freigabeschranke (HITL)** — konfigurierbare Human-in-the-Loop-Freigabe für hochwertige Agentenbestellungen
-- **SSRF-Härtung** — Shop-/API-URLs werden gegen eine exakte Host-Allowlist sowie RFC1918-/IPv6-ULA-/Cloud-IMDS-Sperrlisten validiert
-- **Fail-Closed-Standardeinstellungen** — kein Versand, wenn das Enforcement-Secret leer ist; bei erneuter Verbindung ist ein Nachweis des Domainbesitzes erforderlich (Schutz vor Übernahme durch andere Händler)
+- MCP-Tools für Agenten: `search_products`, `browse_categories`, `get_product_details` und `create_cart`, das den Käufer zum nativen WooCommerce-Checkout weiterleitet.
+- Automatische Katalogsynchronisierung. Produkte werden über WooCommerce-Hooks synchronisiert, wenn Sie sie erstellen, aktualisieren oder löschen, Lagerbestandsänderungen eingeschlossen, und auf der Einstellungsseite können Sie eine vollständige manuelle Synchronisierung starten. Ihren Shop verlassen nur öffentliche Katalogdaten (Titel, Beschreibungen, Preise, Bilder, Kategorien, Lagerbestand), nie personenbezogene Kundendaten, Bestellungen oder Zahlungsinformationen.
+- Verifizierung des Agenten-Tokens: `create_cart` reicht das JWS-Token des Agenten an den Checkout weiter, sodass die Signatur- und Replay-Verifizierung (R002) im normalen Ablauf läuft.
+- Freigabeschranke (HITL): konfigurierbare Human-in-the-Loop-Freigabe für hochwertige Agentenbestellungen.
+- SSRF-Härtung: Shop- und API-URLs werden gegen eine exakte Host-Allowlist und gegen die Sperrlisten für RFC1918, IPv6 ULA und Cloud-IMDS geprüft.
+- Fail-Closed-Standardeinstellungen: Es wird nichts versendet, wenn das Enforcement-Secret leer ist, und für eine erneute Verbindung müssen Sie den Besitz der Domain nachweisen. Das schützt vor der Übernahme durch andere Händler.
 
 ## Kompatibilität
 
@@ -52,7 +52,7 @@ Trusteed for WooCommerce ist ein **schlanker Connector**, der Ihren Produktkatal
 
 - WordPress 6.0+ mit WooCommerce 8.0+
 - PHP 7.4 oder neuer
-- Ein Trusteed-Konto — [kostenlos registrieren auf trusteed.xyz](https://trusteed.xyz)
+- Ein Trusteed-Konto ([kostenlos registrieren auf trusteed.xyz](https://trusteed.xyz))
 
 ## Installation
 
@@ -60,7 +60,7 @@ Trusteed for WooCommerce ist ein **schlanker Connector**, der Ihren Produktkatal
 
 1. **Laden Sie die installierbare `.zip`** aus dem neuesten GitHub-Release herunter:
    [**⬇ trusteed-agentic-commerce-woocommerce-2.1.0.zip**](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest/download/trusteed-agentic-commerce-woocommerce-2.1.0.zip)
-   — oder durchsuchen Sie alle Versionen auf der [Releases-Seite](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
+   oder durchsuchen Sie alle Versionen auf der [Releases-Seite](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases).
 2. Im WordPress-Admin: **Plugins → Installieren → Plugin hochladen**.
 3. Wählen Sie die heruntergeladene Datei `trusteed-agentic-commerce-woocommerce-2.1.0.zip` aus und klicken Sie auf **Jetzt installieren**.
 4. Klicken Sie auf **Aktivieren**.
@@ -76,42 +76,42 @@ bash build-zip.sh        # outputs dist/trusteed-agentic-commerce-woocommerce-<v
 ## Konfiguration
 
 1. Melden Sie sich in Ihrem WordPress-**Admin** an.
-2. Gehen Sie zu **WooCommerce → Trusteed** (oder dem Menüpunkt **Trusteed**).
+2. Gehen Sie zu **WooCommerce → Trusteed** (oder zum Menüpunkt **Trusteed**).
 3. Geben Sie Ihren **API-Schlüssel** von [app.trusteed.xyz/settings](https://app.trusteed.xyz/settings) ein.
-4. Klicken Sie auf **Speichern & Verbinden** — das Plugin testet die Konnektivität, registriert Ihren Shop und synchronisiert Ihren Katalog automatisch.
+4. Klicken Sie auf **Speichern & Verbinden**. Das Plugin testet die Verbindung, registriert Ihren Shop und synchronisiert Ihren Katalog.
 
-Nach der Verbindung kann jeder MCP-kompatible Agent (Claude, ChatGPT oder benutzerdefinierte Agenten, erstellt mit LangChain, CrewAI, Vercel AI SDK usw.) Ihre Produkte durchsuchen, Kategorien durchstöbern, Produktdetails ansehen und Warenkörbe erstellen. Wenn der Kunde zum Kauf bereit ist, leitet der Agent ihn zu Ihrem nativen WooCommerce-Checkout weiter, wo Ihre bestehenden Zahlungs-Gateways (Stripe, PayPal, …) die Zahlung abwickeln.
+Nach der Verbindung kann jeder MCP-kompatible Agent (Claude, ChatGPT oder ein eigener Agent, gebaut mit LangChain, CrewAI, Vercel AI SDK und ähnlichen Tools) Ihre Produkte durchsuchen, Kategorien ansehen, Produktdetails lesen und Warenkörbe anlegen. Wenn der Kunde kaufen möchte, schickt ihn der Agent zu Ihrem nativen WooCommerce-Checkout, und Ihre bestehenden Zahlungs-Gateways (Stripe, PayPal, …) nehmen die Zahlung an.
 
-Eine ausführliche Anleitung für Händler finden Sie unter [`docs/MERCHANT_INSTALLATION_GUIDE.md`](docs/MERCHANT_INSTALLATION_GUIDE.md).
+Die vollständige Anleitung für Händler finden Sie in [`docs/MERCHANT_INSTALLATION_GUIDE.md`](docs/MERCHANT_INSTALLATION_GUIDE.md).
 
 ## FAQ
 
-**Welche Daten werden übermittelt?** Nur Ihr öffentlicher Produktkatalog (Titel, Preise, Beschreibungen, Bilder, Kategorien, Lagerstatus). Keine personenbezogenen Kundendaten, Zahlungsdaten oder Bestellhistorie. Die gesamte Kommunikation erfolgt über HTTPS.
+**Welche Daten werden übermittelt?** Nur Ihr öffentlicher Produktkatalog: Titel, Preise, Beschreibungen, Bilder, Kategorien und Lagerstatus. Keine personenbezogenen Kundendaten, Zahlungsdaten oder Bestellhistorie. Die gesamte Kommunikation läuft über HTTPS.
 
-**Welche Agenten werden unterstützt?** Jeder MCP-kompatible Agent: Claude (Anthropic), ChatGPT (OpenAI) sowie benutzerdefinierte Agenten, erstellt mit LangChain, CrewAI, Vercel AI SDK oder jedem Framework, das das Model Context Protocol unterstützt.
+**Welche Agenten werden unterstützt?** Jeder MCP-kompatible Agent: Claude (Anthropic), ChatGPT (OpenAI) sowie eigene Agenten, gebaut mit LangChain, CrewAI, Vercel AI SDK oder jedem anderen Framework, das das Model Context Protocol unterstützt.
 
-**Verlangsamt es meinen Shop?** Nein. Das Plugin kommuniziert nur bei Katalogänderungen mit Trusteed — es fügt weder dem Laden der Storefront-Seiten noch dem Kunden-Checkout zusätzlichen Overhead hinzu.
+**Verlangsamt es meinen Shop?** Es fügt im Checkout eine Anfrage hinzu. Außerdem kommuniziert das Plugin mit Trusteed, wenn sich Ihr Katalog ändert und wenn ein Agent in Ihrem Shop handelt. Wenn ein Kunde eine Bestellung aufgibt, ob Agent oder Mensch, bittet das Plugin Trusteed, Ihre Regeln auszuwerten. Diese Anfrage läuft nach 5 Sekunden ab. Ist Trusteed nicht erreichbar, wendet das Plugin Ihre Regeln aus dem zuletzt geladenen signierten Snapshot an. Ist auch das nicht möglich, richtet sich das Ergebnis nach dem Fehlermodus, den Sie in den Plugin-Einstellungen gewählt haben: die Bestellung blockieren oder zulassen.
 
 ## Änderungsprotokoll
 
 ### 2.1.0
 
-- **Rebranding** — interne Klassen, Options-Schlüssel und REST-Routen von `Amcp_`/`amcp_` zu `Trusteed_`/`trusteed_` umbenannt. Abwärtskompatibilität gewahrt: bestehende Installationen funktionieren weiter (Legacy-Optionen `amcp_{key}` werden weiterhin als Fallback gelesen, Legacy-REST-Namespaces bleiben neben den neuen registriert, das Legacy-Präfix verschlüsselter Werte wird weiterhin entschlüsselt).
-- **Fix** — die R043-HITL-Payload wird nun durchgängig weitergereicht, sodass ein BLOCK eine Human-in-the-Loop-Pause anzeigen kann, statt eines harten Blocks, der die Kaufabsicht verliert.
-- **Kritischer Fix** — das kompilierte Admin-SPA-Bundle (`assets/admin-spa/`) fehlte komplett im verteilten Paket; das Trusteed-Admin-Panel zeigte bei jeder Installation einen Fehler "Bundle nicht kompiliert". Das Bundle wird jetzt korrekt mitgeliefert.
-- Härtung bei Abrechnungs-Webhooks, Checkout-Durchsetzung, Katalog-Synchronisation und Warenkorb-Signalen.
+- Rebranding: Interne Klassen, Options-Schlüssel und REST-Routen wurden von `Amcp_`/`amcp_` zu `Trusteed_`/`trusteed_` umbenannt. Bestehende Installationen funktionieren weiter. Legacy-Optionen `amcp_{key}` werden weiterhin als Fallback gelesen, Legacy-REST-Namespaces bleiben neben den neuen registriert, und das Legacy-Präfix verschlüsselter Werte wird weiterhin entschlüsselt.
+- Fix: Die R043-HITL-Payload wird jetzt durchgängig weitergereicht, sodass ein BLOCK eine Human-in-the-Loop-Pause anzeigen kann statt eines harten Blocks, der die Kaufabsicht verliert.
+- Fix (kritisch): Das kompilierte Admin-SPA-Bundle (`assets/admin-spa/`) fehlte im ausgelieferten Paket. Das Trusteed-Admin-Panel zeigte bei jeder Installation den Fehler „Bundle nicht kompiliert“. Das Bundle wird jetzt korrekt mitgeliefert.
+- Härtung bei Abrechnungs-Webhooks, Checkout-Durchsetzung, Katalogsynchronisierung und Warenkorb-Signalen.
 
 ### 2.0.2
 
-Fix für die Durchsetzung von Checkout-Regeln. Händlerregeln (Höchstbetrag, gesperrte Länder, Geschäftszeiten) wurden bei organischen Checkouts ohne Agenten komplett übersprungen — sie gelten jetzt universell. Ein Offline-Sicherheitsventil-Evaluator wurde hinzugefügt, der diese Regeln lokal durchsetzt, wenn die entfernte Regel-API nicht erreichbar ist.
+Fix für die Durchsetzung von Checkout-Regeln. Händlerregeln (Höchstbetrag, gesperrte Länder, Geschäftszeiten) wurden bei organischen Checkouts ohne Agenten komplett übersprungen. Jetzt gelten sie für jeden Checkout. Neu ist ein Offline-Sicherheitsventil-Evaluator, der diese Regeln lokal durchsetzt, wenn die entfernte Regel-API nicht erreichbar ist.
 
 ### 2.0.1
 
-Kritischer Aktivierungs- und Sicherheits-Hotfix (Codex-Audit). Behebt eine halbfertige `AGENTICMCP_*` → `TRUSTEED_*`-Umbenennung, die die Aktivierung in 2.0.0 verhinderte; `create_cart` leitet nun das JWS-Token des Agenten weiter, sodass die R002-Verifizierung ausgeführt wird; der REST-Client validiert den API-Basis-Host gegen eine exakte Allowlist.
+Kritischer Hotfix für Aktivierung und Sicherheit (Codex-Audit). Behebt eine halbfertige Umbenennung von `AGENTICMCP_*` zu `TRUSTEED_*`, die in 2.0.0 die Aktivierung verhinderte. `create_cart` leitet jetzt das JWS-Token des Agenten weiter, sodass die R002-Verifizierung läuft. Der REST-Client prüft den API-Basis-Host gegen eine exakte Allowlist.
 
 ### 2.0.0
 
-Sicherheits- und Zuverlässigkeits-Sprint. 2-Phasen-Trennung mit Bestätigungstoken; erneute Verbindung erfordert einen Nachweis des Domainbesitzes (`/.well-known/amcp-verify.txt`); echter Cart-Bridge-Endpunkt für `create_cart`; Wiederholungsversuche des Agenten-Event-Webhooks mit exponentiellem Backoff; SSRF-Härtung; Fail-Closed-Standardeinstellungen für die Durchsetzung.
+Sprint für Sicherheit und Zuverlässigkeit. Das Trennen läuft jetzt in zwei Phasen mit einem Bestätigungstoken. Für die erneute Verbindung ist ein Nachweis des Domainbesitzes nötig (`/.well-known/amcp-verify.txt`). `create_cart` bekommt einen echten Cart-Bridge-Endpunkt. Der Webhook für Agenten-Events wiederholt fehlgeschlagene Zustellungen mit exponentiellem Backoff. Dazu kommen SSRF-Härtung und Fail-Closed-Standardeinstellungen für die Durchsetzung.
 
 ## Support
 
@@ -120,4 +120,4 @@ Sicherheits- und Zuverlässigkeits-Sprint. 2-Phasen-Trennung mit Bestätigungsto
 
 ## Lizenz
 
-GPL-2.0-or-later. Vollständiger Text siehe [LICENSE](LICENSE).
+GPL-2.0-or-later. Den vollständigen Text finden Sie in [LICENSE](LICENSE).

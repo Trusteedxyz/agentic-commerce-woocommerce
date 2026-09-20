@@ -1,11 +1,11 @@
-# Privacy Policy — AgenticMCPStores for WooCommerce
+# Privacy Policy — Trusteed for WooCommerce
 
 **Last updated:** 2026-03-28
 **Plugin version:** 1.0.0
 
-## What Data Is Sent to AgenticMCPStores
+## What Data Is Sent to Trusteed
 
-When you install and configure this plugin, the following product catalog data is transmitted to the AgenticMCPStores SaaS platform:
+When you install and configure this plugin, the following product catalog data is transmitted to the Trusteed SaaS platform:
 
 - Product titles
 - Product prices (regular and sale prices)
@@ -25,7 +25,7 @@ This data is sent during:
 
 ## What Data Is NOT Sent
 
-The following data is **never** transmitted to AgenticMCPStores:
+The following data is **never** transmitted to Trusteed:
 
 - **Customer data**: names, email addresses, physical addresses, phone numbers
 - **Order data**: order history, order details, order statuses
@@ -35,22 +35,22 @@ The following data is **never** transmitted to AgenticMCPStores:
 
 ## Where Data Is Stored
 
-Product catalog data is stored on AgenticMCPStores servers hosted on Railway (US-East region). Data is encrypted in transit (TLS 1.2+) and at rest.
+Product catalog data is stored on Trusteed servers hosted on Railway (US-East region). Data is encrypted in transit (TLS 1.2+) and at rest.
 
 ## Data Retention
 
-- Product catalog data is maintained on AgenticMCPStores servers for as long as the plugin is installed and active on your WooCommerce store.
+- Product catalog data is maintained on Trusteed servers for as long as the plugin is installed and active on your WooCommerce store.
 - When you uninstall the plugin, your catalog data is scheduled for deletion and permanently removed within **30 days**.
 - You can request immediate deletion at any time via the plugin settings page (disconnect your store) or by contacting the DPO.
 
 ## Third-Party Access
 
-Product catalog data stored on AgenticMCPStores may be queried by AI agents (such as Claude, ChatGPT, and other MCP-compatible agents) through the MCP (Model Context Protocol) interface when they search for products on behalf of buyers.
+Product catalog data stored on Trusteed may be queried by AI agents (such as Claude, ChatGPT, and other MCP-compatible agents) through the MCP (Model Context Protocol) interface when they search for products on behalf of buyers.
 
 Your catalog data is **never sold** to third parties. Access is limited to:
 
 - AI agents performing product search and cart creation via MCP
-- AgenticMCPStores internal systems for catalog indexing and serving
+- Trusteed internal systems for catalog indexing and serving
 
 ## Legal Basis for Processing
 
@@ -77,4 +77,4 @@ To exercise any of these rights, use the plugin settings page to disconnect your
 
 ## Disclaimer
 
-This privacy policy applies to the AgenticMCPStores for WooCommerce plugin. For the complete AgenticMCPStores privacy policy, visit https://trusteed.xyz/privacy
+This privacy policy applies to the Trusteed for WooCommerce plugin. For the complete Trusteed privacy policy, visit https://trusteed.xyz/privacy

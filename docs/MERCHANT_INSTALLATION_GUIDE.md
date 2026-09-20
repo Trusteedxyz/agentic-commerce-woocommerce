@@ -1,6 +1,6 @@
-# AgenticMCPStores for WooCommerce — Merchant Installation Guide
+# Trusteed for WooCommerce: Merchant Installation Guide
 
-A step-by-step guide to connect your WooCommerce store to AI shopping agents.
+This guide takes you from a fresh WordPress admin to a store that AI shopping agents can search. Follow the sections in order.
 
 ---
 
@@ -8,8 +8,8 @@ A step-by-step guide to connect your WooCommerce store to AI shopping agents.
 
 1. [Prerequisites](#1-prerequisites)
 2. [Installation](#2-installation)
-3. [Get Your API Key](#3-get-your-api-key)
-4. [Configure the Plugin](#4-configure-the-plugin)
+3. [Choose How to Connect](#3-choose-how-to-connect)
+4. [Connect Your Store](#4-connect-your-store)
 5. [First Catalog Sync](#5-first-catalog-sync)
 6. [Verify Everything Works](#6-verify-everything-works)
 7. [Troubleshooting](#7-troubleshooting)
@@ -19,104 +19,104 @@ A step-by-step guide to connect your WooCommerce store to AI shopping agents.
 
 ## 1. Prerequisites
 
-Before installing, make sure your site meets these requirements:
+Check that your site meets these requirements before you install:
 
-| Requirement     | Minimum Version                  |
-| --------------- | -------------------------------- |
-| WordPress       | 6.8 or later                     |
-| WooCommerce     | 8.0 or later                     |
-| PHP             | 7.4 or later                     |
-| SSL Certificate | Required (HTTPS must be enabled) |
+| Requirement | Minimum Version                   |
+| ----------- | --------------------------------- |
+| WordPress   | 6.0 or later                      |
+| WooCommerce | 8.0 or later                      |
+| PHP         | 7.4 or later                      |
+| HTTPS       | Recommended (SSL certificate)     |
 
-You will also need:
+You also need:
 
-- **Admin access** to your WordPress dashboard
-- **At least one published product** in WooCommerce (so the sync has something to send)
-- An active internet connection from your server to `api.trusteed.xyz`
+- Admin access to your WordPress dashboard
+- At least one published product in WooCommerce, so the sync has something to send
+- A server that can reach `api.trusteed.xyz` over the internet
 
 ### How to check your WooCommerce version
 
 1. Go to **WooCommerce > Status** in your WordPress admin menu
-2. Look for the "WC Version" field under "WordPress Environment"
-3. If your version is below 8.0, update WooCommerce before proceeding
+2. Find the "WC Version" field under "WordPress Environment"
+3. If the version is below 8.0, update WooCommerce before you continue
 
 ### How to check your PHP version
 
 1. Go to **WooCommerce > Status** in your WordPress admin menu
-2. Look for the "PHP Version" field under "Server Environment"
-3. If your version is below 7.4, contact your hosting provider to upgrade
+2. Find the "PHP Version" field under "Server Environment"
+3. If the version is below 7.4, ask your hosting provider to upgrade it
 
 ---
 
 ## 2. Installation
 
-### Option A: Install from the Woo Marketplace (recommended)
-
-1. Log in to your WordPress admin dashboard
-2. Go to **Plugins > Add New**
-3. Search for **"AgenticMCPStores for WooCommerce"**
-4. Click **Install Now** on the plugin card
-5. Once installed, click **Activate**
-
-### Option B: Manual upload
-
-1. Download the `agenticmcpstores-for-woocommerce.zip` file from [trusteed.xyz/downloads](https://trusteed.xyz/downloads)
+1. Download [trusteed-agentic-commerce-woocommerce-2.1.0.zip](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/releases/latest/download/trusteed-agentic-commerce-woocommerce-2.1.0.zip) from the latest GitHub release
 2. In your WordPress admin, go to **Plugins > Add New > Upload Plugin**
-3. Click **Choose File**, select the downloaded `.zip` file
+3. Click **Choose File** and select the `.zip` you downloaded
 4. Click **Install Now**
-5. Once installed, click **Activate**
+5. When the install finishes, click **Activate**
 
-After activation, you will see a new menu item: **WooCommerce > AgenticMCPStores**.
-
----
-
-## 3. Get Your API Key
-
-You need a free API key to connect your store.
-
-1. Go to [trusteed.xyz/developers](https://trusteed.xyz/developers)
-2. Click **"Get Free API Key"**
-3. Enter your email address and store URL
-4. Check your inbox for the confirmation email and verify your account
-5. Copy the API key from your dashboard (it starts with `amcs_`)
-
-> **Keep your API key private.** Do not share it publicly or commit it to version control. If you suspect your key has been compromised, regenerate it immediately from your AgenticMCPStores dashboard.
+Once the plugin is active, a new menu item appears at **WooCommerce > Trusteed**.
 
 ---
 
-## 4. Configure the Plugin
+## 3. Choose How to Connect
 
-1. In your WordPress admin, go to **WooCommerce > AgenticMCPStores**
-2. Paste your API key into the **"API Key"** field
+The connection page offers two ways to link your store to Trusteed. Pick one:
 
-   <!-- Screenshot reference: settings-api-key-field.png -->
+- **Email and password.** Enter your Trusteed email and password. If you don't have an account yet, the plugin creates one for you.
+- **API key.** If you'd rather not type your password into WordPress, paste an API key from the [Trusteed dashboard](https://trusteed.xyz/developers).
 
-3. Click **"Save & Connect"**
-4. Wait a few seconds. You should see a **green "Connected" badge** appear next to the connection status
+> **Keep your API key private.** Don't post it anywhere public and don't commit it to version control. If you think it has been exposed, regenerate it from your Trusteed dashboard right away.
 
-   <!-- Screenshot reference: settings-connected-badge.png -->
+---
 
-If you see a red "Connection Failed" message instead, check the [Troubleshooting](#7-troubleshooting) section below.
+## 4. Connect Your Store
+
+In this version, the labels on the connection page are in Spanish. The English meaning is in parentheses below.
+
+### Option A: Email and password
+
+1. In your WordPress admin, go to **WooCommerce > Trusteed**
+2. In the section **"Conecta tu tienda a Trusteed"** (Connect your store to Trusteed), enter your email in **"Tu correo"** (Your email)
+3. Enter your password in **"Contraseña"** (Password). It needs at least 8 characters. If you already have a Trusteed account, use the same password
+4. Click **"Conectar mi tienda"** (Connect my store)
+5. Wait a few seconds. The plugin shows "¡Tienda conectada con éxito!" (Store connected successfully!)
+
+### Option B: API key
+
+1. Go to **WooCommerce > Trusteed**
+2. In the section **"¿Prefieres no usar contraseña?"** (Prefer not to use a password?), paste your key into **"API key"**
+3. Click **"Conectar con API key"** (Connect with API key)
+4. Wait a few seconds. The plugin shows "¡Tienda conectada con tu API key!" (Store connected with your API key!)
+
+<!-- Screenshot reference: settings-connected-badge.png -->
+
+After either option, the section **"Estado de la conexión"** (Connection status) shows a **"Conectada"** (Connected) badge.
+
+If an error message shows up instead, go to the [Troubleshooting](#7-troubleshooting) section.
 
 ---
 
 ## 5. First Catalog Sync
 
-After connecting, your product catalog syncs automatically. Here is what happens:
+Your catalog syncs on its own once the store is connected. Here is what the plugin does:
 
-1. The plugin scans all your **published** WooCommerce products
-2. It sends catalog data (titles, descriptions, prices, images, categories, stock status) to AgenticMCPStores via HTTPS
-3. The settings page shows a progress indicator during the initial sync
-4. Once complete, you will see the total number of synced products
+1. It scans all your **published** WooCommerce products
+2. It sends the catalog data to Trusteed over HTTPS, in batches of 100 products
+3. When the sync ends, **"Última sincronización"** (Last sync) shows the time of the sync
 
 **What gets synced:**
 
-- Product titles, descriptions, and short descriptions
-- Prices (regular and sale prices)
-- Product images (URLs only, images are not uploaded)
-- Categories and tags
+- Product name, SKU, description and short description
+- Current price. When a product is on sale, the regular price also goes along as a compare-at price
 - Stock status and quantity
-- Product variations (sizes, colors, etc.)
+- Product images (the image URL and alt text, the image files stay on your server)
+- Categories and tags
+- Currency and product type (simple, variable and so on)
+- The product's link on your store
+
+Variable products sync as a single product. Their variations are not sent separately.
 
 **What does NOT get synced:**
 
@@ -127,129 +127,125 @@ After connecting, your product catalog syncs automatically. Here is what happens
 
 ### Manual sync
 
-If you need to force a full re-sync (for example, after a bulk product import):
+Force a full re-sync when you need one, for example after a bulk product import:
 
-1. Go to **WooCommerce > AgenticMCPStores**
-2. Scroll down to the **"Catalog Sync"** section
-3. Click **"Sync Now"**
-4. Wait for the progress indicator to complete
+1. Go to **WooCommerce > Trusteed**
+2. In the **"Acciones"** (Actions) section, click **"Sincronizar catálogo ahora"** (Sync catalog now)
+3. The button shows "Sincronizando..." (Syncing...) while the sync runs. Wait until it finishes
 
 ---
 
 ## 6. Verify Everything Works
 
-After the initial sync, verify that your store is properly connected:
+Run these four checks after the first sync.
 
 ### Check 1: Connection status
 
-Go to **WooCommerce > AgenticMCPStores**. You should see:
+Go to **WooCommerce > Trusteed**. In **"Estado de la conexión"** you should see:
 
-- A **green "Connected" badge**
-- Your store name and slug displayed
-- The number of synced products matching your published product count
+- A **"Conectada"** badge
+- Your active plan ("Plan activo")
+- Your MCP endpoint ("Endpoint MCP")
+- A timestamp in "Última sincronización" instead of "Nunca" (Never)
 
-### Check 2: Product count matches
+### Check 2: Test the connection
 
-Compare the "Synced Products" count on the settings page with your actual published products:
-
-1. Go to **Products > All Products**
-2. Note the count of "Published" products
-3. This number should match the synced count on the AgenticMCPStores settings page
+1. In the **"Acciones"** section, click **"Probar conexión"** (Test connection)
+2. The plugin shows the result and the connection latency in milliseconds
 
 ### Check 3: Test with an AI agent
 
-The quickest way to verify end-to-end functionality:
+This is the quickest end-to-end test.
 
-1. Go to [claude.ai](https://claude.ai) (or any MCP-compatible agent)
-2. Ask the agent: _"Search for products on [your-store-slug] at AgenticMCPStores"_
-3. The agent should return products from your catalog
-4. If you have the demo store configured, you can test at `https://trusteed.xyz/demo-store`
+1. Open [claude.ai](https://claude.ai) or any other MCP-compatible agent
+2. Ask it: _"Search for products on [your-store-slug] at Trusteed"_
+3. The agent should list products from your catalog
+4. If you have the demo store configured, you can also test at `https://trusteed.xyz/demo-store`
 
-### Check 4: Automatic sync verification
+### Check 4: Automatic sync
 
 1. Go to **Products** in WooCommerce and edit any product
 2. Change the price and click **Update**
-3. Go back to **WooCommerce > AgenticMCPStores**
-4. The "Last Sync" timestamp should show the current time, confirming the hook fired
+3. Go back to **WooCommerce > Trusteed**
+4. The "Última sincronización" timestamp should show the current time. That confirms the product hook fired
 
 ---
 
 ## 7. Troubleshooting
 
-### Problem 1: "Connection Failed" after entering API key
+### Problem 1: An error appears when you connect
 
-**Cause:** The API key is invalid or your server cannot reach the AgenticMCPStores API.
-
-**Solution:**
-
-- Double-check that you copied the full API key (it starts with `amcs_`)
-- Make sure there are no extra spaces before or after the key
-- Verify your server can make outbound HTTPS requests (some hosts block external API calls)
-- Contact your hosting provider if outbound HTTPS is blocked
-
-### Problem 2: Product count is zero after sync
-
-**Cause:** No published products found, or the sync failed silently.
+**Cause:** The email or password is wrong, the API key is invalid, or your server can't reach the Trusteed API.
 
 **Solution:**
 
-- Confirm you have at least one product with status "Published" (not Draft or Private)
-- Click "Sync Now" to trigger a manual full sync
-- Check **WooCommerce > Status > Logs** for any error messages from the plugin
-- If using a caching plugin, clear your cache and try again
+- Retype your email and password, or copy the full API key again
+- Remove any space before or after the key
+- Confirm that your server can make outbound HTTPS requests, because some hosts block them
+- If outbound HTTPS is blocked, ask your hosting provider to open it
+- Click **"Probar conexión"** to see whether the plugin can reach Trusteed
+
+### Problem 2: Your products don't show up in the agent after the sync
+
+**Cause:** The plugin found no published products, or the sync failed without a visible error.
+
+**Solution:**
+
+- Confirm that at least one product has the status "Published" (Draft and Private products are skipped)
+- Click **"Sincronizar catálogo ahora"** to run a full sync by hand
+- Check the PHP error log (`wp-content/debug.log` when debug logging is on) for lines that start with `[amcp.catalog_sync]`
+- If you use a caching plugin, clear its cache and try again
 
 ### Problem 3: Products are outdated after editing
 
-**Cause:** WooCommerce hooks did not fire, or a caching layer intercepted the update.
+**Cause:** The WooCommerce hooks didn't fire, or a caching layer intercepted the update.
 
 **Solution:**
 
-- Click "Sync Now" on the settings page to force a full re-sync
-- If you use an object caching plugin (Redis, Memcached), flush the cache
-- If you use a staging/production workflow, ensure the plugin is active on the production site
+- Click **"Sincronizar catálogo ahora"** on the settings page to force a full re-sync
+- If you use an object cache (Redis, Memcached), flush it
+- If you work with a staging and a production site, confirm that the plugin is active on production
 
-### Problem 4: Plugin conflicts or white screen
+### Problem 4: Plugin conflict or white screen
 
-**Cause:** Another plugin or theme is conflicting with AgenticMCPStores.
-
-**Solution:**
-
-- Deactivate all other plugins temporarily
-- Activate them one by one to identify the conflict
-- If the issue is with a specific plugin, contact support@trusteed.xyz with the plugin name and error details
-- Check your PHP error log (`wp-content/debug.log`) for specific error messages
-
-### Problem 5: Slow initial sync for large catalogs
-
-**Cause:** Stores with thousands of products may take several minutes for the first sync.
+**Cause:** Another plugin or your theme conflicts with Trusteed.
 
 **Solution:**
 
-- The initial sync processes products in batches. Allow up to 5 minutes for stores with 1,000+ products
-- Do not navigate away from the settings page during the initial sync
-- If the sync times out, click "Sync Now" to resume where it left off
-- For stores with 10,000+ products, consider running the sync during low-traffic hours
+- Deactivate all other plugins for now
+- Reactivate them one at a time until the problem comes back. The last one you activated is the conflict
+- Send that plugin's name and the error details to support@trusteed.xyz
+- Read your PHP error log (`wp-content/debug.log`) for the exact error message
+
+### Problem 5: Slow first sync on a large catalog
+
+**Cause:** A store with thousands of products sends many batches, and the first sync can take a while.
+
+**Solution:**
+
+- The first sync sends products in batches of 100
+- Stay on the settings page until the sync finishes
+- If the sync times out, click **"Sincronizar catálogo ahora"** to run it again. Each run starts from the first product
+- For stores with 10,000+ products, run the sync when traffic is low
 
 ---
 
 ## 8. Support
 
-If you need help or have questions:
+Need help? Reach us here:
 
-- **Documentation:** [trusteed.xyz/docs](https://trusteed.xyz/docs)
-- **Email:** support@trusteed.xyz
-- **Response time:** Within 24 hours on business days
-- **Free tier support:** Email only
-- **Growth/Pro/Enterprise support:** Priority email with guaranteed SLA
+- Documentation: [trusteed.xyz/docs](https://trusteed.xyz/docs)
+- Email: support@trusteed.xyz
+- GitHub issues: [github.com/Trusteedxyz/agentic-commerce-woocommerce/issues](https://github.com/Trusteedxyz/agentic-commerce-woocommerce/issues)
 
-When contacting support, please include:
+Include these details in your message:
 
 - Your WordPress version (found in **Dashboard > Updates**)
 - Your WooCommerce version (found in **WooCommerce > Status**)
 - Your PHP version (found in **WooCommerce > Status > Server Environment**)
-- The error message or screenshot of the issue
+- The error message, or a screenshot of the problem
 - Your store URL
 
 ---
 
-_Last updated: 2026-03-28_
+_Last updated: 2026-09-20_
