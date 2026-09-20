@@ -1,4 +1,4 @@
-# Privacy Policy — Trusteed for WooCommerce
+# Privacy Policy: Trusteed for WooCommerce
 
 **Last updated:** 2026-08-17
 **Plugin version:** 2.2.2
@@ -74,7 +74,7 @@ As a merchant using this plugin, you have the right to:
 - **Portability**: Request your catalog data in a machine-readable format
 - **Objection**: Object to the processing of your data by contacting the DPO
 
-To stop agents from reaching your store, use the plugin settings page to disconnect it. To have stored data erased, send an email to privacy@trusteed.xyz — disconnecting alone does not delete it.
+To stop agents from reaching your store, use the plugin settings page to disconnect it. To have stored data erased, send an email to privacy@trusteed.xyz. Disconnecting alone does not delete it.
 
 ## Disclaimer
 

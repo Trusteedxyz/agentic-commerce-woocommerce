@@ -110,7 +110,7 @@ widersprechen können:
 | **Was wir gesehen haben** | Echter Agentenverkehr im gewählten Zeitraum: welche Agenten kamen, welche Werkzeuge sie nutzten, wie weit sie kamen und woran sie scheiterten |
 
 Eine Prüfung, die nicht durchgeführt werden konnte, wird als **nicht geprüft**
-ausgewiesen — mit Begründung. Sie wird nie stillschweigend verworfen und nie als
+ausgewiesen, mit Begründung. Sie wird nie stillschweigend verworfen und nie als
 bestanden gewertet. «Wir konnten nicht nachsehen» und «wir haben nachgesehen und
 es war in Ordnung» sind verschiedene Antworten, und die Seite sagt, welche gilt.
 
@@ -154,7 +154,7 @@ genau die Selbsttäuschung, die diese Seite aufdecken soll.
 
 ### 2.3.4
 
-- Neu: wenn eine Prüfung nicht durchgeführt werden konnte, erklärt das Panel jetzt, was sie freischalten würde — nichts zu tun, Einrichtung nötig, Daten stehen noch aus, oder eine unserer eigenen Prüfungen ist fehlgeschlagen — statt einer unerklärten grauen Liste.
+- Neu: wenn eine Prüfung nicht durchgeführt werden konnte, erklärt das Panel jetzt, was sie freischalten würde (nichts zu tun, Einrichtung nötig, Daten stehen noch aus, oder eine unserer eigenen Prüfungen ist fehlgeschlagen), statt einer unerklärten grauen Liste.
 - Neu: das Panel zeigt jetzt, welcher unserer Server Ihre Anfrage beantwortet hat, ein kurzes, undurchsichtiges Kürzel. Nützlich zum Vergleich mit dem, was der Support sieht; es verrät nie einen Hostnamen oder Dienstnamen.
 
 ### 2.3.3
@@ -167,7 +167,7 @@ genau die Selbsttäuschung, die diese Seite aufdecken soll.
 
 - Behoben: Die Seite zur Agenten-Bereitschaft wurde ohne ihr Stylesheet ausgeliefert, sodass das Panel unformatiert dargestellt wurde.
 - Behoben: Das Panel konnte die Oberfläche in einer Sprache und die Diagnose in einer anderen anzeigen. Die ermittelte Sprache wird jetzt zusammen mit den Texten weitergereicht, statt zweimal getrennt erkannt zu werden.
-- Neu: Jeder Befund enthält einen Link dorthin, wo er behoben wird, und die Zusagen des Händlers — die Lieferzeit und die übrigen — erscheinen mit dem jeweils vorhandenen Beleg.
+- Neu: Jeder Befund enthält einen Link dorthin, wo er behoben wird, und die Zusagen des Händlers (die Lieferzeit und die übrigen) erscheinen mit dem jeweils vorhandenen Beleg.
 - Geändert: Ein Shop ohne bisherige Prüfung wird als „wird geprüft“ angezeigt statt als „wird einmal täglich geprüft“: Das Öffnen des Panels startet die erste Prüfung bereits im Hintergrund.
 
 ### 2.3.1
@@ -177,17 +177,17 @@ genau die Selbsttäuschung, die diese Seite aufdecken soll.
 
 ### 2.3.0
 
-- **Neu — Dashboard zur Agenten-Bereitschaft.** *Finden mich Agenten?* ist jetzt im Verwaltungsbereich verfügbar. Es vergleicht, was Ihr Shop ankündigt, mit dem, was er tatsächlich antwortet — in **16 Prüfungen**, und zeigt alle sechzehn, nicht nur die fehlgeschlagenen. Eine Prüfung, die nicht laufen konnte, nennt den **Grund** (Shop nicht verbunden, noch keine ausgelieferten Bestellungen, diesmal nichts zu vergleichen), statt eine Lücke zu lassen, die wie ein Defekt wirkt. Siehe «Das Dashboard zur Agenten-Bereitschaft» oben.
+- **Neu: Dashboard zur Agenten-Bereitschaft.** *Finden mich Agenten?* ist jetzt im Verwaltungsbereich verfügbar. Es vergleicht, was Ihr Shop ankündigt, mit dem, was er tatsächlich antwortet, in **16 Prüfungen**, und zeigt alle sechzehn, nicht nur die fehlgeschlagenen. Eine Prüfung, die nicht laufen konnte, nennt den **Grund** (Shop nicht verbunden, noch keine ausgelieferten Bestellungen, diesmal nichts zu vergleichen), statt eine Lücke zu lassen, die wie ein Defekt wirkt. Siehe «Das Dashboard zur Agenten-Bereitschaft» oben.
 - Behoben: die Diagnose wurde innerhalb der API auf Spanisch verfasst und unverändert angezeigt: Wer den Bereich auf Englisch nutzte, las englische Überschriften über spanischen Befunden. Die Prüfungen liefern jetzt sprachneutrale Codes, und der Text wird beim Ausliefern in Ihrer Sprache erzeugt.
-- Behoben: Prüfung C1 («Sie kündigen Werkzeuge an, die Ihr Shop nicht bereitstellt») wertete den gesamten öffentlichen Katalog als bereitgestellt, wenn keine Werkzeugliste konfiguriert war: gemeldet wurden 46 von 48, tatsächlich liefert der Server 12. Der Fehler ging in die schmeichelhafte Richtung — genau die, die dieses Dashboard aufdecken soll.
-- Behoben: Prüfung C6 («Sie kündigen etwas als verfügbar an, das abgeschaltet ist») meldete eine Funktion als abgeschaltet, sobald ihr Schalter nicht gesetzt war — auch bei Schaltern, die standardmäßig aktiv sind. Das war ein Fehlalarm in jedem Shop.
+- Behoben: Prüfung C1 («Sie kündigen Werkzeuge an, die Ihr Shop nicht bereitstellt») wertete den gesamten öffentlichen Katalog als bereitgestellt, wenn keine Werkzeugliste konfiguriert war: gemeldet wurden 46 von 48, tatsächlich liefert der Server 12. Der Fehler ging in die schmeichelhafte Richtung, genau die, die dieses Dashboard aufdecken soll.
+- Behoben: Prüfung C6 («Sie kündigen etwas als verfügbar an, das abgeschaltet ist») meldete eine Funktion als abgeschaltet, sobald ihr Schalter nicht gesetzt war, auch bei Schaltern, die standardmäßig aktiv sind. Das war ein Fehlalarm in jedem Shop.
 
 ### 2.2.2
 
-- Sicherheitsfix: der API-Client akzeptierte in **jeder** Umgebung eine Basis-URL im Loopback- oder RFC1918-Bereich (`10.*`, `172.16–31.*`, `192.168.*`, `localhost`, `127.*`), auch über einfaches HTTP. Eine Installation, deren API-URL umgeleitet worden war, hätte ihre `X-AgenticMCP-Key`-Zugangsdaten an eine interne Adresse geschickt. Dieser Entwicklungsmodus muss nun ausdrücklich aktiviert werden und ist standardmäßig aus: nur über `TRUSTEED_ALLOW_LOCAL_API_BASE` oder den WordPress-Umgebungstyp `local` — dieselbe Absicherung, die `Trusteed_Token_Broker` über `WP_DEBUG` längst anwandte und die diesem Client fehlte.
+- Sicherheitsfix: der API-Client akzeptierte in **jeder** Umgebung eine Basis-URL im Loopback- oder RFC1918-Bereich (`10.*`, `172.16–31.*`, `192.168.*`, `localhost`, `127.*`), auch über einfaches HTTP. Eine Installation, deren API-URL umgeleitet worden war, hätte ihre `X-AgenticMCP-Key`-Zugangsdaten an eine interne Adresse geschickt. Dieser Entwicklungsmodus muss nun ausdrücklich aktiviert werden und ist standardmäßig aus: nur über `TRUSTEED_ALLOW_LOCAL_API_BASE` oder den WordPress-Umgebungstyp `local`. Es ist dieselbe Absicherung, die `Trusteed_Token_Broker` über `WP_DEBUG` längst anwandte und die diesem Client fehlte.
 - Sicherheitsfix: Cloud-Instanz-Metadaten und interne IPv6-Bereiche werden jetzt in jeder Umgebung gesperrt, *auch* im Entwicklungsmodus, der sie vorher alle wieder öffnete: `169.254.0.0/16` (IMDS), Alibaba `100.100.100.200`, `metadata.google.internal`, Unique-Local `fc00::/7`, Link-Local `fe80::/10`. Sie liefern zudem einen eigenen Fehlercode statt der irreführenden Meldung „HTTPS-URL konfigurieren".
 - Behoben: IPv6-Hosts trafen auf keine einzige Prüfung zu: `parse_url()` gibt sie in Klammern zurück (`[::1]`), der Loopback-Eintrag `::1` war also toter Code.
-- Datenschutzfix: beim Deinstallieren blieben 21 Options-Zeilen zurück, darunter drei verschlüsselte Secrets (`trusteed_embed_wp_secret`, `trusteed_enforcement_hmac_secret`, `trusteed_woo_webhook_secret`) und die veralteten `amcp_*`-Aliase, die der Options-Accessor weiterhin als Rückfall liest — eine Neuinstallation konnte so ein altes Secret wiederbeleben. `uninstall.php` räumt jetzt alle drei Namensräume sowie die Snapshot- und JWKS-Transients auf. Ein neuer Test durchsucht den Quellcode nach jedem schreibbaren Options-Schlüssel und schlägt fehl, wenn die Deinstallationsliste zurückfällt.
+- Datenschutzfix: beim Deinstallieren blieben 21 Options-Zeilen zurück, darunter drei verschlüsselte Secrets (`trusteed_embed_wp_secret`, `trusteed_enforcement_hmac_secret`, `trusteed_woo_webhook_secret`) und die veralteten `amcp_*`-Aliase, die der Options-Accessor weiterhin als Rückfall liest. Eine Neuinstallation konnte so ein altes Secret wiederbeleben. `uninstall.php` räumt jetzt alle drei Namensräume sowie die Snapshot- und JWKS-Transients auf. Ein neuer Test durchsucht den Quellcode nach jedem schreibbaren Options-Schlüssel und schlägt fehl, wenn die Deinstallationsliste zurückfällt.
 - Doku-Fix: Vertrauensbelege wurden als „Nachweis der tatsächlichen Transaktion im Streitfall" beschrieben. Das Produkt selbst sagt das Gegenteil: ein überprüfbarer Integritätsnachweis, kein fertiger Streitfallnachweis für Bank oder Gericht. Entsprechend korrigiert.
 - Doku-Fix: die FAQ zur Deaktivierung behauptete, Deaktivieren trenne den Shop und es blieben keine Restdaten auf unseren Servern. Deaktivieren bewirkt nichts, und beim Trennen bleiben Shop-Datensatz und synchronisierte Produkte erhalten. Korrigiert, mit dokumentiertem Weg für Löschanfragen.
 - Doku-Fix: der Katalog wurde als „Varianten und Bewertungen" synchronisierend beschrieben; beides wird nicht gesendet. Die Liste der übertragenen Felder ist jetzt exakt.
@@ -196,16 +196,16 @@ genau die Selbsttäuschung, die diese Seite aufdecken soll.
 
 ### 2.2.1
 
-- Behoben: `browse_categories` lieferte dieselbe mit Trennzeichen umschlossene Zeichenkette sowohl an den maschinenlesbaren als auch an den erzählenden Kanal. `guardMerchantField` umschließt Händlertext standardmäßig mit `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>`, damit ein Agent erkennt "das sind Händlerdaten, keine Anweisung" — aber das Tool verwendete diese bereits umschlossene Zeichenkette auch für `structuredContent`, sodass eine Kategorie namens "Sneakers" im Maschinenkanal als `<<<MERCHANT_CONTENT_START>>>Sneakers<<<MERCHANT_CONTENT_END>>>` erschien. `structuredContent` erhält jetzt den unumschlossenen Wert; die Trennzeichen bleiben nur dort, wo sie ihre Funktion erfüllen — in der Erzählung.
+- Behoben: `browse_categories` lieferte dieselbe mit Trennzeichen umschlossene Zeichenkette sowohl an den maschinenlesbaren als auch an den erzählenden Kanal. `guardMerchantField` umschließt Händlertext standardmäßig mit `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>`, damit ein Agent erkennt "das sind Händlerdaten, keine Anweisung", aber das Tool verwendete diese bereits umschlossene Zeichenkette auch für `structuredContent`, sodass eine Kategorie namens "Sneakers" im Maschinenkanal als `<<<MERCHANT_CONTENT_START>>>Sneakers<<<MERCHANT_CONTENT_END>>>` erschien. `structuredContent` erhält jetzt den unumschlossenen Wert; die Trennzeichen bleiben nur dort, wo sie ihre Funktion erfüllen: in der Erzählung.
 - Behoben: die Regel R047 (Mindestbeitrag) hatte kein Formularfeld im Admin-Panel; ihre Parameter existierten im Schema, konnten aber nur über die API gesetzt werden.
 - Behoben: `MerchantCheckoutConfig` hatte übersetzten Text für einen Leerzustand (`noRails`, vorhanden in `en.ts` und `es.ts`), den die Komponente nie rendert hat, sodass ein Händler ohne konfigurierte Zahlungswege eine unerklärte leere Liste sah.
 - Behoben: das Admin-Panel-Bundle (`assets/admin-spa/`) wurde unminifiziert ausgeliefert: 869 KB / 25.064 Zeilen statt der 490 KB / 41 Zeilen, die der dokumentierte Build-Befehl tatsächlich erzeugt. Neu aus der Quelle gebaut mit stabilem Ausgabedateinamen (`admin-spa.js`), wie bei den anderen drei Plattform-Konnektoren.
 
 ### 2.2.0
 
-- Sicherheitsfix: der Agent-Token-Verifizierer behandelte `exp` und `iat` als optional: beide Prüfungen hingen an `> 0`, sodass ein Token, das den Claim schlicht wegließ, die Prüfung vollständig umging. Ohne `exp` lief es nie ab; ohne `iat` hatte es kein Höchstalter. Beide sind jetzt verpflichtend, und ein nicht-numerischer Wert wird zurückgewiesen statt gecastet. Der Replay-Schutz war hier bereits fail-closed (ein fehlendes oder fehlerhaftes `jti` wird abgelehnt) — dies schließt die verbleibende Hälfte.
-- Sicherheitsfix: ein `iat` in der Zukunft wird nun abgelehnt (30s Uhrenabweichung werden toleriert). Zusammen mit dem Höchstalter-Fenster ergab sich eine gleitende Lebensdauer: `jetzt - iat` bleibt klein, solange der Aussteller den Claim nach vorne schiebt — das Token alterte also nie.
-- Fix: Regel R036 (maximaler Positionswert) las ihre Obergrenze aus einem Parameter namens `maxCents`, von R035 übernommen. Der kanonische Name lautet `maxCentsPerLine` und ist der einzige, den das strikte Schema des Händlerpanels akzeptiert — eine vom Händler konfigurierte Obergrenze hätte die Prüfung nie erreicht. Der kanonische Schlüssel wird jetzt zuerst gelesen; `maxCents` bleibt als Rückfall akzeptiert.
+- Sicherheitsfix: der Agent-Token-Verifizierer behandelte `exp` und `iat` als optional: beide Prüfungen hingen an `> 0`, sodass ein Token, das den Claim schlicht wegließ, die Prüfung vollständig umging. Ohne `exp` lief es nie ab; ohne `iat` hatte es kein Höchstalter. Beide sind jetzt verpflichtend, und ein nicht-numerischer Wert wird zurückgewiesen statt gecastet. Der Replay-Schutz war hier bereits fail-closed (ein fehlendes oder fehlerhaftes `jti` wird abgelehnt). Dies schließt die verbleibende Hälfte.
+- Sicherheitsfix: ein `iat` in der Zukunft wird nun abgelehnt (30s Uhrenabweichung werden toleriert). Zusammen mit dem Höchstalter-Fenster ergab sich eine gleitende Lebensdauer: `jetzt - iat` bleibt klein, solange der Aussteller den Claim nach vorne schiebt. Das Token alterte also nie.
+- Fix: Regel R036 (maximaler Positionswert) las ihre Obergrenze aus einem Parameter namens `maxCents`, von R035 übernommen. Der kanonische Name lautet `maxCentsPerLine` und ist der einzige, den das strikte Schema des Händlerpanels akzeptiert. Eine vom Händler konfigurierte Obergrenze hätte die Prüfung nie erreicht. Der kanonische Schlüssel wird jetzt zuerst gelesen; `maxCents` bleibt als Rückfall akzeptiert.
 - Fix: der sprachübergreifende Konformitätstest löste sein Fixture über einen Pfad auf, den es nur im Entwicklungs-Monorepo gibt, und schlug daher in diesem Repository fehl. Er liest nun die in `tests/fixtures/` mitgelieferte Kopie.
 - Trust Receipts: das Admin-SPA-Bundle wurde mit der Beleg-Download-Schaltfläche neu gebaut, die einen Beleg über denselben Endpunkt als ZIP exportiert, den auch das gehostete Dashboard nutzt. Die Schaltfläche benennt klar, was dieser Export ist: ein Nachweis der Agenten-Integrität, kein Streitfall-Beweis.
 

@@ -153,7 +153,7 @@ esta página existe para cazar.
 
 ### 2.3.4
 
-- Nuevo: cuando una comprobación no se pudo ejecutar, el panel ahora explica qué la desbloquearía — nada que hacer, hay que configurar algo, falta esperar datos, o ha fallado una comprobación nuestra — en vez de una lista plana de grises sin explicar.
+- Nuevo: cuando una comprobación no se pudo ejecutar, el panel ahora explica qué la desbloquearía (nada que hacer, hay que configurar algo, falta esperar datos, o ha fallado una comprobación nuestra) en vez de una lista plana de grises sin explicar.
 - Nuevo: el panel ahora muestra qué servidor nuestro respondió a tu petición, una etiqueta corta y opaca. Útil para comparar lo que ves aquí con lo que ve soporte; nunca revela un nombre de host o de servicio.
 
 ### 2.3.3
@@ -166,7 +166,7 @@ esta página existe para cazar.
 
 - Corregido: la página de disponibilidad para agentes se publicaba sin su hoja de estilos, así que el panel salía sin formato.
 - Corregido: el panel podía mostrar la carcasa en un idioma y el diagnóstico en otro. El idioma resuelto viaja ahora junto a los textos, en vez de detectarse dos veces por separado.
-- Nuevo: cada hallazgo lleva un enlace a donde se corrige, y las afirmaciones del comercio —el plazo de entrega y las demás— aparecen con el respaldo que tiene cada una.
+- Nuevo: cada hallazgo lleva un enlace a donde se corrige, y las afirmaciones del comercio (el plazo de entrega y las demás) aparecen con el respaldo que tiene cada una.
 - Cambiado: una tienda sin ninguna comprobación todavía se lee como «comprobando» en lugar de «se comprueba una vez al día»: abrir el panel ya lanza la primera comprobación en segundo plano.
 
 ### 2.3.1
@@ -176,14 +176,14 @@ esta página existe para cazar.
 
 ### 2.3.0
 
-- **Nuevo — panel de preparación agéntica.** *¿Me encuentran los agentes?* llega al panel de administración. Contrasta lo que tu tienda anuncia con lo que responde de verdad, en **16 comprobaciones**, y las enseña las dieciséis, no sólo las que fallan. Una comprobación que no se ha podido hacer dice **por qué** (tienda sin conectar, todavía sin pedidos entregados, nada que comparar esta vez) en vez de dejar un hueco que se lee como avería. Ver «El panel de preparación agéntica» más arriba.
+- **Nuevo: panel de preparación agéntica.** *¿Me encuentran los agentes?* llega al panel de administración. Contrasta lo que tu tienda anuncia con lo que responde de verdad, en **16 comprobaciones**, y las enseña las dieciséis, no sólo las que fallan. Una comprobación que no se ha podido hacer dice **por qué** (tienda sin conectar, todavía sin pedidos entregados, nada que comparar esta vez) en vez de dejar un hueco que se lee como avería. Ver «El panel de preparación agéntica» más arriba.
 - Corregido: el diagnóstico se escribía en castellano dentro de la API y se mostraba tal cual, así que un comerciante con el panel en inglés leía encabezados en inglés y hallazgos en castellano. Las comprobaciones emiten ahora códigos neutros de idioma y el texto se compone al servirlo, en el idioma que estés usando.
 - Corregido: la comprobación C1 («anuncias herramientas que tu tienda no sirve») daba por servido el catálogo público entero cuando no había lista de herramientas configurada: informaba de 46 de 48 respondiendo cuando el servidor sirve 12. Fallaba en la dirección aduladora, que es justo la que este panel existe para cazar.
 - Corregido: la comprobación C6 («anuncias como disponible algo que está apagado») daba una capacidad por apagada siempre que su bandera no estuviera puesta, incluso en banderas que están encendidas por defecto. Era una falsa alarma en todas las tiendas.
 
 ### 2.2.2
 
-- Corrección de seguridad: el cliente de la API aceptaba una URL base en loopback o en rango privado RFC1918 (`10.*`, `172.16–31.*`, `192.168.*`, `localhost`, `127.*`) en **todos** los entornos, incluso por HTTP plano. Una instalación cuya URL de API hubiese sido redirigida enviaría su credencial `X-AgenticMCP-Key` a una dirección interna. Ese modo de desarrollo ahora hay que activarlo a propósito y viene desactivado: sólo se habilita con `TRUSTEED_ALLOW_LOCAL_API_BASE` o con el tipo de entorno `local` de WordPress — la misma puerta que `Trusteed_Token_Broker` ya aplicaba con `WP_DEBUG` y que este cliente había perdido.
+- Corrección de seguridad: el cliente de la API aceptaba una URL base en loopback o en rango privado RFC1918 (`10.*`, `172.16–31.*`, `192.168.*`, `localhost`, `127.*`) en **todos** los entornos, incluso por HTTP plano. Una instalación cuya URL de API hubiese sido redirigida enviaría su credencial `X-AgenticMCP-Key` a una dirección interna. Ese modo de desarrollo ahora hay que activarlo a propósito y viene desactivado: sólo se habilita con `TRUSTEED_ALLOW_LOCAL_API_BASE` o con el tipo de entorno `local` de WordPress. Es la misma puerta que `Trusteed_Token_Broker` ya aplicaba con `WP_DEBUG` y que este cliente había perdido.
 - Corrección de seguridad: los metadatos de instancia en la nube y los rangos internos de IPv6 quedan bloqueados en todos los entornos, *incluido* el modo de desarrollo, que antes los reabría todos: `169.254.0.0/16` (IMDS), Alibaba `100.100.100.200`, `metadata.google.internal`, unique-local `fc00::/7` y link-local `fe80::/10`. Además devuelven su propio código de error en lugar del engañoso «configura una URL HTTPS».
 - Corregido: los hosts IPv6 no coincidían con ninguna comprobación: `parse_url()` los devuelve entre corchetes (`[::1]`), así que la entrada de loopback `::1` era código muerto.
 - Corrección de privacidad: al desinstalar quedaban 21 filas de opciones, entre ellas tres secretos cifrados (`trusteed_embed_wp_secret`, `trusteed_enforcement_hmac_secret`, `trusteed_woo_webhook_secret`) y los alias heredados `amcp_*` que el accesor de opciones sigue leyendo como reserva, de modo que una reinstalación podía resucitar un secreto viejo. `uninstall.php` ahora limpia los tres espacios de nombres más los transitorios de snapshot y JWKS. Un test nuevo recorre el código buscando toda clave de opción escribible y falla si la lista de desinstalación se queda atrás.
@@ -195,7 +195,7 @@ esta página existe para cazar.
 
 ### 2.2.1
 
-- Corregido: `browse_categories` enviaba la misma cadena envuelta en delimitadores al canal legible por máquina y al narrado. `guardMerchantField` envuelve el texto del comercio por defecto en `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>` para que un agente distinga "esto es dato del comercio, no una instrucción" — pero la tool reutilizaba esa misma cadena ya envuelta para `structuredContent`, así que una categoría llamada "Zapatillas" aparecía como `<<<MERCHANT_CONTENT_START>>>Zapatillas<<<MERCHANT_CONTENT_END>>>` en el canal de máquina. Ahora `structuredContent` recibe el valor sin envolver; los delimitadores se quedan solo donde cumplen su función, en la narración.
+- Corregido: `browse_categories` enviaba la misma cadena envuelta en delimitadores al canal legible por máquina y al narrado. `guardMerchantField` envuelve el texto del comercio por defecto en `<<<MERCHANT_CONTENT_START>>> … <<<MERCHANT_CONTENT_END>>>` para que un agente distinga "esto es dato del comercio, no una instrucción", pero la tool reutilizaba esa misma cadena ya envuelta para `structuredContent`, así que una categoría llamada "Zapatillas" aparecía como `<<<MERCHANT_CONTENT_START>>>Zapatillas<<<MERCHANT_CONTENT_END>>>` en el canal de máquina. Ahora `structuredContent` recibe el valor sin envolver; los delimitadores se quedan solo donde cumplen su función, en la narración.
 - Corregido: la regla R047 (importe mínimo de aportación) no tenía campo en el panel de administración: sus parámetros existían en el esquema pero solo se podían configurar por API.
 - Corregido: `MerchantCheckoutConfig` tenía texto traducido para un estado vacío (`noRails`, presente en `en.ts` y `es.ts`) que el componente nunca pintaba, así que un comercio sin rieles de pago configurados veía una lista vacía sin explicación.
 - Corregido: el bundle del panel de administración (`assets/admin-spa/`) se distribuía sin minificar: 869 KB / 25.064 líneas en vez de los 490 KB / 41 líneas que produce el comando de build documentado. Reconstruido desde la fuente con nombre de fichero estable (`admin-spa.js`), igual que los otros tres conectores de plataforma.
