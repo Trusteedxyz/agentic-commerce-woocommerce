@@ -149,7 +149,21 @@ verdict from yesterday looks like one from yesterday. A cached "all good"
 passed off as current is exactly the kind of self-deception this page exists
 to catch.
 
+## Security Acknowledgements
+
+We thank **MD Rabbi Hossain** ([LinkedIn](https://www.linkedin.com/in/csrrabbi/) · [X](https://x.com/csrrabbi)) for a responsible disclosure report against our identity provider, `auth.trusteed.xyz`.
+
+The report's central claim is accurate: our OAuth dynamic client registration endpoint (`/oidc/register`, RFC 7591) accepts requests without a credential. That is deliberate — our MCP connectors, including Claude's, self-register through this endpoint before they can authorize at all, and requiring a credential there would break them. The access it enables is consent phishing, a property of any open dynamic-registration flow rather than unauthenticated access, and it does not reach checkout: our payment path requires a verified agent-identity claim that a token obtained this way does not carry.
+
+Investigating the report surfaced something it did not flag: an OAuth scope (`mcp:admin`) was published across our discovery documents and offered on the consent screen, but no code enforced it — a token holding it carried the exact same privileges as `mcp:read`. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
+
 ## Changelog
+
+### 2.3.5
+
+**Error messages from Trusteed now reach you as sentences, not codes.**
+
+- Fixed: when Trusteed rejected a request, the plugin showed you its machine code instead of the explanation that came with it. You saw "API error 409: wrong_deployment" where the server had actually sent a sentence telling you what happened and what to do about it. The sentence now wins; the code is still available to the plugin.
 
 ### 2.3.4
 
