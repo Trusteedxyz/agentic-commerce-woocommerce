@@ -122,6 +122,28 @@ class Trusteed_Cart_Bridge {
 	const SESSION_AGENT_TOKEN = 'trusteed_agent_token';
 
 	/**
+	 * Marca de origen: todo carrito que crea este endpoint lo pide nuestro MCP
+	 * (auditoría spec-048 2026-09-27, A8). Con ella, un agente sin DID ni token
+	 * es un agente anónimo y no un humano. Es un parámetro de URL: quien tenga el
+	 * enlace puede quitarla (queda como cualquier navegante sin marca) o añadirla
+	 * a mano, y entonces sólo se le trata con MÁS rigor (como agente), nunca con
+	 * menos. El valor no se interpreta: basta con que el parámetro exista.
+	 *
+	 * @since 2.3.6
+	 * @var string
+	 */
+	const ORIGIN_PARAM = 'trusteed_origin';
+
+	/**
+	 * Clave de sesión WC donde se guarda la marca de origen ('1') entre la carga
+	 * del checkout y su envío. Se borra tras cada evaluación.
+	 *
+	 * @since 2.3.6
+	 * @var string
+	 */
+	const SESSION_AGENTIC_ORIGIN = 'trusteed_agentic_origin';
+
+	/**
 	 * Handle POST /wp-json/trusteed/v1/cart (legacy alias: /wp-json/agenticmcp/v1/cart).
 	 *
 	 * Validates each line item, builds a native WooCommerce checkout URL,
@@ -447,6 +469,8 @@ class Trusteed_Cart_Bridge {
 				$args[ self::AGENT_TOKEN_PARAM ] = rawurlencode( $agent_token );
 			}
 
+			$args[ self::ORIGIN_PARAM ] = 'mcp';
+
 			return add_query_arg( $args, wc_get_checkout_url() );
 		}
 
@@ -475,6 +499,8 @@ class Trusteed_Cart_Bridge {
 		if ( null !== $agent_token ) {
 			$query_args[ self::AGENT_TOKEN_PARAM ] = rawurlencode( $agent_token );
 		}
+
+		$query_args[ self::ORIGIN_PARAM ] = 'mcp';
 
 		return add_query_arg( $query_args, wc_get_checkout_url() );
 	}

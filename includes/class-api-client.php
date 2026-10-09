@@ -589,6 +589,22 @@ class Trusteed_Api_Client {
 			);
 		}
 
+		// Reconexión de una tienda ya registrada: Trusteed exige probar el
+		// control del dominio antes de rotar y entregar credenciales.
+		if ( 202 === $parsed['status'] ) {
+			$token = Trusteed_Domain_Challenge::token_from_body( $parsed['body'] );
+			if ( null === $token ) {
+				return new WP_Error(
+					'agenticmcp_onboard_failed',
+					__( 'Trusteed asked for a domain check this plugin does not understand. Update the plugin and try again.', 'trusteed-for-woocommerce' )
+				);
+			}
+			$parsed = $this->redeem_domain_challenge( $token, esc_url_raw( $site_url ) );
+			if ( is_wp_error( $parsed ) ) {
+				return $parsed;
+			}
+		}
+
 		if ( $parsed['status'] < 200 || $parsed['status'] >= 300 ) {
 			$msg = isset( $parsed['body']['error'] )
 				? sanitize_text_field( $parsed['body']['error'] )
@@ -596,16 +612,78 @@ class Trusteed_Api_Client {
 			return new WP_Error( 'agenticmcp_onboard_failed', $msg );
 		}
 
-		$d = isset( $parsed['body']['data'] ) ? $parsed['body']['data'] : array();
+		$d = isset( $parsed['body']['data'] ) && is_array( $parsed['body']['data'] ) ? $parsed['body']['data'] : array();
 
+		return self::onboard_result_from_data( $d );
+	}
+
+	/**
+	 * Publica el token del reto en `/.well-known/amcp-verify.txt` y lo canjea.
+	 *
+	 * El canje va a NUESTRA base de API, no a la URL que sugiera la respuesta.
+	 * Trusteed descarga el token durante esta misma llamada, así que el
+	 * transitorio vive hasta que vuelve.
+	 *
+	 * @param string $token    Token del reto.
+	 * @param string $site_url URL de la tienda (la registrada).
+	 * @return array|WP_Error Respuesta parseada, como la de `/plugin/onboard`.
+	 */
+	private function redeem_domain_challenge( string $token, string $site_url ) {
+		Trusteed_Domain_Challenge::publish( $token );
+		try {
+			$raw = wp_remote_request(
+				$this->api_base . '/api/v1/plugin/onboard/verify-challenge',
+				array(
+					'method'  => 'POST',
+					'timeout' => 30,
+					'headers' => array(
+						'Content-Type' => 'application/json',
+						'Accept'       => 'application/json',
+						'User-Agent'   => self::USER_AGENT_PREFIX . $this->get_plugin_version(),
+					),
+					'body'    => wp_json_encode(
+						array(
+							'store_url'       => untrailingslashit( $site_url ),
+							'challenge_token' => $token,
+						)
+					),
+				)
+			);
+		} finally {
+			Trusteed_Domain_Challenge::clear();
+		}
+		if ( is_wp_error( $raw ) ) {
+			return new WP_Error( 'agenticmcp_onboard_transport', $raw->get_error_message() );
+		}
+		return $this->parse_response( $raw, '/api/v1/plugin/onboard/verify-challenge' );
+	}
+
+	/**
+	 * Traduce el `data` de `/plugin/onboard` a lo que guarda la pantalla de ajustes.
+	 *
+	 * Incluye las credenciales de enforcement y del webhook de Woo: hasta 2.4.0
+	 * esta lista las omitía, `class-settings.php` nunca las recibía y la tienda
+	 * quedaba sin secreto de instalación (snapshot, eventos de agente y
+	 * `trusteed/v1/*` cerraban todos por falta de secreto).
+	 *
+	 * @param array<string,mixed> $d Campo `data` de la respuesta.
+	 * @return array<string,mixed>
+	 */
+	public static function onboard_result_from_data( array $d ): array {
+		$text = static function ( string $key ) use ( $d ): string {
+			return isset( $d[ $key ] ) && is_string( $d[ $key ] ) ? sanitize_text_field( $d[ $key ] ) : '';
+		};
 		return array(
-			'merchant_id'       => isset( $d['merchant_id'] ) ? sanitize_text_field( $d['merchant_id'] ) : '',
-			'api_key'           => isset( $d['api_key'] ) ? sanitize_text_field( $d['api_key'] ) : '',
-			'embed_wp_secret'   => isset( $d['embed_wp_secret'] ) ? sanitize_text_field( $d['embed_wp_secret'] ) : '',
-			'store_slug'        => isset( $d['store_slug'] ) ? sanitize_text_field( $d['store_slug'] ) : '',
-			'mcp_endpoint'      => isset( $d['mcp_endpoint'] ) ? esc_url_raw( $d['mcp_endpoint'] ) : '',
-			'tier'              => isset( $d['tier'] ) ? sanitize_text_field( $d['tier'] ) : 'FREE',
-			'already_connected' => ! empty( $d['already_connected'] ),
+			'merchant_id'                 => $text( 'merchant_id' ),
+			'api_key'                     => $text( 'api_key' ),
+			'embed_wp_secret'             => $text( 'embed_wp_secret' ),
+			'store_slug'                  => $text( 'store_slug' ),
+			'mcp_endpoint'                => isset( $d['mcp_endpoint'] ) && is_string( $d['mcp_endpoint'] ) ? esc_url_raw( $d['mcp_endpoint'] ) : '',
+			'tier'                        => '' !== $text( 'tier' ) ? $text( 'tier' ) : 'FREE',
+			'enforcement_installation_id' => $text( 'enforcement_installation_id' ),
+			'enforcement_hmac_secret'     => $text( 'enforcement_hmac_secret' ),
+			'woo_webhook_secret'          => $text( 'woo_webhook_secret' ),
+			'already_connected'           => ! empty( $d['already_connected'] ),
 		);
 	}
 

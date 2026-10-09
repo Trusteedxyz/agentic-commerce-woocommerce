@@ -148,6 +148,8 @@ class Trusteed_Plugin {
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-trusteed-options.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-crypto-helper.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-api-client.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-domain-challenge.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-disconnect.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-catalog-sync.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-cart-bridge.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-settings.php';
@@ -158,10 +160,15 @@ class Trusteed_Plugin {
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-offline-safety-valve-evaluator.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-cart-signals.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-classic-meta-persister.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-enforcement-failure-policy.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-identity.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-checkout-enforcer.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-r043-hitl-gate.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-event-webhook.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-multi-add-handler.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-request-auth.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-gateway.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-orders-endpoint.php';
 
 		$this->api_client       = new Trusteed_Api_Client();
 		$this->catalog_sync     = new Trusteed_Catalog_Sync( $this->api_client );
@@ -219,6 +226,13 @@ class Trusteed_Plugin {
 			$this->agent_event_webhook
 		);
 
+		// 2.4.0 — pedidos que Trusteed crea y cobra fuera de WooCommerce. La pasarela
+		// `trusteed_agent` sólo etiqueta (nunca disponible en el front); los endpoints
+		// `trusteed/v1/{quote,orders,orders/{id}/paid}` no se registran salvo con la
+		// opción `trusteed_agent_orders_enabled = yes` (por defecto `no`).
+		Trusteed_Agent_Gateway_Registrar::register();
+		Trusteed_Agent_Orders_Endpoint::boot( $this->checkout_enforcer );
+
 		// Gap 2 — handle multi-item agent carts emitted with
 		// `?agenticmcp_multi_add=1&items[N][...]`. Native WC ignores `items[]`.
 		$this->multi_add_handler = new Trusteed_Multi_Add_Handler();
@@ -251,6 +265,9 @@ class Trusteed_Plugin {
 	private function define_hooks() {
 		// Admin menu for plugin settings.
 		add_action( 'admin_menu', array( $this->settings, 'register_menu' ) );
+
+		// Token del reto de dominio al reconectar (`/.well-known/amcp-verify.txt`).
+		Trusteed_Domain_Challenge::register();
 
 		// REST API endpoints for cart bridge and billing webhooks.
 		add_action( 'rest_api_init', array( $this->cart_bridge, 'register_routes' ) );

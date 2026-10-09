@@ -795,14 +795,27 @@ class Trusteed_Settings {
 		// F3.T7 Gap #8 — Best-effort remote revoke BEFORE deleting local
 		// credentials. If the backend is unreachable we still proceed with
 		// the local wipe so the merchant can always recover the WP side.
+		//
+		// 2026-09-05: esto llamaba SÓLO a `/plugin/disconnect` y descartaba la
+		// respuesta. Con la confirmación activa en el servidor (su valor por
+		// defecto) esa ruta contesta `202 pending` y **no da de baja nada**:
+		// el comercio perdía sus credenciales aquí y seguía publicado en el
+		// registro público, en el directorio y con su endpoint MCP anunciado.
+		// `Trusteed_Disconnect` completa las dos fases.
 		$api_key = Trusteed_Api_Client::get_stored_api_key();
 		if ( ! empty( $api_key ) ) {
-			$client         = new Trusteed_Api_Client();
-			$remote_result  = $client->post( '/api/v1/plugin/disconnect', array() );
-			if ( is_wp_error( $remote_result ) ) {
+			$client = new Trusteed_Api_Client();
+			$result = Trusteed_Disconnect::run(
+				static function ( $endpoint, $body ) use ( $client ) {
+					$response = $client->post( $endpoint, $body );
+					return is_wp_error( $response ) ? null : $response;
+				}
+			);
+			if ( ! $result['ok'] ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log(
-					'[amcp.disconnect] remote revoke failed: ' . $remote_result->get_error_message()
+					'[amcp.disconnect] remote revoke incomplete: phase=' . $result['phase']
+					. ' status=' . $result['status']
 				);
 				// Continue — do not block local disconnect on backend failure.
 			}

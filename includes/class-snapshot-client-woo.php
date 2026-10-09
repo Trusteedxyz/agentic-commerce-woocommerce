@@ -10,8 +10,21 @@
  *   - Snapshot  : WP transient, TTL = min(validUntil, 300s)
  *   - JWKS      : WP transient, TTL = 3600s
  *
- * Fail-open: any connectivity, parse, or crypto error returns an empty resolver
- * array, which causes token verification to return INDETERMINATE (not INVALID).
+ * Since 2.3.6 (plan 04, Task 23a) it says WHY there is no snapshot
+ * ({@see get_snapshot_result()}): `tampered` (the served JWS does not verify,
+ * even after re-downloading the JWKS once) or `unavailable` (network/HTTP
+ * error, JWKS unreachable, no `sodium`). A payload that could not be verified
+ * is never used any more: before 2.3.6 a JWKS outage, a missing `sodium` or a
+ * SodiumException decoded the payload WITHOUT verifying it, so its resolver
+ * and its rules (offline valve) were taken on trust. The checkout enforcer
+ * decides with Trusteed_Enforcement_Failure_Policy::decide_degraded().
+ * get_did_resolver()/get_rules() keep returning an empty array when there is
+ * no verified snapshot.
+ *
+ * Also since 2.3.6 (Task 24) a verified snapshot whose header says
+ * `zip: DEF` (the service compresses payloads over 50 KB) is inflated with a
+ * 2 MiB cap by Trusteed_Snapshot_Payload_Decoder; one that cannot be read is
+ * `unavailable`, not `tampered` (before, every such snapshot was `tampered`).
  *
  * @package Trusteed
  * @since   1.4.0
@@ -20,6 +33,9 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+// Task 24: payloads `zip: DEF` (inflated, capped, after the signature).
+require_once __DIR__ . '/class-snapshot-payload-decoder.php';
 
 /**
  * Class Trusteed_Snapshot_Client_Woo
@@ -39,6 +55,51 @@ class Trusteed_Snapshot_Client_Woo {
 
 	/** HTTP timeout for snapshot and JWKS requests. */
 	private const TIMEOUT_SECONDS = 5;
+
+	/**
+	 * Task 29b (L3): how long a forced JWKS re-download that did NOT rescue the
+	 * signature is remembered (WP transient). Inside the window a snapshot that
+	 * does not verify is classified with what that retry already found, without
+	 * a second download.
+	 */
+	const JWKS_NEGATIVE_TTL_SECONDS = 60;
+
+	/** Prefix of the WP transient key of the negative cache of the forced JWKS retry (per server and kid). */
+	private const JWKS_NEGATIVE_KEY = 'trusteed_jwks_forced_retry_failed';
+
+	/**
+	 * Task 29b (L6b): cap on the snapshot HTTP body, checked before verifying.
+	 * A legitimate compact JWS is at most ~2.7 MiB (2 MiB inflate cap, base64url).
+	 * `limit_response_size` truncates instead of failing, so the request asks
+	 * for one byte more and anything longer than the cap is refused.
+	 */
+	const MAX_RESPONSE_BYTES = 4194304;
+
+	/**
+	 * `validUntil` as the server emits it (`toISOString()`) or `date('c')`.
+	 */
+	private const ISO_8601 = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/D';
+
+	/** get_snapshot_result() status: a verified snapshot (fresh or from the cache of verified payloads). */
+	const STATUS_OK = 'ok';
+
+	/** get_snapshot_result() status: the served JWS does not verify, even after re-downloading the JWKS once. */
+	const STATUS_TAMPERED = 'tampered';
+
+	/** get_snapshot_result() status: no verified snapshot (network/HTTP error, JWKS unreachable, no sodium). */
+	const STATUS_UNAVAILABLE = 'unavailable';
+
+	/**
+	 * Outcome per merchant for this instance (one request): a failure is not
+	 * re-fetched by the second reader (token verification, then the offline
+	 * valve).
+	 *
+	 * @var array<string, array{status: string, payload: ?array}>
+	 */
+	private array $results = array();
+
+	/** @var bool The JWKS was already re-downloaded once in this instance. */
+	private bool $jwks_refreshed = false;
 
 	/** @var string API base URL (no trailing slash). */
 	private string $api_base;
@@ -63,6 +124,20 @@ class Trusteed_Snapshot_Client_Woo {
 	}
 
 	/**
+	 * Snapshot status ⇒ degraded kind for the failure policy (Task 23a):
+	 * tampered ⇒ `invalid_signature`, unavailable ⇒ `missing_snapshot`, ok ⇒ null.
+	 *
+	 * @param string $status STATUS_*.
+	 * @return string|null Trusteed_Enforcement_Failure_Policy::KIND_* (literal values).
+	 */
+	public static function degraded_kind( string $status ): ?string {
+		if ( self::STATUS_OK === $status ) {
+			return null;
+		}
+		return self::STATUS_TAMPERED === $status ? 'invalid_signature' : 'missing_snapshot';
+	}
+
+	/**
 	 * Return the agentDidResolver array for a merchant.
 	 *
 	 * Returns empty array (fail-open) on any error.
@@ -71,7 +146,7 @@ class Trusteed_Snapshot_Client_Woo {
 	 * @return array Array of { did, publicKeyJwk }.
 	 */
 	public function get_did_resolver( string $merchant_id ): array {
-		$payload = $this->get_cached_payload( $merchant_id );
+		$payload = $this->get_snapshot_result( $merchant_id )['payload'];
 		if ( null === $payload ) {
 			return array();
 		}
@@ -96,7 +171,7 @@ class Trusteed_Snapshot_Client_Woo {
 	 * @return array Snapshot `rules[]`, or empty array on any error.
 	 */
 	public function get_rules( string $merchant_id ): array {
-		$payload = $this->get_cached_payload( $merchant_id );
+		$payload = $this->get_snapshot_result( $merchant_id )['payload'];
 		if ( null === $payload ) {
 			return array();
 		}
@@ -106,27 +181,61 @@ class Trusteed_Snapshot_Client_Woo {
 	}
 
 	/**
-	 * Fetch (or return the transient-cached) full signed snapshot payload for
-	 * a merchant. Shared by get_did_resolver() and get_rules() so both read
-	 * from a single cache entry / network fetch.
+	 * The verified snapshot payload of a merchant, and why there is none
+	 * (2.3.6, Task 23a). Shared by get_did_resolver(), get_rules() and the
+	 * checkout enforcer, so all of them read from a single cache entry /
+	 * network fetch.
+	 *
+	 * The transient cache only ever holds payloads that verified. A merchant
+	 * id that is empty is `unavailable` (the enforcer treats an unconfigured
+	 * merchant before getting here).
 	 *
 	 * @param string $merchant_id Merchant UUID.
-	 * @return array|null Decoded payload, or null on any error.
+	 * @return array{status: string, payload: ?array} status STATUS_OK | STATUS_TAMPERED | STATUS_UNAVAILABLE; payload only with STATUS_OK.
 	 */
-	private function get_cached_payload( string $merchant_id ): ?array {
+	public function get_snapshot_result( string $merchant_id ): array {
 		if ( empty( $merchant_id ) ) {
-			return null;
+			return array( 'status' => self::STATUS_UNAVAILABLE, 'payload' => null );
+		}
+		if ( isset( $this->results[ $merchant_id ] ) ) {
+			return $this->results[ $merchant_id ];
 		}
 
+		$result                        = $this->load_snapshot( $merchant_id );
+		$this->results[ $merchant_id ] = $result;
+		return $result;
+	}
+
+	/**
+	 * @param string $merchant_id Merchant UUID.
+	 * @return array{status: string, payload: ?array}
+	 */
+	private function load_snapshot( string $merchant_id ): array {
 		$transient_key = self::SNAP_TRANSIENT_PREFIX . substr( md5( $merchant_id ), 0, 12 );
 		$cached        = get_transient( $transient_key );
-		if ( is_array( $cached ) ) {
-			return $cached;
+		// L6a: the cache TTL is clamped to >= 10 s, so a copy can outlive its own
+		// signed `validUntil`; an expired one is absent, not served. A copy with
+		// no readable `validUntil` is malformed and absent too (Task 38c).
+		if ( is_array( $cached ) && ! self::payload_not_usable( $cached ) ) {
+			return array( 'status' => self::STATUS_OK, 'payload' => $cached );
 		}
 
-		$payload = $this->fetch_and_verify_snapshot( $merchant_id );
-		if ( null === $payload ) {
-			return null;
+		$verdict = $this->fetch_and_verify_snapshot( $merchant_id );
+		if ( self::STATUS_OK !== $verdict['status'] ) {
+			return $verdict;
+		}
+		$payload = (array) $verdict['payload'];
+
+		// L6a — anti-rollback: `validUntil` travels INSIDE the signed payload, so a
+		// MITM cannot lengthen it but can replay an old, validly signed snapshot.
+		// An expired snapshot is unavailable (same semantics as Magento, PrestaShop
+		// and WooCommerce AgenticTools). Task 38c: a snapshot signed by our server
+		// ALWAYS carries `validUntil`; absent or unreadable is a malformed payload
+		// and gets the same classification as the expired one (`unavailable`, NOT
+		// `tampered`: the signature verified).
+		if ( self::payload_not_usable( $payload ) ) {
+			error_log( '[amcp] snapshot expired or without a readable validUntil' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			return array( 'status' => self::STATUS_UNAVAILABLE, 'payload' => null );
 		}
 
 		// Cache until validUntil or 60s, whichever is smaller, max 300s.
@@ -139,19 +248,19 @@ class Trusteed_Snapshot_Client_Woo {
 		}
 
 		set_transient( $transient_key, $payload, $ttl );
-		return $payload;
+		return array( 'status' => self::STATUS_OK, 'payload' => $payload );
 	}
 
 	/**
-	 * Fetch the snapshot JWS from the API, verify its Ed25519 signature, and
-	 * return the decoded payload array, or null on failure.
+	 * Fetch the snapshot JWS from the API and verify its Ed25519 signature.
 	 *
 	 * @param string $merchant_id
-	 * @return array|null Decoded payload or null.
+	 * @return array{status: string, payload: ?array}
 	 */
-	private function fetch_and_verify_snapshot( string $merchant_id ): ?array {
-		$url      = $this->api_base . '/v1/rules/snapshot/' . rawurlencode( $merchant_id );
-		$raw_body = '';
+	private function fetch_and_verify_snapshot( string $merchant_id ): array {
+		$unavailable = array( 'status' => self::STATUS_UNAVAILABLE, 'payload' => null );
+		$url         = $this->api_base . '/v1/rules/snapshot/' . rawurlencode( $merchant_id );
+		$raw_body    = '';
 
 		// Spec-048 FR-008 — negotiate the contract wire format: a bare JWS
 		// Compact body with Content-Type application/jose. Mirrors the
@@ -162,99 +271,221 @@ class Trusteed_Snapshot_Client_Woo {
 		$response = wp_remote_get(
 			$url,
 			array(
-				'timeout' => self::TIMEOUT_SECONDS,
-				'headers' => $headers,
+				'timeout'             => self::TIMEOUT_SECONDS,
+				'limit_response_size' => self::MAX_RESPONSE_BYTES + 1,
+				'headers'             => $headers,
 			)
 		);
 
 		if ( is_wp_error( $response ) ) {
 			error_log( '[amcp] snapshot fetch error: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-			return null;
+			return $unavailable;
 		}
 
 		$status = (int) wp_remote_retrieve_response_code( $response );
 		if ( 200 !== $status ) {
 			error_log( '[amcp] snapshot fetch HTTP ' . $status ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-			return null;
+			return $unavailable;
 		}
 
 		// Contract response is the bare JWS Compact string. Trim trailing
 		// whitespace/newlines before verifying.
-		$jws_compact = trim( (string) wp_remote_retrieve_body( $response ) );
+		$raw_body = (string) wp_remote_retrieve_body( $response );
+		if ( strlen( $raw_body ) > self::MAX_RESPONSE_BYTES ) {
+			error_log( '[amcp] snapshot response over the size cap' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			return $unavailable; // Not something we would ever verify.
+		}
+		$jws_compact = trim( $raw_body );
 		if ( '' === $jws_compact ) {
-			return null;
+			return $unavailable;
 		}
 
-		return $this->verify_snapshot_jws( $jws_compact );
+		$verdict = $this->verify_snapshot_jws( $jws_compact );
+		if ( self::STATUS_TAMPERED === $verdict['status'] && ! $this->jwks_refreshed ) {
+			// L3: a forced retry that failed less than a minute ago already told us
+			// what a new one would; do not download the JWKS again.
+			$known = $this->known_forced_retry_failure( $jws_compact );
+			if ( null !== $known ) {
+				return array( 'status' => $known, 'payload' => null );
+			}
+			// A key rotation within the JWKS hour must not look like tampering:
+			// re-download the JWKS once, ignoring its cache, and verify again.
+			$this->jwks_refreshed = true;
+			$keys = $this->get_jwks( true );
+			if ( null === $keys || array() === $keys ) {
+				$this->remember_forced_retry_failure( $jws_compact, self::STATUS_UNAVAILABLE );
+				return $unavailable; // JWKS down/empty: a rotation cannot be told from tampering.
+			}
+			$verdict = $this->verify_snapshot_jws( $jws_compact );
+			if ( self::STATUS_TAMPERED === $verdict['status'] ) {
+				$this->remember_forced_retry_failure( $jws_compact, self::STATUS_TAMPERED );
+			}
+		}
+		if ( self::STATUS_TAMPERED === $verdict['status'] ) {
+			error_log( '[amcp] snapshot JWS does not verify (tampered)' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+		}
+		return $verdict;
 	}
 
 	/**
-	 * Verify the snapshot JWS signature against the Trusteed JWKS.
-	 *
-	 * Returns decoded payload on success, null on failure.
+	 * Verify the snapshot JWS signature against the Trusteed JWKS. Never
+	 * decodes an unverified payload (before 2.3.6 a JWKS outage, a missing
+	 * `sodium` or a SodiumException did).
 	 *
 	 * @param string $jws_compact JWS Compact Serialization.
-	 * @return array|null
+	 * @return array{status: string, payload: ?array}
 	 */
-	private function verify_snapshot_jws( string $jws_compact ): ?array {
+	private function verify_snapshot_jws( string $jws_compact ): array {
+		$tampered    = array( 'status' => self::STATUS_TAMPERED, 'payload' => null );
+		$unavailable = array( 'status' => self::STATUS_UNAVAILABLE, 'payload' => null );
+
 		if ( ! function_exists( 'sodium_crypto_sign_verify_detached' ) ) {
-			// Cannot verify — decode without verification (dev-only fallback).
-			return $this->decode_jws_payload_unverified( $jws_compact );
+			return $unavailable; // Cannot verify: our outage, not the snapshot's fault.
 		}
 
 		$parts = explode( '.', $jws_compact );
 		if ( 3 !== count( $parts ) ) {
-			return null;
+			return $tampered;
 		}
 		[ $header_b64, $payload_b64, $sig_b64 ] = $parts;
 
 		$header_json = self::b64url_decode( $header_b64 );
 		$header      = $header_json ? json_decode( $header_json, true ) : null;
 		if ( ! is_array( $header ) || 'EdDSA' !== ( $header['alg'] ?? '' ) ) {
-			return null;
+			return $tampered;
 		}
-		$kid = (string) ( $header['kid'] ?? '' );
+		if ( array_key_exists( 'crit', $header ) ) {
+			// RFC 7515 §4.1.11: a `crit` header lists extensions the verifier MUST
+			// understand; this one understands none, so the JWS is rejected.
+			return $tampered;
+		}
+		$kid = is_string( $header['kid'] ?? null ) ? $header['kid'] : '';
 
 		$jwks = $this->get_jwks();
 		if ( null === $jwks ) {
-			// JWKS unavailable — decode without verification (fail-open).
-			return $this->decode_jws_payload_unverified( $jws_compact );
+			return $unavailable; // JWKS unreachable.
 		}
 
 		$pubkey_bytes = $this->resolve_jwks_key( $jwks, $kid );
 		if ( null === $pubkey_bytes ) {
-			return null;
+			return $tampered; // Unknown kid (verify re-downloads the JWKS once).
 		}
 
 		$sig_bytes = self::b64url_decode( $sig_b64 );
 		if ( false === $sig_bytes || SODIUM_CRYPTO_SIGN_BYTES !== strlen( $sig_bytes ) ) {
-			return null;
+			return $tampered;
 		}
 
 		$signing_input = $header_b64 . '.' . $payload_b64;
 		try {
 			$valid = sodium_crypto_sign_verify_detached( $sig_bytes, $signing_input, $pubkey_bytes );
 		} catch ( \SodiumException $e ) {
-			return $this->decode_jws_payload_unverified( $jws_compact );
+			return $tampered; // Lengths are checked above: a malformed input.
 		}
 
 		if ( ! $valid ) {
-			error_log( '[amcp] snapshot JWS signature invalid' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			return $tampered;
+		}
+
+		// Only after the signature verified: inflate (if `zip`), capped, and read.
+		$payload_bytes = self::b64url_decode( $payload_b64 );
+		list( $decoded, $payload ) = Trusteed_Snapshot_Payload_Decoder::decode( $header, false === $payload_bytes ? '' : $payload_bytes );
+		if ( Trusteed_Snapshot_Payload_Decoder::OK === $decoded ) {
+			return array( 'status' => self::STATUS_OK, 'payload' => $payload );
+		}
+		// With `zip` the platform's signature verified but we cannot read it
+		// (unknown zip, bomb, broken stream): not usable, not tampering.
+		return Trusteed_Snapshot_Payload_Decoder::declares_zip( $header )
+			? $unavailable
+			: $tampered; // An authentic signature over something that is not our payload.
+	}
+
+	/**
+	 * Can the payload NOT be used? A snapshot signed by our server always carries
+	 * `validUntil`, an ISO-8601 string with zone: absent, of another type,
+	 * unreadable (`strtotime` alone would accept "tomorrow") or already past ⇒
+	 * not usable.
+	 *
+	 * @param array $payload Verified snapshot payload.
+	 * @return bool
+	 */
+	private static function payload_not_usable( array $payload ): bool {
+		$raw = isset( $payload['validUntil'] ) ? $payload['validUntil'] : null;
+		if ( ! is_string( $raw ) || 1 !== preg_match( self::ISO_8601, $raw ) ) {
+			return true;
+		}
+		$until = strtotime( $raw );
+
+		return false === $until || $until <= time();
+	}
+
+	/**
+	 * Transient key of the negative cache of the forced JWKS retry: one entry per
+	 * server AND per `kid` of the JWS being verified, so a failure with no
+	 * relation to a key does not taint a legitimate rotation to another one
+	 * (L1). A JWS whose header carries no readable string `kid` shares one fixed
+	 * entry. The kid is hashed (the transient name is capped at 172 chars).
+	 *
+	 * @param string $jws_compact JWS Compact Serialization being verified.
+	 * @return string
+	 */
+	private function negative_cache_key( string $jws_compact ): string {
+		$kid   = '';
+		$parts = explode( '.', $jws_compact );
+		if ( isset( $parts[0] ) ) {
+			$json   = self::b64url_decode( $parts[0] );
+			$header = $json ? json_decode( $json, true ) : null;
+			if ( is_array( $header ) && isset( $header['kid'] ) && is_string( $header['kid'] ) ) {
+				$kid = $header['kid'];
+			}
+		}
+
+		return self::JWKS_NEGATIVE_KEY . '_' . md5( $this->api_base ) . '_' . ( '' === $kid ? 'nokid' : md5( $kid ) );
+	}
+
+	/**
+	 * What the last forced JWKS retry (< 60 s ago) concluded, if it failed to
+	 * rescue the signature: STATUS_TAMPERED or STATUS_UNAVAILABLE. A store that
+	 * cannot be read counts as "nothing known" (the retry runs).
+	 *
+	 * @return string|null
+	 */
+	private function known_forced_retry_failure( string $jws_compact ): ?string {
+		try {
+			$value = get_transient( $this->negative_cache_key( $jws_compact ) );
+		} catch ( \Throwable $e ) {
 			return null;
 		}
 
-		$payload_json = self::b64url_decode( $payload_b64 );
-		$payload      = $payload_json ? json_decode( $payload_json, true ) : null;
-		return is_array( $payload ) ? $payload : null;
+		return in_array( $value, array( self::STATUS_TAMPERED, self::STATUS_UNAVAILABLE ), true ) ? $value : null;
+	}
+
+	/**
+	 * Remember a forced retry that did not rescue the signature. A failed write
+	 * is harmless: without the entry the next request simply retries.
+	 *
+	 * @param string $status STATUS_TAMPERED | STATUS_UNAVAILABLE.
+	 * @return void
+	 */
+	private function remember_forced_retry_failure( string $jws_compact, string $status ): void {
+		try {
+			set_transient( $this->negative_cache_key( $jws_compact ), $status, self::JWKS_NEGATIVE_TTL_SECONDS );
+		} catch ( \Throwable $e ) {
+			// No negative cache: the retry just runs again next time.
+		}
 	}
 
 	/**
 	 * Fetch and cache the Trusteed JWKS.
 	 *
+	 * `$force` skips the 1 h cache (a key rotation). A failed download returns
+	 * null and leaves the cache as it was.
+	 *
+	 * @param bool $force Ignore the cached JWKS.
 	 * @return array|null JWKS keys array or null on failure.
 	 */
-	private function get_jwks(): ?array {
-		$cached = get_transient( self::JWKS_TRANSIENT_KEY );
+	private function get_jwks( bool $force = false ): ?array {
+		$cached = $force ? false : get_transient( self::JWKS_TRANSIENT_KEY );
 		if ( is_array( $cached ) ) {
 			return $cached;
 		}
@@ -297,22 +528,6 @@ class Trusteed_Snapshot_Client_Woo {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Decode JWS payload without signature verification (used when sodium unavailable).
-	 *
-	 * @param string $jws_compact
-	 * @return array|null
-	 */
-	private function decode_jws_payload_unverified( string $jws_compact ): ?array {
-		$parts = explode( '.', $jws_compact );
-		if ( count( $parts ) < 2 ) {
-			return null;
-		}
-		$json = self::b64url_decode( $parts[1] );
-		$data = $json ? json_decode( $json, true ) : null;
-		return is_array( $data ) ? $data : null;
 	}
 
 	/**

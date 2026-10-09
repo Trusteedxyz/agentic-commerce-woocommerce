@@ -363,6 +363,12 @@ class Trusteed_Catalog_Sync {
 			'short_description' => wp_strip_all_tags( $product->get_short_description() ),
 		);
 
+		// The API schema (productSchema.stock_quantity) accepts an integer or an
+		// absent key, but rejects null: omit it for products that do not manage stock.
+		if ( null === $payload['stock_quantity'] ) {
+			unset( $payload['stock_quantity'] );
+		}
+
 		// Compare-at price: only include when regular price differs from sale price.
 		$regular_price = $product->get_regular_price();
 		$sale_price    = $product->get_sale_price();
@@ -417,7 +423,8 @@ class Trusteed_Catalog_Sync {
 
 			if ( $term instanceof \WP_Term ) {
 				$categories[] = array(
-					'id'   => $term->term_id,
+					// The API schema (productSchema.categories[].id) requires a string.
+					'id'   => (string) $term->term_id,
 					'name' => $term->name,
 				);
 			}

@@ -41,11 +41,16 @@ test.describe("Trusteed for WooCommerce — Demo", () => {
     await page.goto(`${BASE_URL}/wp-admin/plugins.php`);
     await page.waitForLoadState("networkidle");
 
-    const pluginRow = page.locator("tr").filter({ hasText: "Trusteed for WooCommerce" }).first();
+    const pluginRow = page
+      .locator("tr")
+      .filter({ hasText: "Trusteed for WooCommerce" })
+      .first();
     await pluginRow.scrollIntoViewIfNeeded();
     await page.waitForTimeout(2000);
 
-    await expect(pluginRow.locator("a").filter({ hasText: /Deactivate/i })).toBeVisible();
+    await expect(
+      pluginRow.locator("a").filter({ hasText: /Deactivate/i })
+    ).toBeVisible();
 
     // ──────────────────────────────────────────────────────────────────────────
     // Paso 3: Panel Trusteed — Home
@@ -124,7 +129,8 @@ test.describe("Trusteed for WooCommerce — Demo", () => {
         // 401 = endpoint existe pero requiere autenticación de agente
         const note = document.createElement("div");
         note.style.cssText = "color:#89b4fa; margin-top:8px; font-size:11px;";
-        note.textContent = "→ El endpoint requiere API key de agente (esperado en demo)";
+        note.textContent =
+          "→ El endpoint requiere API key de agente (esperado en demo)";
         el.parentElement?.appendChild(note);
       } else {
         el.style.color = "#f38ba8";

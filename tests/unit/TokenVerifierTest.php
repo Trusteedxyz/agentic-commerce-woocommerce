@@ -33,7 +33,7 @@ declare(strict_types=1);
  *   TV-17  Token with DID fragment kid → DID extracted correctly, valid state
  *   TV-18  Token with merchantId absent → passes check (merchantId optional)
  *   TV-19  Token exactly at exp boundary (within 30s grace) → state=valid
- *   TV-20  Token at exact MAX_AGE_SECONDS for iat → state=valid (boundary)
+ *   TV-20  Token at exact MAX_AGE_SECONDS (300s) for iat → state=valid (boundary); 301s → too_old
  *
  * Run:
  *   cd packages/wp-plugin/agenticmcpstores-for-woocommerce
@@ -132,6 +132,29 @@ class TokenVerifierTest extends TestCase
 
     // ── TV-05: wrong typ ─────────────────────────────────────────────────────
 
+    /** Task 29b (L6c): a `crit` header (RFC 7515 §4.1.11) is rejected even with a valid signature. */
+    public function testCritHeaderIsRejectedEvenWithAValidSignature(): void
+    {
+        $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
+        $header   = $this->defaultHeader() + ['crit' => ['exp']];
+
+        $result = Trusteed_Token_Verifier::verify($this->makeTokenWithHeader($header, []), $resolver, self::MERCHANT_ID);
+
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
+        $this->assertSame('crit_not_supported', $result->error);
+    }
+
+    /** An empty `crit` is malformed by the RFC and rejected as well. */
+    public function testEmptyCritHeaderIsRejectedToo(): void
+    {
+        $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
+        $header   = $this->defaultHeader() + ['crit' => []];
+
+        $result = Trusteed_Token_Verifier::verify($this->makeTokenWithHeader($header, []), $resolver, self::MERCHANT_ID);
+
+        $this->assertSame('crit_not_supported', $result->error);
+    }
+
     /** typ must be "trusteed-agent-token+jwt". */
     public function testWrongTypReturnsInvalid(): void
     {
@@ -220,14 +243,14 @@ class TokenVerifierTest extends TestCase
 
     // ── TV-11: token too old (iat) ───────────────────────────────────────────
 
-    /** iat older than MAX_AGE_SECONDS (120s) → invalid. */
+    /** iat older than MAX_AGE_SECONDS (300s, decision 48) → invalid. */
     public function testTooOldTokenReturnsInvalid(): void
     {
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
-        // exp still valid but iat too far back.
+        // exp still valid (inside the 30s grace) but iat too far back.
         $jws = $this->makeToken([
-            'iat' => time() - 331,
-            'exp' => time() + 300,
+            'iat' => time() - 301,
+            'exp' => time() + 10,
         ]);
 
         $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
@@ -449,18 +472,48 @@ class TokenVerifierTest extends TestCase
 
     // ── TV-20: iat at exact MAX_AGE_SECONDS boundary ─────────────────────────
 
-    /** Token whose iat is exactly MAX_AGE_SECONDS old is at the boundary → valid. */
+    /**
+     * Token whose iat is exactly MAX_AGE_SECONDS (300s) old is at the boundary → valid.
+     * The clock is re-read around the call so a second tick cannot turn the
+     * boundary case into 301.
+     */
     public function testIatAtMaxAgeBoundaryIsValid(): void
     {
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
-        $jws      = $this->makeToken([
-            'iat' => time() - 120, // exactly MAX_AGE_SECONDS
-            'exp' => time() + 10,
-        ]);
+        do {
+            $t      = time();
+            $jws    = $this->makeToken(['iat' => $t - 300, 'exp' => $t + 10]);
+            $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+            $same   = ( time() === $t );
+        } while ( ! $same );
+
+        $this->assertSame(Trusteed_Token_State::VALID, $result->state);
+    }
+
+    /** One second past the maximum (age 301) → invalid, same re-read guard (never earlier than 301). */
+    public function testIatOneSecondPastMaxAgeIsTooOld(): void
+    {
+        $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
+        $jws      = $this->makeToken(['iat' => time() - 301, 'exp' => time() + 10]);
 
         $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Trusteed_Token_State::VALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
+        $this->assertSame('too_old', $result->error);
+    }
+
+    /**
+     * Decision 48: tokens between the old 120 s cap and the contract's 300 s are
+     * legitimate (agents mint tokens with up to 300 s of life) and must verify.
+     */
+    public function testAgesBetweenTheOldCapAndTheContractAreValid(): void
+    {
+        $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
+        foreach ([121, 200, 299] as $age) {
+            $jws    = $this->makeToken(['iat' => time() - $age, 'exp' => time() + 10]);
+            $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
+            $this->assertSame(Trusteed_Token_State::VALID, $result->state, "age {$age}s must verify");
+        }
     }
 
     // ── TV-21: wrong signing key ─────────────────────────────────────────────

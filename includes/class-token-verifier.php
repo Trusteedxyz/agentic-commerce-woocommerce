@@ -52,8 +52,11 @@ class Trusteed_Token_Verify_Result {
 	public string $kid;
 
 	/**
-	 * Token `jti` claim — opaque single-use identifier used for replay
-	 * protection (spec-048 P2.8). Empty string if absent or malformed.
+	 * Single-use identifier of the token used for replay protection (spec-048
+	 * P2.8): the canonical `nonce` claim, or the legacy `jti` alias when
+	 * `nonce` is absent (see Trusteed_Token_Verifier::extract_replay_identifier).
+	 * The property keeps its historical name `jti`. Empty string if absent or
+	 * malformed.
 	 *
 	 * @var string
 	 */
@@ -114,14 +117,26 @@ class Trusteed_Token_Verifier {
 	/** Expected audience claim. */
 	private const EXPECTED_AUD = 'trusteed';
 
-	/** Max allowed token age from iat to now (seconds). 30s grace on exp. */
-	private const MAX_AGE_SECONDS = 120;
+	/**
+	 * Max allowed token age from iat to now (seconds). 30s grace on exp.
+	 *
+	 * Decision 48 (2026-10-02): the SAME number in every verifier — the 300 s
+	 * the contract declares (`AgentTokenPayloadSchema`: `exp - iat <= 300`).
+	 * Agents mint their own tokens with up to 300 s of life, so a lower cap
+	 * (this one was 120) rejects legitimate tokens that are still valid for
+	 * the server and for the Shopify Function. Tied across languages by
+	 * packages/shared/src/enforcement/__tests__/agent-token-max-age-parity.test.ts.
+	 */
+	private const MAX_AGE_SECONDS = 300;
 
 	/**
-	 * `jti` format gate (spec-048 P2.8). Base64url-ish characters, 16–128 chars.
-	 * Mirrors backend Zod regex in agent-events-nonce.routes.ts.
+	 * Format gate of the single-use identifier (spec-048 P2.8): base64url
+	 * characters, 16–64 chars. 16–64 is the length the canonical token schema
+	 * (`AgentTokenPayloadSchema.nonce`) allows; the alphabet is the one the
+	 * server's nonce-consume endpoint (agent-events-nonce.routes.ts) accepts,
+	 * so a token this gate lets through can always be consumed.
 	 */
-	private const JTI_RE = '/^[A-Za-z0-9_-]{16,128}$/';
+	private const REPLAY_ID_RE = '/^[A-Za-z0-9_-]{16,64}$/';
 
 	/**
 	 * Verify a JWS Compact agent token.
@@ -161,6 +176,10 @@ class Trusteed_Token_Verifier {
 		}
 		if ( self::EXPECTED_TYP !== ( $header['typ'] ?? '' ) ) {
 			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, '', 0.0, 'wrong_typ' );
+		}
+		if ( array_key_exists( 'crit', $header ) ) {
+			// RFC 7515 §4.1.11: critical extensions we do not understand.
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, '', 0.0, 'crit_not_supported' );
 		}
 
 		// Extract DID from kid: "did:web:example.com#key-1" → "did:web:example.com".
@@ -226,9 +245,9 @@ class Trusteed_Token_Verifier {
 			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'too_old' );
 		}
 
-		// Resolve public key from agentDidResolver (keyed by DID).
-		$resolver_map = self::build_resolver_map( $did_resolver );
-		$jwk          = $resolver_map[ $did ] ?? null;
+		// Resolve public key from agentDidResolver (the list the server emits; the
+		// legacy DID-keyed map is accepted too — 2.3.6, Task 23a).
+		$jwk = self::resolve_agent_did_public_key( $did_resolver, $did );
 		if ( null === $jwk ) {
 			// DID not in resolver — we cannot verify (not necessarily spoofed). Fail open.
 			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INDETERMINATE, $did, 0.0, 'did_not_in_resolver', $kid );
@@ -261,15 +280,16 @@ class Trusteed_Token_Verifier {
 			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'sig_invalid' );
 		}
 
-		// Spec-048 P2.8 — extract `jti` for replay protection. Missing or
-		// malformed jti is treated as INVALID to prevent unbounded replay
-		// via tokens minted without single-use identifiers.
-		$jti_raw = isset( $payload['jti'] ) ? (string) $payload['jti'] : '';
-		if ( '' === $jti_raw ) {
-			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'missing_jti', $kid );
-		}
-		if ( ! preg_match( self::JTI_RE, $jti_raw ) ) {
-			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'bad_jti', $kid );
+		// Spec-048 P2.8 — single-use identifier for replay protection (B5,
+		// 2026-10-01). Read from the SIGNED payload (the signature was verified
+		// above): the canonical claim is `nonce`; `jti` is only a legacy alias.
+		// Missing or malformed is INVALID to prevent unbounded replay via tokens
+		// minted without a single-use identifier. The `missing_jti` / `bad_jti`
+		// codes (and the `_agent_token_jti_*` attributes the server knows) are
+		// kept for compatibility: they now cover the nonce.
+		list( $jti_raw, $replay_error ) = self::extract_replay_identifier( $payload );
+		if ( '' !== $replay_error ) {
+			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, $replay_error, $kid );
 		}
 
 		$trust_score = isset( $payload['agentTrustScore'] ) ? (float) $payload['agentTrustScore'] : 0.0;
@@ -285,19 +305,89 @@ class Trusteed_Token_Verifier {
 	}
 
 	/**
-	 * Convert the agentDidResolver array (list of {did, publicKeyJwk}) to a map keyed by DID.
+	 * Single-use identifier of a token payload (B5). The canonical contract is
+	 * `nonce` (AgentTokenPayloadSchema; the server verifier keys its anti-replay
+	 * store on it). `jti` is read ONLY as a legacy alias when `nonce` is absent
+	 * or empty; if both are present and differ, `nonce` wins. A `nonce` that is
+	 * present but malformed is NOT rescued by a valid `jti`.
 	 *
-	 * @param array $did_resolver
-	 * @return array<string, array> DID → publicKeyJwk
+	 * @param array $payload Decoded, signature-verified payload.
+	 * @return array{0: string, 1: string} [ identifier, error ]: error is '' | 'missing_jti' | 'bad_jti'.
 	 */
-	private static function build_resolver_map( array $did_resolver ): array {
-		$map = array();
-		foreach ( $did_resolver as $entry ) {
-			if ( isset( $entry['did'], $entry['publicKeyJwk'] ) && is_string( $entry['did'] ) ) {
-				$map[ $entry['did'] ] = $entry['publicKeyJwk'];
+	public static function extract_replay_identifier( array $payload ): array {
+		$raw = $payload['nonce'] ?? null;
+		if ( null === $raw || '' === $raw ) {
+			$raw = $payload['jti'] ?? null;
+		}
+		if ( null === $raw || '' === $raw ) {
+			return array( '', 'missing_jti' );
+		}
+		if ( ! is_string( $raw ) || 1 !== preg_match( self::REPLAY_ID_RE, $raw ) ) {
+			return array( '', 'bad_jti' );
+		}
+		return array( $raw, '' );
+	}
+
+	/**
+	 * Port of `resolveAgentDidPublicKey` (packages/shared/src/enforcement/platform-flow.ts,
+	 * vectors `snapshotResolverShape` of the shared fixture): the public key of
+	 * `$did` in the snapshot `agentDidResolver`.
+	 *
+	 * - List (what the server emits): the LAST well-formed entry whose `did`
+	 *   matches exactly (as before). A later malformed entry no longer
+	 *   overrides a good one (before 2.3.6 it did, and the token went INVALID).
+	 * - Legacy map `{did: jwk}`: the exact key only.
+	 * - Malformed entries (not an object, `did` not a string, `publicKeyJwk`
+	 *   not an object, `x` missing/empty) are ignored without throwing.
+	 *
+	 * Only resolves: `kty`/`crv` and the signature are checked by verify().
+	 *
+	 * @param mixed  $resolver `agentDidResolver` as received.
+	 * @param string $did      DID to resolve.
+	 * @return array{x:string,kty?:string,crv?:string,kid?:string}|null
+	 */
+	public static function resolve_agent_did_public_key( $resolver, string $did ): ?array {
+		if ( '' === $did || ! is_array( $resolver ) ) {
+			return null;
+		}
+		if ( array() !== $resolver && array_is_list( $resolver ) ) {
+			$found = null;
+			foreach ( $resolver as $entry ) {
+				if ( ! self::is_json_object( $entry ) || ! isset( $entry['did'] ) || $entry['did'] !== $did ) {
+					continue;
+				}
+				$found = self::to_public_key( $entry['publicKeyJwk'] ?? null ) ?? $found;
+			}
+			return $found;
+		}
+		return array_key_exists( $did, $resolver ) ? self::to_public_key( $resolver[ $did ] ) : null;
+	}
+
+	/**
+	 * A decoded JSON object: an associative (or empty) array, never a list.
+	 *
+	 * @param mixed $value Decoded value.
+	 * @return bool
+	 */
+	private static function is_json_object( $value ): bool {
+		return is_array( $value ) && ( array() === $value || ! array_is_list( $value ) );
+	}
+
+	/**
+	 * @param mixed $jwk JWK as received.
+	 * @return array{x:string,kty?:string,crv?:string,kid?:string}|null
+	 */
+	private static function to_public_key( $jwk ): ?array {
+		if ( ! self::is_json_object( $jwk ) || ! isset( $jwk['x'] ) || ! is_string( $jwk['x'] ) || '' === $jwk['x'] ) {
+			return null;
+		}
+		$key = array( 'x' => $jwk['x'] );
+		foreach ( array( 'kty', 'crv', 'kid' ) as $field ) {
+			if ( isset( $jwk[ $field ] ) && is_string( $jwk[ $field ] ) ) {
+				$key[ $field ] = $jwk[ $field ];
 			}
 		}
-		return $map;
+		return $key;
 	}
 
 	/**

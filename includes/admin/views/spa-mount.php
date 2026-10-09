@@ -23,6 +23,7 @@ $allowed_sections = array(
 	'trust-center',
 	'merchant-center',
 	'settings',
+	'payment-methods',
 	'inicio',
 	'mis-ventas',
 	'mis-reglas',

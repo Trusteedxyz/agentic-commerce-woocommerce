@@ -20,3 +20,6 @@ require_once __DIR__ . '/wp-stubs.php';
 
 require_once __DIR__ . '/../../includes/class-token-verifier.php';
 require_once __DIR__ . '/../../includes/class-snapshot-client-woo.php';
+require_once __DIR__ . '/../../includes/class-disconnect.php';
+require_once __DIR__ . '/../../includes/class-enforcement-failure-policy.php';
+require_once __DIR__ . '/../../includes/class-agent-identity.php';

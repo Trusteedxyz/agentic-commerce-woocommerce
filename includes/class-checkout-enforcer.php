@@ -34,6 +34,24 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Trusteed_Checkout_Enforcer {
 
+	/** 2.3.6 (5b): our own failure closed an agent — not a rule; own message. */
+	const DECISION_UNAVAILABLE = 'UNAVAILABLE';
+
+	/** 2.3.6 (5b): DID proven by a VALID token in the last run_evaluation(); '' otherwise. */
+	private string $verified_did = '';
+
+	/**
+	 * 2.4.0: sólo lo activa evaluate_order_for_agent_api() (pedido creado por la API de
+	 * Trusteed, sin sesión de WooCommerce): el pedido es agéntico aunque no haya señal de sesión.
+	 */
+	private bool $force_agentic = false;
+
+	/**
+	 * 2.4.0: DID de agente ya autenticado por el canal firmado de Trusteed (HMAC de instalación).
+	 * Sólo lo fija evaluate_order_for_agent_api(); null en el checkout normal.
+	 */
+	private ?string $trusted_agent_did = null;
+
 	/**
 	 * Enforcement API client.
 	 *
@@ -69,8 +87,10 @@ class Trusteed_Checkout_Enforcer {
 	/**
 	 * Failure mode policy (spec-048 Gap 5/6 tri-state fail-closed).
 	 *
-	 * 'enforce' → INDETERMINATE maps to BLOCK (fail-closed).
-	 * 'observe' → INDETERMINATE maps to ALLOW + telemetry log (fail-open).
+	 * Since 2.3.6 it only governs AGENTIC checkouts (DID, token or origin
+	 * marker); a human checkout is never blocked by INDETERMINATE:
+	 * 'enforce' → an agent's INDETERMINATE maps to BLOCK (fail-closed).
+	 * 'observe' → an agent's INDETERMINATE maps to ALLOW + telemetry log.
 	 *
 	 * @since 1.5.0
 	 * @var string
@@ -110,7 +130,9 @@ class Trusteed_Checkout_Enforcer {
 		$this->merchant_id     = $merchant_id;
 		$this->installation_id = $installation_id;
 		$this->snapshot_client = $snapshot_client;
-		$this->failure_mode    = 'observe' === $failure_mode ? 'observe' : 'enforce';
+		// Trim + lowercase contra el vocabulario enforce|observe; un valor no
+		// resuelto (p. ej. `permissive` de otra plataforma) cierra: 'enforce'.
+		$this->failure_mode    = Trusteed_Enforcement_Failure_Policy::normalize_failure_mode( $failure_mode ) ?? 'enforce';
 		$this->event_webhook   = $event_webhook;
 	}
 
@@ -134,6 +156,37 @@ class Trusteed_Checkout_Enforcer {
 
 		// Blocks / Store API checkout: fires during AJAX order creation.
 		add_action( 'woocommerce_store_api_checkout_update_order_from_request', array( $this, 'enforce_rules_blocks' ), 10, 2 );
+
+		// 2.3.6 (5b): la REST de pedidos no puede escribir la atribución del agente.
+		Trusteed_Rest_Order_Meta_Guard::register();
+	}
+
+	/**
+	 * Evalúa las reglas locales sobre un pedido ya creado por la API de Trusteed
+	 * (POST trusteed/v1/orders), donde no hay checkout ni sesión de WooCommerce.
+	 *
+	 * Mismo camino que el checkout (run_evaluation: API de enforcement, válvula
+	 * offline y política de fallo), con dos diferencias declaradas: el pedido es
+	 * agéntico por construcción, y el DID —autenticado por el HMAC de instalación,
+	 * no por un token del comprador— viaja como agentId.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param \WC_Order  $order     Pedido creado (estado pending, con dirección y método).
+	 * @param string|null $agent_did DID del agente, o null si no viene.
+	 * @return string 'ALLOW', 'BLOCK' o self::DECISION_UNAVAILABLE.
+	 */
+	public function evaluate_order_for_agent_api( $order, ?string $agent_did = null ): string {
+		$this->force_agentic     = true;
+		$this->trusted_agent_did = ( null !== $agent_did && '' !== $agent_did ) ? $agent_did : null;
+		try {
+			return $this->run_evaluation(
+				fn(): array => $this->build_order_context_from_order( $order, null )
+			);
+		} finally {
+			$this->force_agentic     = false;
+			$this->trusted_agent_did = null;
+		}
 	}
 
 	/**
@@ -150,8 +203,8 @@ class Trusteed_Checkout_Enforcer {
 		if ( ! function_exists( 'is_checkout' ) || ! is_checkout() ) {
 			return;
 		}
-		// Bail if no DID param in URL — avoid unnecessary work.
-		if ( ! isset( $_GET[ Trusteed_Cart_Bridge::AGENT_ID_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		// Bail if neither the DID, the token nor the origin marker is in the URL.
+		if ( ! isset( $_GET[ Trusteed_Cart_Bridge::AGENT_ID_PARAM ] ) && ! isset( $_GET[ Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM ] ) && ! isset( $_GET[ Trusteed_Cart_Bridge::ORIGIN_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
 			return;
 		}
 		$this->capture_agent_session();
@@ -165,34 +218,61 @@ class Trusteed_Checkout_Enforcer {
 	 * @return void
 	 */
 	public function capture_agent_session(): void {
-		if ( ! isset( $_GET[ Trusteed_Cart_Bridge::AGENT_ID_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-			return;
-		}
-
-		$raw = sanitize_text_field(
-			rawurldecode( wp_unslash( $_GET[ Trusteed_Cart_Bridge::AGENT_ID_PARAM ] ) ) // phpcs:ignore WordPress.Security.NonceVerification
-		);
-
-		if ( ! preg_match( Trusteed_Cart_Bridge::AGENT_DID_RE, $raw ) ) {
-			return;
-		}
-
-		if ( WC()->session ) {
-			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_ID, $raw );
-
-			// Capture agent JWS token if present (used for R002 signature verification).
-			if ( isset( $_GET[ Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-				$raw_token = sanitize_text_field(
-					rawurldecode( wp_unslash( $_GET[ Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM ] ) ) // phpcs:ignore WordPress.Security.NonceVerification
-				);
-				// Basic format gate: JWS Compact is three base64url segments separated by dots.
-				if ( preg_match( '/^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]*$/', $raw_token ) ) {
-					WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, $raw_token );
-				}
-			}
-
+		// Marca de origen de nuestro MCP (Trusteed_Cart_Bridge::ORIGIN_PARAM).
+		// Añadirla a mano sólo endurece el trato (agente); ver la constante.
+		if ( isset( $_GET[ Trusteed_Cart_Bridge::ORIGIN_PARAM ] ) && WC()->session ) { // phpcs:ignore WordPress.Security.NonceVerification
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, '1' );
 			WC()->session->save_data();
 		}
+
+		if ( ! WC()->session ) {
+			return;
+		}
+
+		// DID declarado: sólo una declaración (Trusteed_Agent_Identity); marca el
+		// checkout como agéntico y se ata al token, nunca viaja ni atribuye solo.
+		// Task 16: `?param[]=x` llega como array; rawurldecode() lanzaba TypeError
+		// (500). Un valor que no es cadena es una señal de agente rota (DID ⇒
+		// marca de origen; token ⇒ token rechazado).
+		if ( isset( $_GET[ Trusteed_Cart_Bridge::AGENT_ID_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			$raw = self::url_param( Trusteed_Cart_Bridge::AGENT_ID_PARAM );
+			if ( null === $raw ) {
+				WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, '1' );
+			} elseif ( preg_match( Trusteed_Cart_Bridge::AGENT_DID_RE, $raw ) ) {
+				WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_ID, $raw );
+			} elseif ( '' !== $raw ) {
+				// Un DID con forma rota sigue siendo una señal de agente (sólo endurece).
+				WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, '1' );
+			}
+		}
+
+		// Token (2.3.6: también sin DID; el bridge puede emitirlo solo). Uno sin
+		// forma de JWS es un token inválido de agente, nunca «sin token».
+		if ( isset( $_GET[ Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+			$raw_token = self::url_param( Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM );
+			$accepted  = null === $raw_token
+				? array( 'token' => '', 'rejected' => true )
+				: Trusteed_Agent_Identity::accept_token( $raw_token );
+			if ( '' !== $accepted['token'] ) {
+				WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, $accepted['token'] );
+			} elseif ( $accepted['rejected'] ) {
+				WC()->session->set( Trusteed_Agent_Identity::SESSION_TOKEN_REJECTED, '1' );
+			}
+		}
+
+		WC()->session->save_data();
+	}
+
+	/**
+	 * URL parameter as a decoded, sanitized string; null when it is present but
+	 * not a string (`?name[]=x`). Task 16.
+	 *
+	 * @param string $name Query parameter name.
+	 * @return string|null
+	 */
+	private static function url_param( string $name ): ?string {
+		$value = wp_unslash( $_GET[ $name ] ?? '' ); // phpcs:ignore WordPress.Security.NonceVerification
+		return is_string( $value ) ? sanitize_text_field( rawurldecode( $value ) ) : null;
 	}
 
 	/**
@@ -209,16 +289,16 @@ class Trusteed_Checkout_Enforcer {
 	 * @throws \Exception On BLOCK decision.
 	 */
 	public function enforce_rules_classic(): void {
-		// Snapshot the agent DID BEFORE run_evaluation clears the WC session.
-		// Required so the deferred meta-persistence hook below can stamp the
-		// order with `_trusteed_agent_did` (parity with Blocks/Store API path)
-		// so refund/cancel webhook + R023 refund-abuse-guard can fire for
-		// shortcode-checkout orders too.
-		$agent_id_for_meta = WC()->session
-			? WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENT_ID )
-			: null;
+		// 2.3.6 (5b): el token del formulario es señal de agente (mismo campo que
+		// lee WC-AgenticTools); la atribución sólo sale de un token verificado.
+		$decision = $this->run_evaluation(
+			fn(): array => $this->get_order_context_from_post(),
+			array( $_POST[ Trusteed_Agent_Identity::REQUEST_TOKEN_FIELD ] ?? '' ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		);
 
-		$decision = $this->run_evaluation( $this->get_order_context_from_post() );
+		if ( self::DECISION_UNAVAILABLE === $decision ) {
+			throw new \Exception( esc_html__( 'Your order could not be verified right now. Please try again in a few minutes.', 'agenticmcpstores' ) );
+		}
 
 		if ( 'BLOCK' === $decision ) {
 			throw new \Exception(
@@ -231,9 +311,10 @@ class Trusteed_Checkout_Enforcer {
 
 		// ALLOW path — delegate to Trusteed_Classic_Meta_Persister which registers
 		// a one-shot `woocommerce_checkout_create_order` hook to stamp the
-		// three metas the Blocks path writes inline.
-		if ( ! empty( $agent_id_for_meta ) && is_string( $agent_id_for_meta ) ) {
-			Trusteed_Classic_Meta_Persister::register( $agent_id_for_meta );
+		// three metas the Blocks path writes inline. Only a DID proven by a
+		// VALID token (2.3.6): a declared one never attributes the order.
+		if ( '' !== $this->verified_did ) {
+			Trusteed_Classic_Meta_Persister::register( $this->verified_did );
 		}
 	}
 
@@ -253,15 +334,25 @@ class Trusteed_Checkout_Enforcer {
 	 * @throws \Automattic\WooCommerce\StoreApi\Exceptions\RouteException On BLOCK.
 	 */
 	public function enforce_rules_blocks( $order, $request ): void {
-		// Snapshot agent_id before run_evaluation clears the session.
-		$agent_id_for_meta = WC()->session
-			? WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENT_ID )
-			: null;
+		$body          = is_object( $request ) && method_exists( $request, 'get_json_params' ) ? $request->get_json_params() : array();
+		// 2.3.6 (5b): token del cuerpo y, si no, de la meta del pedido (lo que lee WC-AgenticTools).
+		$decision      = $this->run_evaluation(
+			fn(): array => $this->build_order_context_from_order( $order, $request ),
+			array(
+				is_array( $body ) ? ( $body[ Trusteed_Agent_Identity::REQUEST_TOKEN_FIELD ] ?? '' ) : '',
+				method_exists( $order, 'get_meta' ) ? $order->get_meta( Trusteed_Agent_Identity::REQUEST_TOKEN_FIELD, true ) : '',
+			)
+		);
 
-		$order_context = $this->build_order_context_from_order( $order, $request );
-		$decision      = $this->run_evaluation( $order_context );
+		if ( self::DECISION_UNAVAILABLE === $decision && class_exists( '\Automattic\WooCommerce\StoreApi\Exceptions\RouteException' ) ) {
+			throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException(
+				'trusteed_agent_unverifiable',
+				__( 'Your order could not be verified right now. Please try again in a few minutes.', 'agenticmcpstores' ),
+				503
+			);
+		}
 
-		if ( 'BLOCK' === $decision ) {
+		if ( 'BLOCK' === $decision || self::DECISION_UNAVAILABLE === $decision ) {
 			if ( class_exists( '\Automattic\WooCommerce\StoreApi\Exceptions\RouteException' ) ) {
 				throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException(
 					'trusteed_agent_blocked',
@@ -274,10 +365,12 @@ class Trusteed_Checkout_Enforcer {
 			}
 			// Fallback: add notice (will surface on next page load).
 			wc_add_notice(
-				__(
-					'Your order could not be completed because it did not pass the store\'s agent verification rules.',
-					'agenticmcpstores'
-				),
+				self::DECISION_UNAVAILABLE === $decision
+					? __( 'Your order could not be verified right now. Please try again in a few minutes.', 'agenticmcpstores' )
+					: __(
+						'Your order could not be completed because it did not pass the store\'s agent verification rules.',
+						'agenticmcpstores'
+					),
 				'error'
 			);
 			return;
@@ -285,13 +378,38 @@ class Trusteed_Checkout_Enforcer {
 
 		// ALLOW path: persist agent DID + R022 cart-attr status so the order webhook
 		// can propagate agentIdHash to PlatformOrder for R023 refund-abuse-guard
-		// enforcement and downstream readers can verify agent provenance.
-		if ( ! empty( $agent_id_for_meta ) && is_string( $agent_id_for_meta ) ) {
-			$order->update_meta_data( '_trusteed_agent_did', sanitize_text_field( $agent_id_for_meta ) );
+		// enforcement and downstream readers can verify agent provenance. Only a
+		// DID proven by a VALID token of that same DID (2.3.6): a declared one
+		// is evaluated but never attributed.
+		if ( '' !== $this->verified_did ) {
+			$order->update_meta_data( '_trusteed_agent_did', sanitize_text_field( $this->verified_did ) );
 			$order->update_meta_data( '_trusteed_agent_status', 'ok' );
 			$order->update_meta_data( '_trusteed_eval_at', gmdate( DATE_ATOM ) );
 			$order->save_meta_data();
 		}
+	}
+
+	/**
+	 * Señales agénticas de la sesión, leídas ANTES de que run_evaluation() la
+	 * borre (Trusteed_Enforcement_Failure_Policy::is_agentic).
+	 *
+	 * @since 2.3.6
+	 *
+	 * @param string|null                        $agent_id DID ya normalizado (null si no hay).
+	 * @param array{token:string, rejected:bool} $token    De resolve_token(); uno rechazado también cuenta.
+	 * @return bool
+	 */
+	private function resolve_is_agentic( ?string $agent_id, array $token ): bool {
+		if ( $this->force_agentic ) {
+			return true;
+		}
+		$session = WC()->session;
+		$origin  = $session ? $session->get( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN ) : null;
+		return Trusteed_Enforcement_Failure_Policy::is_agentic(
+			$agent_id,
+			'' !== $token['token'] || $token['rejected'],
+			'1' === $origin
+		);
 	}
 
 	/**
@@ -300,8 +418,10 @@ class Trusteed_Checkout_Enforcer {
 	 * Tri-state outcome from API client (spec-048 Gap 5/6):
 	 *   ALLOW         → return 'ALLOW'
 	 *   BLOCK         → return 'BLOCK'
-	 *   INDETERMINATE → 'enforce' mode returns 'BLOCK' (fail-closed),
-	 *                   'observe' mode returns 'ALLOW' + telemetry log.
+	 *   INDETERMINATE → offline safety valve (scoped by appliesTo), then
+	 *                   Trusteed_Enforcement_Failure_Policy::decide_unavailable():
+	 *                   a human → 'ALLOW'; an agent → 'BLOCK' in 'enforce',
+	 *                   'ALLOW' in 'observe' (since 2.3.6, A8).
 	 *
 	 * App Store remediation (2026-07-11): previously this method returned
 	 * 'ALLOW' immediately for any non-agent cart, WITHOUT ever calling the
@@ -318,14 +438,73 @@ class Trusteed_Checkout_Enforcer {
 	 *
 	 * @since 1.3.0
 	 *
-	 * @param array $order_context Pre-built orderContext array.
-	 * @return string 'ALLOW' or 'BLOCK'.
+	 * @param \Closure         $build_context  Builds the orderContext array. It runs INSIDE the
+	 *                                         guard (Task 29b): an exception while reading the
+	 *                                         cart/order is our failure, not a reason to abort
+	 *                                         a person's order.
+	 * @param array<int,mixed> $request_tokens Agent tokens carried by the request (2.3.6, 5b).
+	 * @return string 'ALLOW', 'BLOCK' (a rule) or self::DECISION_UNAVAILABLE (our failure).
 	 */
-	private function run_evaluation( array $order_context ): string {
-		// Merchant not configured — cannot evaluate. In enforce mode this is a
-		// hard fail (would silently bypass otherwise); in observe mode allow + log.
+	private function run_evaluation( \Closure $build_context, array $request_tokens = array() ): string {
+		// Task 27c (M6): la señal agéntica se lee ANTES (el cuerpo borra la sesión
+		// a mitad) y, si ni eso se puede leer, se trata como agente (D1 sólo
+		// ampara a la persona probada).
+		try {
+			$agent_id_probe = WC()->session ? WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENT_ID ) : null;
+			$probe_agentic  = $this->resolve_is_agentic(
+				is_string( $agent_id_probe ) && '' !== $agent_id_probe ? $agent_id_probe : null,
+				Trusteed_Agent_Identity::resolve_token( WC()->session, $request_tokens )
+			);
+		} catch ( \Throwable $e ) {
+			$probe_agentic = true;
+		}
+
+		try {
+			return $this->run_evaluation_unguarded( $build_context, $request_tokens );
+		} catch ( \Throwable $e ) {
+			// Una avería nuestra no aborta el pedido de una persona ni es un permiso
+			// para un agente. Sin detalle en el log (el mensaje podría llevar datos
+			// de la petición) y sin código de regla: no es «una regla te bloqueó».
+			$this->verified_did = '';
+			$decision           = Trusteed_Enforcement_Failure_Policy::decide_on_internal_error( $probe_agentic );
+			try {
+				$this->clear_agent_session();
+			} catch ( \Throwable $ignored ) {
+				// La decisión no depende de limpiar la sesión.
+			}
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+				sprintf(
+					'[amcp.enforcement_internal_error] platform=woocommerce merchant=%s class=%s agentic=%s decision=%s',
+					$this->merchant_id,
+					get_class( $e ),
+					$probe_agentic ? 'true' : 'false',
+					$decision
+				)
+			);
+			return 'BLOCK' === $decision ? self::DECISION_UNAVAILABLE : 'ALLOW';
+		}
+	}
+
+	/**
+	 * Cuerpo de {@see run_evaluation()}, sin la guarda de excepciones.
+	 *
+	 * @param \Closure         $build_context  Builds the orderContext array.
+	 * @param array<int,mixed> $request_tokens Agent tokens carried by the request.
+	 * @return string 'ALLOW', 'BLOCK' or self::DECISION_UNAVAILABLE.
+	 */
+	private function run_evaluation_unguarded( \Closure $build_context, array $request_tokens = array() ): string {
+		$this->verified_did = '';
+		$order_context      = $build_context();
+		$token              = Trusteed_Agent_Identity::resolve_token( WC()->session, $request_tokens );
+
+		// Merchant not connected — nothing to evaluate against. Since 2.3.6
+		// (Task 23a) this is `layer_disabled` (configuration, not an outage):
+		// nobody is held, an agent neither, like an unconfigured WC-AgenticTools,
+		// PrestaShop or Odoo. Logged either way.
 		if ( empty( $this->merchant_id ) ) {
-			return $this->apply_failure_mode( 'merchant_id_unset' );
+			$agent = WC()->session ? WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENT_ID ) : null;
+			$agent = is_string( $agent ) && '' !== $agent ? $agent : null;
+			return $this->report_unavailable( 'merchant_id_unset', $agent, $this->resolve_is_agentic( $agent, $token ), false, Trusteed_Enforcement_Failure_Policy::KIND_LAYER_DISABLED, $this->token_present( $token ) );
 		}
 
 		$agent_id = WC()->session
@@ -335,10 +514,48 @@ class Trusteed_Checkout_Enforcer {
 			$agent_id = null;
 		}
 
+		// Read BEFORE the session is cleared below (and before the token check).
+		$is_agentic = $this->resolve_is_agentic( $agent_id, $token );
+
 		// Verify agent token signature and enrich orderContext cartAttributes.
-		// Safe to call unconditionally — no-ops (returns $order_context
-		// unchanged) when there is no session token to verify.
-		$order_context = $this->enrich_with_token_verification( $order_context );
+		// No-op when there is no token. 5b: the token is bound to the declared
+		// DID; only a VALID token of that same DID yields $this->verified_did.
+		$verified           = $this->enrich_with_token_verification( $order_context, $token, (string) $agent_id );
+		$order_context      = $verified['context'];
+		$declared_did       = $agent_id; // Only for the outage counter (report_unavailable).
+		// Decision 2: with the nonce store down the identity is AUTHENTIC (the
+		// signature verified) and travels as agentId below, but the order is not
+		// attributed (R023 only keeps a DID whose nonce was accepted).
+		$this->verified_did = $verified['nonce_unavailable'] ? '' : $verified['verified_did'];
+
+		// Task 23a: the token could not be checked because there is no verified
+		// snapshot (the DID resolver travels INSIDE it). Tampered or missing,
+		// an agent with a token is held in every mode — before asking the
+		// server, so a forged token is never a pass. A person never gets here
+		// (no token ⇒ no snapshot lookup).
+		if ( null !== $verified['degraded'] ) {
+			$this->clear_agent_session();
+			return $this->report_unavailable( 'snapshot_' . $verified['degraded'], $declared_did, $is_agentic, false, $verified['degraded'], true );
+		}
+		// Task 16: only a DID proven by a VALID token travels as agentId (the
+		// server keys the agent's history on it); a declared-only DID is an
+		// anonymous agent (endpointClass above still says agentic_endpoint).
+		$agent_id = '' !== $verified['verified_did'] ? $verified['verified_did'] : null;
+		// 2.4.0: pedido de la API de Trusteed — el DID viene del canal firmado, no de la URL.
+		if ( null === $agent_id && null !== $this->trusted_agent_did ) {
+			$agent_id = $this->trusted_agent_did;
+		}
+
+		// Decision 2: the signature verified and only the anti-replay check could
+		// not run (our nonce store did not answer). The failure mode decides, as
+		// with any outage: `enforce` holds the agent before asking the server
+		// (our outage, not "a rule blocked you"); `observe` lets it through with
+		// the marker. The identity is kept either way. The server ignores the
+		// allowlist when it sees the marker.
+		if ( $verified['nonce_unavailable'] && 'BLOCK' === Trusteed_Enforcement_Failure_Policy::decide_unavailable( true, $this->failure_mode, false ) ) {
+			$this->clear_agent_session();
+			return $this->report_unavailable( 'nonce_store_unavailable', $verified['verified_did'], true, false, Trusteed_Enforcement_Failure_Policy::KIND_EVALUATOR_UNAVAILABLE, true );
+		}
 
 		$payload = array(
 			'merchantId'     => $this->merchant_id,
@@ -348,6 +565,8 @@ class Trusteed_Checkout_Enforcer {
 			'installationId' => $this->installation_id,
 			'timestamp'      => gmdate( DATE_ATOM ),
 		);
+		// Sólo en agénticos: el payload orgánico queda byte a byte como antes.
+		$payload = $is_agentic ? array_merge( $payload, array( 'endpointClass' => 'agentic_endpoint' ) ) : $payload;
 
 		$result = $this->api_client->evaluate( $payload );
 
@@ -355,6 +574,8 @@ class Trusteed_Checkout_Enforcer {
 		if ( WC()->session ) {
 			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_ID, null );
 			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, null );
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, null );
+			WC()->session->set( Trusteed_Agent_Identity::SESSION_TOKEN_REJECTED, null );
 		}
 
 		if ( Trusteed_Eval_Outcome::INDETERMINATE === $result->outcome ) {
@@ -367,7 +588,12 @@ class Trusteed_Checkout_Enforcer {
 			// still fire during a remote-API outage, instead of either
 			// silently letting every cart through or blocking every
 			// legitimate human checkout.
-			$offline_block = $this->try_offline_safety_valve( $order_context );
+			// Task 23a: the valve only runs on a VERIFIED snapshot; without one
+			// the cause (tampered / missing) decides and its rules are ignored.
+			$kind          = $this->snapshot_degraded_kind() ?? Trusteed_Enforcement_Failure_Policy::KIND_EVALUATOR_UNAVAILABLE;
+			$offline_block = Trusteed_Enforcement_Failure_Policy::KIND_EVALUATOR_UNAVAILABLE === $kind
+				? $this->try_offline_safety_valve( $order_context, $is_agentic )
+				: null;
 			if ( null !== $offline_block ) {
 				error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 					sprintf(
@@ -377,9 +603,9 @@ class Trusteed_Checkout_Enforcer {
 						$result->reason
 					)
 				);
-				return 'BLOCK';
+				return $this->report_unavailable( $result->reason, $declared_did, $is_agentic, true, $kind, $this->token_present( $token ) );
 			}
-			return $this->apply_failure_mode( $result->reason );
+			return $this->report_unavailable( $result->reason, $declared_did, $is_agentic, false, $kind, $this->token_present( $token ) );
 		}
 
 		// R043 HITL — a human-in-the-loop approval is required before the order may
@@ -396,7 +622,10 @@ class Trusteed_Checkout_Enforcer {
 			return 'ALLOW'; // Order proceeds → gate freezes it to pending.
 		}
 
-		return Trusteed_Eval_Outcome::BLOCK === $result->outcome ? 'BLOCK' : 'ALLOW';
+		if ( Trusteed_Eval_Outcome::BLOCK !== $result->outcome ) {
+			return 'ALLOW';
+		}
+		return 'BLOCK';
 	}
 
 	/**
@@ -408,10 +637,16 @@ class Trusteed_Checkout_Enforcer {
 	 * caller falls through to failure_mode) when the snapshot is
 	 * unavailable, has no applicable rules, or the cart passes.
 	 *
+	 * Since 2.3.6 the rules are first scoped by who is checking out
+	 * (Trusteed_Enforcement_Failure_Policy::offline_rules_for): a human only
+	 * gets the merchant's `appliesTo: ALL`/`HUMAN` rules (R030 cap, countries…),
+	 * never an AGENT rule such as R028/R029.
+	 *
 	 * @param array $order_context Same shape sent to the remote evaluator.
+	 * @param bool  $is_agentic    Checkout carries an agentic signal.
 	 * @return array{ruleCode: string, reason: string}|null
 	 */
-	private function try_offline_safety_valve( array $order_context ): ?array {
+	private function try_offline_safety_valve( array $order_context, bool $is_agentic ): ?array {
 		if ( null === $this->snapshot_client || ! method_exists( $this->snapshot_client, 'get_rules' ) ) {
 			return null;
 		}
@@ -423,6 +658,10 @@ class Trusteed_Checkout_Enforcer {
 		if ( empty( $rules ) || ! class_exists( 'Trusteed_Offline_Safety_Valve_Evaluator' ) ) {
 			return null;
 		}
+		$rules = Trusteed_Enforcement_Failure_Policy::offline_rules_for( (array) $rules, $is_agentic );
+		if ( empty( $rules ) ) {
+			return null;
+		}
 		$cart_attributes = isset( $order_context['cartAttributes'] ) && is_array( $order_context['cartAttributes'] )
 			? $order_context['cartAttributes']
 			: array();
@@ -430,57 +669,88 @@ class Trusteed_Checkout_Enforcer {
 	}
 
 	/**
-	 * Map INDETERMINATE result to ALLOW/BLOCK per failure_mode policy.
-	 *
-	 * Emits:
+	 * The server did not answer (INDETERMINATE) or there is nobody to ask
+	 * (merchant_id_unset). Decides with the shared policy — a human is never
+	 * blocked by this; only an agent gets the failure_mode — and leaves a trace:
 	 *   - Structured error_log line (grep-able fallback).
 	 *   - POST /v1/agent-events kind=enforcement_indeterminate when an
-	 *     event_webhook + agent_did are available, so backend Prometheus
-	 *     counter `enforcement_api_fail_total{platform,reason,mode}` ticks.
+	 *     event_webhook and a DID are available, so the backend counter
+	 *     `enforcement_api_fail_total{platform,reason,mode}` ticks.
 	 *
-	 * @since 1.5.0
+	 * The DID arrives as a parameter: the previous apply_failure_mode() read it
+	 * from the session AFTER run_evaluation() had cleared it, so the
+	 * `enforcement_indeterminate` telemetry was never emitted.
 	 *
-	 * @param string $reason Short reason code from API client.
-	 * @return string 'ALLOW' (observe) or 'BLOCK' (enforce).
+	 * @since 2.3.6 (replaces apply_failure_mode(), 1.5.0)
+	 *
+	 * Since 2.3.6 (Task 23a) the CAUSE decides too
+	 * (Trusteed_Enforcement_Failure_Policy::decide_degraded()): a tampered or
+	 * missing snapshot holds an agent with a token in every mode; an
+	 * unconnected merchant (`layer_disabled`) holds nobody.
+	 *
+	 * @param string      $reason        Short reason code from API client.
+	 * @param string|null $agent_id      DID read before the session was cleared.
+	 * @param bool        $is_agentic    Checkout carries an agentic signal.
+	 * @param bool        $offline_block The offline safety valve found a blocking rule.
+	 * @param string      $kind          Trusteed_Enforcement_Failure_Policy::KIND_*.
+	 * @param bool        $token_present The checkout carried an agent token (valid or not).
+	 * @return string 'ALLOW', 'BLOCK' (the offline valve: a merchant rule) or self::DECISION_UNAVAILABLE.
 	 */
-	private function apply_failure_mode( string $reason ): string {
+	private function report_unavailable( string $reason, ?string $agent_id, bool $is_agentic, bool $offline_block, string $kind = Trusteed_Enforcement_Failure_Policy::KIND_EVALUATOR_UNAVAILABLE, bool $token_present = false ): string {
+		$decision = Trusteed_Enforcement_Failure_Policy::decide_degraded( $kind, $is_agentic, $token_present, $this->failure_mode, $offline_block );
 		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 			sprintf(
-				'[amcp.enforcement_indeterminate] platform=woocommerce merchant=%s mode=%s reason=%s',
+				'[amcp.enforcement_indeterminate] platform=woocommerce merchant=%s mode=%s reason=%s kind=%s agentic=%s decision=%s',
 				$this->merchant_id,
 				$this->failure_mode,
-				$reason
+				$reason,
+				$kind,
+				$is_agentic ? 'true' : 'false',
+				$decision
 			)
 		);
-
-		if ( null !== $this->event_webhook && WC()->session ) {
-			$agent_did = (string) ( WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENT_ID ) ?? '' );
-			if ( '' !== $agent_did ) {
-				$this->event_webhook->emit_indeterminate( $agent_did, $reason, $this->failure_mode );
-			}
+		if ( null !== $this->event_webhook && null !== $agent_id && '' !== $agent_id ) {
+			$this->event_webhook->emit_indeterminate( $agent_id, $reason, $this->failure_mode );
 		}
-
-		return 'enforce' === $this->failure_mode ? 'BLOCK' : 'ALLOW';
+		// 2.3.6 (5b): closing an agent because WE failed is not "a rule blocked
+		// you"; only the offline valve (a merchant rule) returns BLOCK here.
+		return 'BLOCK' === $decision && ! $offline_block ? self::DECISION_UNAVAILABLE : $decision;
 	}
 
 	/**
 	 * Read the agent JWS token from session, verify its Ed25519 signature, and
 	 * add _agent_token_present / _agent_token_signature_invalid to cartAttributes.
 	 *
-	 * Fail-open: if token is absent or verification is INDETERMINATE, no attributes
-	 * are added (R002 will not fire).
+	 * No token ⇒ no attributes. Task 16: a token that is present but not VALID
+	 * (INDETERMINATE, INVALID, another agent's, or no snapshot to check it
+	 * against) is `_agent_token_signature_invalid` — an unverifiable token is
+	 * an invalid one as far as the agent is concerned.
+	 *
+	 * 2.3.6 (5b): the token is bound to the declared DID
+	 * (Trusteed_Agent_Identity::bind_token): a valid token of ANOTHER agent is
+	 * an invalid token (its jti is not consumed); with no declared DID a valid
+	 * token supplies its own. A token without JWS shape is an invalid token.
+	 * `verified_did` is non-empty only for a VALID token that is not marked
+	 * invalid afterwards (replay). Decision 2: with the nonce store down the
+	 * signature still verified, so the DID is kept and only marked
+	 * `_agent_token_nonce_unavailable`; the caller decides by failure mode.
 	 *
 	 * @since 1.4.0
 	 *
-	 * @param array $order_context Existing orderContext.
-	 * @return array orderContext with cartAttributes enriched.
+	 * @param array                              $order_context Existing orderContext.
+	 * @param array{token:string, rejected:bool} $token         From resolve_token().
+	 * @param string                             $declared_did  Declared DID ('' if none).
+	 * @return array{context: array, verified_did: string, nonce_unavailable: bool, degraded: ?string} `nonce_unavailable`:
+	 *         the signature verified and only the anti-replay check could not run (our nonce store did not answer);
+	 *         `degraded`: KIND_* when there was no verified snapshot to check the token (Task 23a).
 	 */
-	private function enrich_with_token_verification( array $order_context ): array {
-		$jws_token = WC()->session ? WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN ) : null;
+	private function enrich_with_token_verification( array $order_context, array $token, string $declared_did ): array {
+		$jws_token = $token['token'];
+		$none      = array( 'context' => $order_context, 'verified_did' => '', 'nonce_unavailable' => false, 'degraded' => null );
 
-		if ( empty( $jws_token ) || ! is_string( $jws_token ) ) {
+		if ( '' === $jws_token && ! $token['rejected'] ) {
 			// No token present — no attributes added. Fail open.
-			return $order_context;
+			return $none;
 		}
 
 		if ( ! isset( $order_context['cartAttributes'] ) || ! is_array( $order_context['cartAttributes'] ) ) {
@@ -489,30 +759,60 @@ class Trusteed_Checkout_Enforcer {
 
 		$order_context['cartAttributes']['_agent_token_present'] = 'true';
 
-		if ( null === $this->snapshot_client ) {
-			// Snapshot client not configured — cannot verify. Fail open.
-			return $order_context;
+		if ( $token['rejected'] ) {
+			// Presented but not a JWS: an agent's invalid token, never "no token".
+			$order_context['cartAttributes']['_agent_token_signature_invalid'] = 'true';
+			return array( 'context' => $order_context, 'verified_did' => '', 'nonce_unavailable' => false, 'degraded' => null );
 		}
 
-		$did_resolver = $this->snapshot_client->get_did_resolver( $this->merchant_id );
+		if ( null === $this->snapshot_client ) {
+			// Snapshot client not configured — cannot verify: not VALID (Task 16).
+			$order_context['cartAttributes']['_agent_token_signature_invalid'] = 'true';
+			return array( 'context' => $order_context, 'verified_did' => '', 'nonce_unavailable' => false, 'degraded' => null );
+		}
+
+		// Task 23a: WHY there is no resolver matters. Tampered or missing
+		// snapshot ⇒ the token cannot be checked ⇒ `degraded` (run_evaluation
+		// holds the agent before asking the server; no jti is consumed).
+		$snapshot = $this->snapshot_client->get_snapshot_result( $this->merchant_id );
+		if ( Trusteed_Snapshot_Client_Woo::STATUS_OK !== $snapshot['status'] ) {
+			$order_context['cartAttributes']['_agent_token_signature_invalid'] = 'true';
+			return array(
+				'context'           => $order_context,
+				'verified_did'      => '',
+				'nonce_unavailable' => false,
+				'degraded'          => Trusteed_Snapshot_Client_Woo::degraded_kind( $snapshot['status'] ),
+			);
+		}
+		$did_resolver = is_array( $snapshot['payload']['agentDidResolver'] ?? null ) ? $snapshot['payload']['agentDidResolver'] : array();
 		$result       = Trusteed_Token_Verifier::verify( $jws_token, $did_resolver, $this->merchant_id );
+		$bound        = Trusteed_Agent_Identity::bind_token( $declared_did, $result->state, $result->agent_did );
+
+		if ( 'valid' !== $bound['state'] ) {
+			// INVALID, INDETERMINATE (e.g. a DID outside the resolver) or another
+			// agent's token: not a proof of anyone (Task 16).
+			$order_context['cartAttributes']['_agent_token_signature_invalid'] = 'true';
+		}
 
 		if ( $result->is_invalid() ) {
 			$order_context['cartAttributes']['_agent_token_signature_invalid'] = 'true';
 
-			// Surface jti-specific failures as explicit attributes so operators can
-			// diagnose tokens minted without single-use identifiers (spec-048 P2.8).
+			// Surface identifier-specific failures as explicit attributes so operators
+			// can diagnose tokens minted without a single-use identifier (spec-048
+			// P2.8). The names say `jti` for compatibility with the server; since B5
+			// they cover the canonical `nonce` (or the legacy `jti` alias).
 			if ( 'missing_jti' === $result->error ) {
 				$order_context['cartAttributes']['_agent_token_jti_missing'] = 'true';
 			} elseif ( 'bad_jti' === $result->error ) {
 				$order_context['cartAttributes']['_agent_token_jti_malformed'] = 'true';
 			}
 		}
-		// VALID or INDETERMINATE → no _agent_token_signature_invalid flag (fail open).
 
 		// Spec-048 P2.8 — single-use replay protection. Only consume nonces for
-		// VALID tokens (INDETERMINATE / INVALID are already handled above).
-		if ( $result->is_valid() && '' !== $result->jti ) {
+		// VALID tokens (INDETERMINATE / INVALID are already handled above) that
+		// belong to the declared agent (5b: never burn another agent's jti).
+		$nonce_unavailable = false;
+		if ( 'valid' === $bound['state'] && '' !== $result->jti ) {
 			$nonce_outcome = $this->api_client->consume_nonce(
 				$this->merchant_id,
 				$result->agent_did,
@@ -526,21 +826,20 @@ class Trusteed_Checkout_Enforcer {
 				$order_context['cartAttributes']['_agent_token_signature_invalid'] = 'true';
 				$order_context['cartAttributes']['_agent_token_replay']            = 'true';
 			} elseif ( Trusteed_Nonce_Outcome::INDETERMINATE === $nonce_outcome->outcome ) {
-				// Honor failure_mode: enforce → mark INVALID (fail-closed); observe →
-				// leave token VALID + emit telemetry (parity with rules/evaluate path).
-				if ( 'enforce' === $this->failure_mode ) {
-					$order_context['cartAttributes']['_agent_token_signature_invalid']   = 'true';
-					$order_context['cartAttributes']['_agent_token_nonce_unavailable'] = 'true';
-				} else {
-					$order_context['cartAttributes']['_agent_token_nonce_unavailable'] = 'true';
-					error_log( '[amcp] nonce-consume indeterminate (observe): ' . $nonce_outcome->reason ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-				}
+				// Decision 2: the signature verified, so the token stays VALID and the
+				// DID is authentic; only replay could not be checked. Mark it (the
+				// server ignores the allowlist with this marker) and let the caller
+				// decide by failure mode.
+				$order_context['cartAttributes']['_agent_token_nonce_unavailable'] = 'true';
+				$nonce_unavailable = true;
+				error_log( '[amcp] nonce-consume indeterminate (' . $this->failure_mode . '): ' . $nonce_outcome->reason ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
 			}
 			// ACCEPTED → nothing to do, token remains VALID.
 		}
 
 		// R004: first-seen key age tracking via WP transients (persistent across requests).
-		if ( '' !== $result->kid ) {
+		// Only for a VALID token (Task 16): an unproven or another agent's key must not age this one.
+		if ( '' !== $result->kid && 'valid' === $bound['state'] ) {
 			$transient_key = 'trusteed_kid_fs_' . hash( 'sha256', $result->kid );
 			$first_seen    = get_transient( $transient_key );
 			if ( false === $first_seen ) {
@@ -550,7 +849,45 @@ class Trusteed_Checkout_Enforcer {
 			$order_context['cartAttributes']['_agent_key_age_hours'] = (string) round( ( time() - (int) $first_seen ) / 3600, 2 );
 		}
 
-		return $order_context;
+		$verified = 'valid' === $bound['state'] && ! isset( $order_context['cartAttributes']['_agent_token_signature_invalid'] );
+		return array(
+			'context'           => $order_context,
+			'verified_did'      => $verified ? $bound['did'] : '',
+			'nonce_unavailable' => $nonce_unavailable,
+			'degraded'          => null,
+		);
+	}
+
+	/**
+	 * Task 23a: kind of the snapshot failure, or null with a verified snapshot
+	 * (or with no snapshot client, which only a test builds).
+	 *
+	 * @return string|null Trusteed_Enforcement_Failure_Policy::KIND_*.
+	 */
+	private function snapshot_degraded_kind(): ?string {
+		try {
+			return null === $this->snapshot_client ? null : Trusteed_Snapshot_Client_Woo::degraded_kind( $this->snapshot_client->get_snapshot_result( $this->merchant_id )['status'] );
+		} catch ( \Throwable $e ) {
+			return Trusteed_Enforcement_Failure_Policy::KIND_MISSING_SNAPSHOT;
+		}
+	}
+
+	/**
+	 * @param array{token:string, rejected:bool} $token From resolve_token().
+	 * @return bool The checkout carried an agent token (valid or not).
+	 */
+	private function token_present( array $token ): bool {
+		return '' !== $token['token'] || $token['rejected'];
+	}
+
+	/** Same session cleanup as after evaluate(), for the early return of Task 23a. */
+	private function clear_agent_session(): void {
+		if ( WC()->session ) {
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_ID, null );
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, null );
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, null );
+			WC()->session->set( Trusteed_Agent_Identity::SESSION_TOKEN_REJECTED, null );
+		}
 	}
 
 	/**

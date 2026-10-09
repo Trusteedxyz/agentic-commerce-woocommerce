@@ -125,23 +125,31 @@ msgstr "Inicio"
 
 #: includes/admin/class-admin-router.php:178
 #: includes/admin/class-admin-router.php:179
-msgid "Trust Center"
-msgstr "Centro de confianza"
+msgid "Trust"
+msgstr "Confianza"
 
 #: includes/admin/class-admin-router.php:188
 #: includes/admin/class-admin-router.php:189
-msgid "My Sales"
+msgid "My sales"
 msgstr "Mis ventas"
 
 #: includes/admin/class-admin-router.php:198
 #: includes/admin/class-admin-router.php:199
-msgid "My Rules"
+msgid "My rules"
 msgstr "Mis reglas"
 
 #: includes/admin/class-admin-router.php:208
 #: includes/admin/class-admin-router.php:209
 msgid "Agents"
 msgstr "Agentes"
+
+#: includes/admin/class-admin-router.php
+msgid "Payment methods"
+msgstr "Métodos de pago"
+
+#: includes/admin/class-admin-router.php
+msgid "Agent Readiness"
+msgstr "Preparación para agentes"
 
 #: includes/admin/class-admin-router.php:218
 #: includes/admin/class-admin-router.php:219

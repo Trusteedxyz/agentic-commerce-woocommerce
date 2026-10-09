@@ -129,29 +129,39 @@ class Trusteed_Multi_Add_Handler {
 			return;
 		}
 
-		// Preserve the agent identity query params so the checkout-enforcer
-		// can capture them on the next page load. We strip the `items[N]` /
-		// `agenticmcp_multi_add` payload from the URL to keep it tidy.
-		$forwarded = array();
-		if ( isset( $_GET[ Trusteed_Cart_Bridge::AGENT_ID_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-			$forwarded[ Trusteed_Cart_Bridge::AGENT_ID_PARAM ] = rawurlencode(
-				sanitize_text_field(
-					rawurldecode( (string) wp_unslash( $_GET[ Trusteed_Cart_Bridge::AGENT_ID_PARAM ] ) ) // phpcs:ignore WordPress.Security.NonceVerification
-				)
-			);
-		}
-		if ( isset( $_GET[ Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
-			$forwarded[ Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM ] = rawurlencode(
-				sanitize_text_field(
-					rawurldecode( (string) wp_unslash( $_GET[ Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM ] ) ) // phpcs:ignore WordPress.Security.NonceVerification
-				)
-			);
-		}
+		$forwarded = self::forwarded_query_args( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification
 
 		$checkout_url = function_exists( 'wc_get_checkout_url' ) ? wc_get_checkout_url() : home_url( '/checkout/' );
 		$redirect_to  = empty( $forwarded ) ? $checkout_url : add_query_arg( $forwarded, $checkout_url );
 
 		wp_safe_redirect( $redirect_to );
 		exit;
+	}
+
+	/**
+	 * Query params that survive the redirect to checkout: the agent identity
+	 * (DID + token) and, since 2.3.6, the origin marker of our MCP — without it
+	 * a multi-line agent cart would reach the checkout looking human. The
+	 * `items[N]` / `agenticmcp_multi_add` payload is dropped to keep the URL
+	 * tidy. Pure: reads only the array it receives.
+	 *
+	 * @since 2.3.6
+	 *
+	 * @param array $query Request query ($_GET).
+	 * @return array
+	 */
+	public static function forwarded_query_args( array $query ): array {
+		$forwarded = array();
+		foreach ( array( Trusteed_Cart_Bridge::AGENT_ID_PARAM, Trusteed_Cart_Bridge::AGENT_TOKEN_PARAM ) as $param ) {
+			if ( isset( $query[ $param ] ) ) {
+				$forwarded[ $param ] = rawurlencode(
+					sanitize_text_field( rawurldecode( (string) wp_unslash( $query[ $param ] ) ) )
+				);
+			}
+		}
+		if ( isset( $query[ Trusteed_Cart_Bridge::ORIGIN_PARAM ] ) ) {
+			$forwarded[ Trusteed_Cart_Bridge::ORIGIN_PARAM ] = 'mcp';
+		}
+		return $forwarded;
 	}
 }

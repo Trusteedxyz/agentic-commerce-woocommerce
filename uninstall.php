@@ -28,6 +28,76 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 /**
+ * Dar de baja el comercio en Trusteed ANTES de borrar nada — 2026-09-05.
+ *
+ * Hasta hoy este fichero borraba las opciones locales y no avisaba a nadie: el
+ * comercio desaparecía de su WordPress y seguía publicado en
+ * `/.well-known/merchant-index.json`, en `/api/v1/stores/directory` y con su
+ * endpoint MCP anunciado, con la puntuación recalculándose sobre un catálogo
+ * congelado. No había ninguna otra señal — WooCommerce no tiene el equivalente
+ * al `app/uninstalled` de Shopify.
+ *
+ * Va primero a propósito: necesita la clave y la URL base que el bucle de
+ * abajo borra. Y es best-effort: si el backend no contesta, la desinstalación
+ * sigue igual. Un `uninstall.php` que falla deja al comerciante con un plugin
+ * a medio borrar, y eso es peor que un registro desactualizado — para eso está
+ * el barrido por latido, que no depende de este aviso.
+ *
+ * Se cargan DOS clases sueltas, y ninguna arranca el plugin ni registra hooks:
+ * son las dos autocontenidas que hacen falta para hablar con la API.
+ */
+// `__DIR__` y no `plugin_dir_path()`: una función menos de WordPress en un
+// fichero cuya cabecera exige mantenerlo libre de dependencias.
+require_once __DIR__ . '/includes/class-crypto-helper.php';
+require_once __DIR__ . '/includes/class-disconnect.php';
+
+$trusteed_uninstall_key = Trusteed_Crypto_Helper::decrypt(
+	(string) get_option( 'agenticmcp_api_key', '' )
+);
+
+if ( '' !== $trusteed_uninstall_key ) {
+	$trusteed_uninstall_base = (string) get_option( 'trusteed_api_base_url', '' );
+	if ( '' === $trusteed_uninstall_base ) {
+		$trusteed_uninstall_base = (string) get_option( 'amcp_api_base_url', '' );
+	}
+	if ( '' === $trusteed_uninstall_base ) {
+		$trusteed_uninstall_base = defined( 'TRUSTEED_API_BASE' )
+			? (string) TRUSTEED_API_BASE
+			: 'https://api.trusteed.xyz';
+	}
+	// `rtrim` y no `untrailingslashit()`: misma razón que `__DIR__` arriba.
+	$trusteed_uninstall_base = rtrim( $trusteed_uninstall_base, '/' );
+
+	Trusteed_Disconnect::run(
+		static function ( $endpoint, $body ) use ( $trusteed_uninstall_base, $trusteed_uninstall_key ) {
+			$response = wp_remote_post(
+				$trusteed_uninstall_base . $endpoint,
+				array(
+					'timeout' => 10,
+					'headers' => array(
+						'Content-Type'     => 'application/json',
+						'Accept'           => 'application/json',
+						'X-AgenticMCP-Key' => $trusteed_uninstall_key,
+					),
+					'body'    => wp_json_encode( $body ),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return null;
+			}
+
+			$decoded = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+
+			return array(
+				'status' => (int) wp_remote_retrieve_response_code( $response ),
+				'body'   => is_array( $decoded ) ? $decoded : array(),
+			);
+		}
+	);
+}
+
+/**
  * Cached snapshot transient, keyed by a digest of the merchant id. Resolved
  * BEFORE the option loop below deletes that id.
  */
@@ -89,6 +159,7 @@ $agenticmcp_options = array(
  * @var string[]
  */
 $trusteed_prefixed_options = array(
+	'agent_orders_enabled',
 	'api_base_url',
 	'embed_wp_secret',
 	'enforcement_hmac_missing_notice',

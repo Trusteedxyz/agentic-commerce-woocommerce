@@ -103,6 +103,26 @@ class Trusteed_Admin_Router {
 	private const SLUG_SETTINGS = 'amcp-settings-embed';
 
 	/**
+	 * Payment methods submenu slug.
+	 *
+	 * @since 1.4.0
+	 * @var string
+	 */
+	private const SLUG_PAYMENT_METHODS = 'amcp-payment-methods';
+
+	/**
+	 * Slugs registered but hidden from the sidebar (still reachable by URL).
+	 *
+	 * @since 1.4.0
+	 * @var string[]
+	 */
+	private const HIDDEN_SLUGS = array(
+		self::SLUG_AGENT_READINESS,
+		self::SLUG_SEGURIDAD,
+		self::SLUG_MERCHANT_CENTER,
+	);
+
+	/**
 	 * Absolute filesystem path to the plugin root (trailing slash).
 	 *
 	 * @since 1.1.0
@@ -140,10 +160,11 @@ class Trusteed_Admin_Router {
 	 */
 	public function init(): void {
 		add_action( 'admin_menu', array( $this, 'register_menus' ) );
+		add_action( 'admin_head', array( $this, 'hide_legacy_submenus' ) );
 	}
 
 	/**
-	 * Register the top-level menu and its seven submenus (mirrors Shopify nav).
+	 * Register the top-level menu, its seven visible submenus and three hidden pages.
 	 *
 	 * Hooked to admin_menu.
 	 *
@@ -170,95 +191,88 @@ class Trusteed_Admin_Router {
 			56
 		);
 
-		// 1. Home — main dashboard (replaces auto-generated duplicate top-level entry).
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'Home', 'trusteed-for-woocommerce' ),
-			__( 'Home', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_INICIO,
-			array( $this, 'render_inicio' )
+		// Unified 7-entry menu (design 2026-10-03 §4): same order and wording as
+		// Shopify, PrestaShop and Magento. Slugs never change (they are the permission
+		// key and the target of the SPA's internal links).
+		$visible = array(
+			// 1. Home — main dashboard (replaces auto-generated duplicate top-level entry).
+			array( self::SLUG_INICIO, __( 'Home', 'trusteed-for-woocommerce' ), 'render_inicio' ),
+			// 2. My sales — orders + AI receipts combined.
+			array( self::SLUG_MIS_VENTAS, __( 'My sales', 'trusteed-for-woocommerce' ), 'render_mis_ventas' ),
+			// 3. Agents — buyer agents panel.
+			array( self::SLUG_AGENTES, __( 'Agents', 'trusteed-for-woocommerce' ), 'render_agentes' ),
+			// 4. My rules — trust rule management.
+			array( self::SLUG_MIS_REGLAS, __( 'My rules', 'trusteed-for-woocommerce' ), 'render_mis_reglas' ),
+			// 5. Payment methods — own entry (was a tab inside Merchant Center).
+			array( self::SLUG_PAYMENT_METHODS, __( 'Payment methods', 'trusteed-for-woocommerce' ), 'render_payment_methods' ),
+			// 6. Trust — store overview (absorbs Agent Readiness and Security in the SPA).
+			array( self::SLUG_TRUST_CENTER, __( 'Trust', 'trusteed-for-woocommerce' ), 'render_trust_center' ),
+			// 7. Settings — fallback mode + payment configuration.
+			array( self::SLUG_SETTINGS, __( 'Settings', 'trusteed-for-woocommerce' ), 'render_settings' ),
 		);
 
-		// 2. Trust Center — store overview.
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'Trust Center', 'trusteed-for-woocommerce' ),
-			__( 'Trust Center', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_TRUST_CENTER,
-			array( $this, 'render_trust_center' )
+		foreach ( $visible as $entry ) {
+			add_submenu_page(
+				self::SLUG_INICIO,
+				$entry[1],
+				$entry[1],
+				self::REQUIRED_CAP,
+				$entry[0],
+				array( $this, $entry[2] )
+			);
+		}
+
+		// Pages that left the menu but stay registered (reachable by URL and by the
+		// SPA's internal links). They are registered here and hidden later, see
+		// hide_legacy_submenus().
+		$hidden = array(
+			array( self::SLUG_AGENT_READINESS, __( 'Agent Readiness', 'trusteed-for-woocommerce' ), 'render_agent_readiness' ),
+			array( self::SLUG_SEGURIDAD, __( 'Security', 'trusteed-for-woocommerce' ), 'render_seguridad' ),
+			array( self::SLUG_MERCHANT_CENTER, __( 'Merchant Center', 'trusteed-for-woocommerce' ), 'render_merchant_center' ),
 		);
 
-		// 3. My Sales — orders + AI receipts combined.
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'My Sales', 'trusteed-for-woocommerce' ),
-			__( 'My Sales', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_MIS_VENTAS,
-			array( $this, 'render_mis_ventas' )
-		);
+		foreach ( $hidden as $entry ) {
+			add_submenu_page(
+				self::SLUG_INICIO,
+				$entry[1],
+				$entry[1],
+				self::REQUIRED_CAP,
+				$entry[0],
+				array( $this, $entry[2] )
+			);
+		}
+	}
 
-		// 4. My Rules — R001-R010 trust rule management.
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'My Rules', 'trusteed-for-woocommerce' ),
-			__( 'My Rules', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_MIS_REGLAS,
-			array( $this, 'render_mis_reglas' )
-		);
+	/**
+	 * Hide the pages that left the menu, without unregistering them.
+	 *
+	 * Hooked to admin_head, NOT run inside admin_menu: wp-admin/admin.php resolves
+	 * the page's parent and runs user_can_access_admin_page() against $submenu
+	 * BEFORE admin_head, and the menu HTML is printed AFTER it. Removing the entries
+	 * on admin_menu would make a direct visit to admin.php?page=amcp-seguridad
+	 * answer "Sorry, you are not allowed to access this page". Removing them here
+	 * only affects what the sidebar renders; the registered page and its parent
+	 * highlighting keep working.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @return void
+	 */
+	public function hide_legacy_submenus(): void {
+		foreach ( self::HIDDEN_SLUGS as $slug ) {
+			remove_submenu_page( self::SLUG_INICIO, $slug );
+		}
+	}
 
-		// 5. Agents — buyer agents panel.
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'Agents', 'trusteed-for-woocommerce' ),
-			__( 'Agents', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_AGENTES,
-			array( $this, 'render_agentes' )
-		);
-
-		// 5b. Agent Readiness — spec 065 F1: what agents did on this store.
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'Agent Readiness', 'trusteed-for-woocommerce' ),
-			__( 'Agent Readiness', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_AGENT_READINESS,
-			array( $this, 'render_agent_readiness' )
-		);
-
-		// 6. Security — keys + audit log combined.
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'Security', 'trusteed-for-woocommerce' ),
-			__( 'Security', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_SEGURIDAD,
-			array( $this, 'render_seguridad' )
-		);
-
-		// 7. Merchant Center — payment methods, orders, shops.
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'Merchant Center', 'trusteed-for-woocommerce' ),
-			__( 'Merchant Center', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_MERCHANT_CENTER,
-			array( $this, 'render_merchant_center' )
-		);
-
-		// 8. Settings — fallback mode + payment configuration.
-		add_submenu_page(
-			self::SLUG_INICIO,
-			__( 'Settings', 'trusteed-for-woocommerce' ),
-			__( 'Settings', 'trusteed-for-woocommerce' ),
-			self::REQUIRED_CAP,
-			self::SLUG_SETTINGS,
-			array( $this, 'render_settings' )
-		);
+	/**
+	 * Render the Payment methods SPA shell.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @return void
+	 */
+	public function render_payment_methods(): void {
+		$this->render_spa_shell( 'payment-methods' );
 	}
 
 	/**

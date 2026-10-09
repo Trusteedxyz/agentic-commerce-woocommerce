@@ -4,7 +4,9 @@
  *
  * Listens for WooCommerce refund and cancellation events on orders that
  * carry the `_trusteed_agent_did` meta (set by the checkout enforcer on
- * agent-initiated ALLOW). POSTs a signed event to /v1/agent-events so the
+ * agent-initiated ALLOW; since 2.3.6 only when a VALID agent token proves that
+ * DID, and not writable through the REST API — orders stamped by earlier
+ * versions may still carry an unverified DID). POSTs a signed event to /v1/agent-events so the
  * backend can update PlatformOrder dispute/cancel counters that feed R023
  * during subsequent evaluations.
  *
