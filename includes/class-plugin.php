@@ -165,6 +165,8 @@ class Trusteed_Plugin {
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-checkout-enforcer.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-r043-hitl-gate.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-event-webhook.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-capabilities-reporter.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-heartbeat.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-multi-add-handler.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-request-auth.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-gateway.php';
@@ -302,6 +304,12 @@ class Trusteed_Plugin {
 		// R023 refund/cancel webhook — propagates events to backend for R023 evaluation.
 		$this->agent_event_webhook->init();
 
+		// Spec-048 4.9 (C7/C8) — report which cart signals this install provides.
+		Trusteed_Capabilities_Reporter::register();
+
+		// C14 — hourly heartbeat so the API knows the plugin is alive.
+		Trusteed_Heartbeat::register();
+
 		// Gap 2 — register the multi-add URL handler.
 		if ( null !== $this->multi_add_handler ) {
 			$this->multi_add_handler->init();
@@ -352,7 +360,14 @@ class Trusteed_Plugin {
 	 * @return void
 	 */
 	public static function activate() {
-		// Stub — future: schedule cron events, create DB tables, etc.
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-trusteed-options.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-crypto-helper.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-api-client.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-capabilities-reporter.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-heartbeat.php';
+		Trusteed_Heartbeat::ensure_scheduled();
+		Trusteed_Capabilities_Reporter::ensure_daily_scheduled();
+		Trusteed_Capabilities_Reporter::schedule_deferred();
 	}
 
 	/**
@@ -361,6 +376,9 @@ class Trusteed_Plugin {
 	 * @return void
 	 */
 	public static function deactivate() {
-		// Stub — future: clear scheduled cron events, flush rewrite rules, etc.
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-capabilities-reporter.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-heartbeat.php';
+		Trusteed_Heartbeat::unschedule();
+		Trusteed_Capabilities_Reporter::unschedule();
 	}
 }

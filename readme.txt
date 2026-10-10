@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.4.1
+Stable tag: 2.4.4
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,21 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.4.4 =
+* Fixed: the capabilities report no longer includes cart signals that no rule reads. The Trusteed API rejected the whole report (HTTP 400), so the rules checks in the dashboard stayed without a verdict.
+* Fixed: a rejected capabilities report is retried after one hour instead of on every page load.
+* Changed (My sales): an order placed by an AI agent now shows the agent and the client it declared (for example ChatGPT or Claude), the channel and payment method (for example "Agent · MCP · x402"), and the real total. It used to show "Other channel", "Person" and "0.00 USD". The order number opens the signed Trust Receipt of the purchase. Requires the matching Trusteed API update.
+* Changed (Security log): an entry without an agent id is no longer labelled "Person"; tool calls are labelled as agent activity.
+* Changed (Agent readiness): a check without a verdict now says why (needs a setting, waiting for data, does not apply, we will retry) instead of "Not checked"; checks that do not apply are counted apart. The three panels are stacked full width and wide tables no longer overflow their card.
+
+= 2.4.3 =
+* New: the hourly heartbeat also reports your tax display settings (prices entered with or without tax, and how the shop shows them), so Trusteed can tell whether the catalog price and the price an agent sees are comparable. No customer data.
+
+= 2.4.2 =
+* New: the plugin reports which cart signals it provides to Trusteed (`POST /api/v1/enforcement/capabilities`, signed with the installation secret) on update, after saving credentials and once a day, so the dashboard can tell which rules your store can actually feed. Network failures are logged and never break the admin.
+* New: an hourly heartbeat (WP-Cron) tells Trusteed the plugin is alive, so a quiet store is no longer reported as out of date.
+* New: when an order is marked Completed, the plugin sends an `order.completed` event (no customer data: id, number, totals, dates and the agent id when present) so Trusteed can compare your shipping promise with real fulfilment times. Requires a connection made with 2.4.1 or later.
 
 = 2.4.1 =
 * Fixed: connecting a store never saved its enforcement credentials (installation id, installation secret and WooCommerce webhook secret). Trusteed sent them, but the plugin dropped them before saving, so everything signed with the installation secret was refused: rule snapshots, agent events and the `trusteed/v1/*` endpoints. Stores connected before this fix must reconnect once.

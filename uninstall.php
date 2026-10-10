@@ -122,6 +122,7 @@ $trusteed_transients = array(
 	'trusteed_jwks',
 	'trusteed_eval_4xx_rate',
 	'trusteed_eval_config_drift_notice',
+	'trusteed_capabilities_report_backoff',
 );
 
 foreach ( $trusteed_transients as $trusteed_transient ) {
@@ -145,6 +146,7 @@ $agenticmcp_options = array(
 	'agenticmcp_webhook_secret',
 	'agenticmcp_last_billing_event_id',
 	'agenticmcp_trial_ends_at',
+	'trusteed_capabilities_reported_fingerprint',
 );
 
 /**
@@ -178,4 +180,11 @@ foreach ( $trusteed_prefixed_options as $trusteed_bare_key ) {
 
 foreach ( $agenticmcp_options as $option ) {
 	delete_option( $option );
+}
+
+// Scheduled events (heartbeat, capabilities report) must not outlive the plugin.
+if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
+	foreach ( array( 'trusteed_heartbeat_hourly', 'trusteed_capabilities_report_daily', 'trusteed_capabilities_report_deferred' ) as $trusteed_cron_hook ) {
+		wp_clear_scheduled_hook( $trusteed_cron_hook );
+	}
 }

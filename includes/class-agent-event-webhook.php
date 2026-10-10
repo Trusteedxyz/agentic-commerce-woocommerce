@@ -114,6 +114,10 @@ class Trusteed_Agent_Event_Webhook {
 	public function init(): void {
 		add_action( 'woocommerce_order_refunded', array( $this, 'on_order_refunded' ), 10, 2 );
 		add_action( 'woocommerce_order_status_cancelled', array( $this, 'on_order_cancelled' ), 10, 2 );
+		// C16 — completed orders feed the shipping-promise reconciliation. Goes to
+		// the WooCommerce order-webhook receiver (NOT /v1/agent-events, which only
+		// accepts agent refund/cancel events and would drop it).
+		add_action( 'woocommerce_order_status_completed', array( $this, 'on_order_completed' ), 10, 2 );
 		// Gap 7 — emit `order_placed` so backend has a baseline order count to
 		// normalize R023 refund ratio. Fires once when checkout finishes and
 		// the order object is fully assembled with totals + meta.
@@ -147,6 +151,116 @@ class Trusteed_Agent_Event_Webhook {
 	 */
 	public function on_order_cancelled( $order_id, $order = null ): void {
 		$this->emit_event( (int) $order_id, 'cancelled', array() );
+	}
+
+	/** Receiver path for WooCommerce order webhooks (topic `order.completed`). */
+	public const ORDER_WEBHOOK_PATH = '/api/v1/ucp/webhooks/woocommerce/orders';
+
+	/**
+	 * Hook: woocommerce_order_status_completed.
+	 *
+	 * Emits `order.completed` in the shape of a native WooCommerce order webhook
+	 * (HMAC-SHA256 base64 of the raw body with `woo_webhook_secret`; headers
+	 * `x-wc-webhook-*`). Covers ALL orders, not just agentic ones: C16 reconciles
+	 * the merchant's shipping promise against fulfilment times. Payload carries no
+	 * customer PII (no billing/shipping, no email). Single attempt; failures are
+	 * logged and never break the admin action that completed the order.
+	 *
+	 * @since 2.4.2
+	 *
+	 * @param int   $order_id Order ID.
+	 * @param mixed $order    Order object (optional, WC passes it from 3.x).
+	 * @return void
+	 */
+	public function on_order_completed( $order_id, $order = null ): void {
+		try {
+			if ( empty( $this->api_base ) ) {
+				return;
+			}
+			$order = ( is_object( $order ) && method_exists( $order, 'get_id' ) )
+				? $order
+				: ( function_exists( 'wc_get_order' ) ? wc_get_order( (int) $order_id ) : null );
+			if ( ! $order ) {
+				return;
+			}
+			$secret = Trusteed_Crypto_Helper::decrypt( (string) Trusteed_Options::get_option( 'woo_webhook_secret', '' ) );
+			if ( '' === $secret ) {
+				return; // Not provisioned: reconnect required. Nothing to sign with.
+			}
+			$payload     = self::build_order_completed_payload( $order );
+			$delivery_id = (string) $payload['_trusteed_delivery_id'];
+			unset( $payload['_trusteed_delivery_id'] ); // Header only; keep the body Woo-shaped.
+			$raw_body = wp_json_encode( $payload );
+			if ( false === $raw_body ) {
+				return;
+			}
+			$response = wp_remote_post(
+				rtrim( $this->api_base, '/' ) . self::ORDER_WEBHOOK_PATH,
+				array(
+					'timeout' => self::BLOCKING_TIMEOUT_SECONDS,
+					'headers' => array(
+						'Content-Type'               => 'application/json',
+						'x-wc-webhook-source'        => get_site_url(),
+						'x-wc-webhook-topic'         => 'order.completed',
+						'x-wc-webhook-signature'     => base64_encode( hash_hmac( 'sha256', $raw_body, $secret, true ) ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions
+						'x-wc-webhook-delivery-id'   => $delivery_id,
+					),
+					'body'    => $raw_body,
+				)
+			);
+			if ( is_wp_error( $response ) ) {
+				error_log( '[trusteed.order_completed] transport error: ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+				return;
+			}
+			$code = (int) wp_remote_retrieve_response_code( $response );
+			if ( $code >= 400 ) {
+				error_log( '[trusteed.order_completed] rejected: HTTP ' . $code ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+			}
+		} catch ( \Throwable $e ) {
+			error_log( '[trusteed.order_completed] exception: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions
+		}
+	}
+
+	/**
+	 * Minimal, PII-free order payload in WooCommerce REST webhook shape.
+	 *
+	 * @param object $order WC_Order (or compatible).
+	 * @return array<string,mixed>
+	 */
+	public static function build_order_completed_payload( $order ): array {
+		$fmt = static function ( $dt, bool $gmt ): string {
+			if ( ! is_object( $dt ) || ! method_exists( $dt, 'getTimestamp' ) ) {
+				return '';
+			}
+			return $gmt
+				? gmdate( 'Y-m-d\TH:i:s', (int) $dt->getTimestamp() )
+				: ( method_exists( $dt, 'date' ) ? (string) $dt->date( 'Y-m-d\TH:i:s' ) : '' );
+		};
+		$created   = method_exists( $order, 'get_date_created' ) ? $order->get_date_created() : null;
+		$completed = method_exists( $order, 'get_date_completed' ) ? $order->get_date_completed() : null;
+		$id        = (int) $order->get_id();
+
+		$payload = array(
+			'id'                  => $id,
+			'number'              => method_exists( $order, 'get_order_number' ) ? (string) $order->get_order_number() : (string) $id,
+			'status'              => 'completed',
+			'currency'            => strtoupper( (string) $order->get_currency() ),
+			'total'               => (string) $order->get_total(),
+			'date_created'        => $fmt( $created, false ),
+			'date_created_gmt'    => $fmt( $created, true ),
+			'date_completed'      => $fmt( $completed, false ),
+			'date_completed_gmt'  => $fmt( $completed, true ),
+			'meta_data'           => array(),
+			// Stable per completion: a redelivery dedups, a re-completion does not.
+			'_trusteed_delivery_id' => 'trusteed-plugin-' . $id . '-' . ( is_object( $completed ) ? (int) $completed->getTimestamp() : 0 ),
+		);
+		foreach ( array( '_trusteed_agent_did', '_trusteed_order_id', '_trusteed_checkout_session_id' ) as $key ) {
+			$value = method_exists( $order, 'get_meta' ) ? (string) $order->get_meta( $key, true ) : '';
+			if ( '' !== $value ) {
+				$payload['meta_data'][] = array( 'key' => $key, 'value' => $value );
+			}
+		}
+		return $payload;
 	}
 
 	/**

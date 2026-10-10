@@ -80,7 +80,9 @@ final class InternalErrorInRunEvaluationTest extends TestCase
         return new class('https://api.trusteed.test', 'inst', 'example-secret') extends Trusteed_Snapshot_Client_Woo {
             public function get_snapshot_result(string $merchant_id): array
             {
-                $rule = ['ruleCode' => 'R019', 'enabled' => true, 'appliesTo' => 'ALL', 'params' => ['blockedCountries' => 'KP']];
+                // R018 con un array donde va un número: `5000 / [1]` lanza TypeError. (Antes se rompía con
+                // `blockedCountries => 'KP'`, pero la válvula ya normaliza listas de países y tolera una cadena.)
+                $rule = ['ruleCode' => 'R018', 'enabled' => true, 'appliesTo' => 'ALL', 'params' => ['merchantAvgOrderCents' => [1]]];
                 return ['status' => self::STATUS_OK, 'payload' => ['rules' => [$rule], 'agentDidResolver' => []]];
             }
         };

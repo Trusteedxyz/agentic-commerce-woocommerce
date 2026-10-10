@@ -140,7 +140,8 @@ if (!function_exists('wp_remote_post')) {
         $GLOBALS['__amcp_wp_remote_post_calls']++;
         $GLOBALS['__amcp_wp_remote_post_last_url']  = $url;
         $GLOBALS['__amcp_wp_remote_post_last_args'] = $args;
-        return ['response' => ['code' => 200], 'body' => '{}'];
+        // Respuesta forzada opcional (p. ej. un 400 del servidor).
+        return $GLOBALS['__amcp_wp_remote_post_response'] ?? ['response' => ['code' => 200], 'body' => '{}'];
     }
 }
 

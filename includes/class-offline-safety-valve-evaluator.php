@@ -88,7 +88,40 @@ class Trusteed_Offline_Safety_Valve_Evaluator {
 	}
 
 	private static function order_country( array $order_context ): ?string {
-		return $order_context['billingCountry'] ?? $order_context['shippingCountry'] ?? null;
+		return self::normalize_country( $order_context['billingCountry'] ?? $order_context['shippingCountry'] ?? null );
+	}
+
+	/** trim + uppercase; empty / non-string => null (mirror of normalizeCountryCode in TS). */
+	private static function normalize_country( $value ): ?string {
+		if ( ! is_string( $value ) ) {
+			return null;
+		}
+		$code = strtoupper( trim( $value ) );
+		return '' !== $code ? $code : null;
+	}
+
+	/**
+	 * @param mixed $values
+	 * @return array<int, string>
+	 */
+	private static function normalize_country_list( $values ): array {
+		$out = array();
+		foreach ( (array) $values as $value ) {
+			$code = self::normalize_country( $value );
+			if ( null !== $code ) {
+				$out[] = $code;
+			}
+		}
+		return $out;
+	}
+
+	/** ISO 4217: trim + uppercase, exactly 3 letters A-Z; anything else => null (mirror of normalizeCurrencyCode). */
+	private static function normalize_currency( $value ): ?string {
+		if ( ! is_string( $value ) ) {
+			return null;
+		}
+		$code = strtoupper( trim( $value ) );
+		return 1 === preg_match( '/^[A-Z]{3}$/', $code ) ? $code : null;
 	}
 
 	private static function attr_bool( array $cart_attributes, string $key ): bool {
@@ -109,7 +142,7 @@ class Trusteed_Offline_Safety_Valve_Evaluator {
 	// ── R014 (country dimension only — cancellation-history dimension needs a DB lookup, not offline-capable) ──
 
 	private static function eval_r014( array $params, array $order_context, array $cart_attributes ): ?string {
-		$high_risk = $params['highRiskCountries'] ?? self::DEFAULT_HIGH_RISK_COUNTRIES;
+		$high_risk = self::normalize_country_list( $params['highRiskCountries'] ?? self::DEFAULT_HIGH_RISK_COUNTRIES );
 		$country   = self::order_country( $order_context );
 		if ( null !== $country && in_array( $country, $high_risk, true ) ) {
 			return "delivery country {$country} is high-risk";
@@ -156,11 +189,11 @@ class Trusteed_Offline_Safety_Valve_Evaluator {
 		if ( null === $country ) {
 			return null; // NO_SIGNAL — not a block.
 		}
-		$blocked = $params['blockedCountries'] ?? array();
+		$blocked = self::normalize_country_list( $params['blockedCountries'] ?? array() );
 		if ( in_array( $country, $blocked, true ) ) {
 			return "country {$country} is blocked";
 		}
-		$allowed = $params['allowedCountries'] ?? array();
+		$allowed = self::normalize_country_list( $params['allowedCountries'] ?? array() );
 		if ( ! empty( $allowed ) && ! in_array( $country, $allowed, true ) ) {
 			return "country {$country} is not allowed";
 		}
@@ -254,13 +287,29 @@ class Trusteed_Offline_Safety_Valve_Evaluator {
 	private static function eval_r030( array $params, array $order_context, array $cart_attributes ): ?string {
 		$max = $params['maxAmountCents'] ?? null;
 		$cart_total_cents = (int) ( $order_context['cartTotalCents'] ?? 0 );
-		if ( null !== $max && $cart_total_cents > $max ) {
+		// ee5861063 + M1: only compare against a cap of the SAME currency (no FX).
+		// Order currency absent/malformed or cap currency undeclared/malformed =>
+		// compared as before (mirror of classifyMoneyCap). Different currencies are
+		// not comparable; the actor signal $order_context['agentCheckout'] decides:
+		// true => agent: BLOCK "currency not comparable"; false => person: amount
+		// skipped (country control still applies); absent/non-bool => unknown
+		// actor: conservative, compare as before D2.
+		$order_currency      = self::normalize_currency( $order_context['currency'] ?? null );
+		$cap_currency        = self::normalize_currency( $params['maxAmountCurrency'] ?? null );
+		$agent_signal        = $order_context['agentCheckout'] ?? null;
+		$same_or_unknown     = null === $order_currency || null === $cap_currency || $order_currency === $cap_currency;
+		$comparable          = $same_or_unknown || ! is_bool( $agent_signal );
+		$not_comparable_agent = ! $same_or_unknown && true === $agent_signal;
+		if ( null !== $max && $comparable && $cart_total_cents > $max ) {
 			return "cart total {$cart_total_cents} > merchant max {$max}";
 		}
 		$country = self::order_country( $order_context );
-		$allowed = $params['allowedCountries'] ?? array();
+		$allowed = self::normalize_country_list( $params['allowedCountries'] ?? array() );
 		if ( null !== $country && ! empty( $allowed ) && ! in_array( $country, $allowed, true ) ) {
 			return "country {$country} is outside merchant controls";
+		}
+		if ( null !== $max && $not_comparable_agent ) {
+			return "currency not comparable: order {$order_currency}, merchant cap {$cap_currency}";
 		}
 		return null;
 	}

@@ -35,7 +35,14 @@ final class UninstallOptionCleanupTest extends TestCase
     /**
      * Option keys read via get_option() but owned by WordPress core, never by us.
      */
-    private const FOREIGN_OPTIONS = ['active_plugins'];
+    // Filas que el plugin sólo LEE y son de otro dueño: desinstalarlo no puede
+    // borrarlas. Las tres de WooCommerce las lee el latido (`tax_config()`).
+    private const FOREIGN_OPTIONS = [
+        'active_plugins',
+        'woocommerce_calc_taxes',
+        'woocommerce_prices_include_tax',
+        'woocommerce_tax_display_shop',
+    ];
 
     protected function setUp(): void
     {

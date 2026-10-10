@@ -665,6 +665,8 @@ class Trusteed_Checkout_Enforcer {
 		$cart_attributes = isset( $order_context['cartAttributes'] ) && is_array( $order_context['cartAttributes'] )
 			? $order_context['cartAttributes']
 			: array();
+		// M1: actor signal for the valve's currency-not-comparable branch (agent => block).
+		$order_context['agentCheckout'] = $is_agentic;
 		return Trusteed_Offline_Safety_Valve_Evaluator::evaluate( $rules, $order_context, $cart_attributes );
 	}
 
