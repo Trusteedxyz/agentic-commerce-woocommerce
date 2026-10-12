@@ -244,7 +244,13 @@ class Trusteed_Plugin {
 		// so is_admin() returns false and the route would never be registered.
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/admin/class-token-broker.php';
 		$api_base = (string) Trusteed_Options::get_option( 'api_base_url', TRUSTEED_API_BASE );
-		( new Trusteed_Token_Broker( $api_base, TRUSTEED_VERSION ) )->init();
+		$token_broker = new Trusteed_Token_Broker( $api_base, TRUSTEED_VERSION );
+		$token_broker->init();
+
+		// Sincronización de la cuenta Stripe de WooCommerce (opt-in desde el panel).
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-stripe-sync.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/admin/class-stripe-sync-routes.php';
+		( new Trusteed_Stripe_Sync_Routes( $token_broker, $api_base ) )->init();
 
 		// Admin embed shell — spec 039 F3 (T039-310..T039-313).
 		if ( is_admin() ) {

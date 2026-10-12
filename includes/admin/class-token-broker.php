@@ -229,6 +229,17 @@ class Trusteed_Token_Broker {
 	 * @return \WP_REST_Response|\WP_Error REST response or error.
 	 */
 	public function handle_token_request( \WP_REST_Request $request ) {
+		return $this->request_token();
+	}
+
+	/**
+	 * Emite un token embed (uso del handler REST y de la sincronización de Stripe).
+	 *
+	 * @since 2.4.5
+	 *
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function request_token() {
 		$merchant_id = Trusteed_Options::get_option( 'merchant_id', '' );
 
 		if ( empty( $merchant_id ) ) {

@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.4.4
+Stable tag: 2.4.5
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,10 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.4.5 =
+* New: "Use my WooCommerce Stripe account" in the Payment methods panel. The Stripe key already set in the WooCommerce Stripe plugin is sent to Trusteed by your site (never through the browser) and kept in sync when you change it. Opt-in.
+* New: purchases paused for your approval show up under My sales, and a notice on Home tells you when one is waiting.
 
 = 2.4.4 =
 * Fixed: the capabilities report no longer includes cart signals that no rule reads. The Trusteed API rejected the whole report (HTTP 400), so the rules checks in the dashboard stayed without a verdict.

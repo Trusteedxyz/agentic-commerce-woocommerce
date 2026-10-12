@@ -159,6 +159,11 @@ Investigating the report surfaced something it did not flag: an OAuth scope (`mc
 
 ## Changelog
 
+### 2.4.5
+
+- New: "Use my WooCommerce Stripe account" in the Payment methods panel. The Stripe key already set in the WooCommerce Stripe plugin is sent to Trusteed by your site (never through the browser) and kept in sync when you change it. Opt-in.
+- New: purchases paused for your approval show up under My sales, and a notice on Home tells you when one is waiting.
+
 ### 2.4.4
 
 - Fixed: the capabilities report no longer includes cart signals that no rule reads. The Trusteed API rejected the whole report (HTTP 400), so the rules checks in the dashboard stayed without a verdict.

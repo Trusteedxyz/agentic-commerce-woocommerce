@@ -147,6 +147,7 @@ $agenticmcp_options = array(
 	'agenticmcp_last_billing_event_id',
 	'agenticmcp_trial_ends_at',
 	'trusteed_capabilities_reported_fingerprint',
+	'trusteed_stripe_sync_enabled',
 );
 
 /**
