@@ -252,6 +252,11 @@ class Trusteed_Plugin {
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/admin/class-stripe-sync-routes.php';
 		( new Trusteed_Stripe_Sync_Routes( $token_broker, $api_base ) )->init();
 
+		// Sincronización de la cuenta PayPal de WooCommerce PayPal Payments (opt-in desde el panel).
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-paypal-sync.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/admin/class-paypal-sync-routes.php';
+		( new Trusteed_PayPal_Sync_Routes( $token_broker, $api_base ) )->init();
+
 		// Admin embed shell — spec 039 F3 (T039-310..T039-313).
 		if ( is_admin() ) {
 			require_once TRUSTEED_PLUGIN_DIR . 'includes/admin/class-admin-router.php';

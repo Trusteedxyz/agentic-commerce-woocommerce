@@ -28,8 +28,12 @@ class Trusteed_Stripe_Sync {
 
 	private const CONNECT_PATH = '/v1/embed/merchant/payment-methods/stripe/connect';
 
-	/** Mismo patrón que el conector de la plataforma; `rk_` no está soportada. */
-	private const KEY_PATTERN = '/^sk_(test|live)_[A-Za-z0-9]{24,200}$/';
+	/**
+	 * Mismo patrón que el conector de la plataforma. Acepta la clave restringida
+	 * `rk_` (recomendada: sólo «PaymentIntents: Write», el resto en «None») además
+	 * de la secreta completa `sk_`; el modo sigue saliendo del prefijo test/live.
+	 */
+	private const KEY_PATTERN = '/^(?:sk|rk)_(test|live)_[A-Za-z0-9]{24,200}$/';
 
 	/** El Bearer del comerciante sólo puede viajar a hosts de Trusteed. */
 	private const ALLOWED_API_HOSTS = array(
@@ -148,8 +152,15 @@ class Trusteed_Stripe_Sync {
 				'mode' => $creds['mode'],
 			);
 		}
-		$body   = json_decode( (string) $res['body'], true );
-		$reason = is_array( $body ) && isset( $body['error'] ) && is_string( $body['error'] ) ? $body['error'] : 'http_' . (int) $res['status'];
+		$status = (int) $res['status'];
+		$reason = 'http_' . $status;
+		// Un 3xx no se interpreta: su cuerpo no es de la plataforma.
+		if ( $status < 300 || $status >= 400 ) {
+			$body = json_decode( (string) $res['body'], true );
+			if ( is_array( $body ) && isset( $body['error'] ) && is_string( $body['error'] ) ) {
+				$reason = $body['error'];
+			}
+		}
 		return array(
 			'ok'     => false,
 			'code'   => 'platform_rejected',
@@ -176,7 +187,9 @@ class Trusteed_Stripe_Sync {
 	 * @return array{status:int,body:string}
 	 */
 	public static function default_post( string $url, array $args ): array {
-		$r = wp_remote_post( $url, $args );
+		// Sin redirecciones: el POST lleva el Bearer del comerciante y un 3xx lo reenviaría.
+		$args['redirection'] = 0;
+		$r                   = wp_remote_post( $url, $args );
 		if ( is_wp_error( $r ) ) {
 			return array(
 				'status' => 0,

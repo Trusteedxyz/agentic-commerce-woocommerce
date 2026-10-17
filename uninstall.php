@@ -148,6 +148,9 @@ $agenticmcp_options = array(
 	'agenticmcp_trial_ends_at',
 	'trusteed_capabilities_reported_fingerprint',
 	'trusteed_stripe_sync_enabled',
+	'trusteed_paypal_sync_enabled',
+	'trusteed_paypal_sync_hash',
+	'trusteed_paypal_sync_retry_at',
 );
 
 /**

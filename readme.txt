@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.4.5
+Stable tag: 2.5.0
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,21 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.0 =
+* Change: an agent order is no longer marked as paid unless the payment provider confirms the charge. The plugin now checks the payment (Stripe PaymentIntent or PayPal capture) with the credentials of your own account; if it cannot confirm it, the order stays On hold and the agent orders endpoint answers `409 payment_not_verified` (definitive) or `503 payment_verification_unavailable` (provider unreachable or no credentials; Trusteed retries). Review On hold orders from agents in WooCommerce > Orders. If the charge was made on a Trusteed demo account instead of your own, it will not be confirmed by design.
+
+= 2.4.9 =
+* Fix: variable products now send their variations (price, stock and attributes) with the catalog sync. Before, Trusteed listed a variable product without any variation, so an agent could add it to the cart without choosing one and the store refused to price the order. Variations without a price are skipped. Run "Sync catalog" once after updating so existing products pick them up.
+
+= 2.4.8 =
+* New: the hourly heartbeat now also sends the link, title and last-modified date of your Terms and Privacy Policy pages (only if they are published). Trusteed shows them to agents as imported from your store, separate from the policies you declare. The page content is never sent.
+
+= 2.4.7 =
+* New: orders paid through PayPal can now be marked as paid on your store. The agent orders endpoint accepts a PayPal capture reference (with `payment_method = paypal`) next to the Stripe PaymentIntent, and titles the payment method as PayPal. Stripe payments are unchanged.
+
+= 2.4.6 =
+* New: "Use my WooCommerce PayPal account" in the Payment methods panel. The credentials already set in WooCommerce PayPal Payments are sent to Trusteed by your site (never through the browser) and kept in sync when you change them; disconnecting PayPal there disconnects it in Trusteed too. Payments go to your own PayPal account. Opt-in.
 
 = 2.4.5 =
 * New: "Use my WooCommerce Stripe account" in the Payment methods panel. The Stripe key already set in the WooCommerce Stripe plugin is sent to Trusteed by your site (never through the browser) and kept in sync when you change it. Opt-in.
@@ -348,6 +363,9 @@ See full sprint detail in repository docs: `docs/CLAUDE/specifications.md` (Spec
 * Full i18n support (English + Spanish)
 
 == Upgrade Notice ==
+
+= 2.5.0 =
+Agent orders are only marked as paid once your own payment provider (Stripe or PayPal) confirms the charge. Unconfirmed ones stay On hold for review.
 
 = 2.0.0 =
 **SECURITY UPGRADE: re-Connect required.** Closes 17 findings (3 HIGH + 14 MEDIUM/LOW) including SSRF, cross-merchant takeover, disconnect DoS, and silent enforcement bypass. After upgrade, click "Reconnect" once to receive fresh enforcement credentials.

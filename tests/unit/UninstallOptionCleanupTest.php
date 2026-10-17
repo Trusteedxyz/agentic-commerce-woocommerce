@@ -43,6 +43,9 @@ final class UninstallOptionCleanupTest extends TestCase
         'woocommerce_prices_include_tax',
         // Opción del plugin Stripe de WooCommerce: la lee la sincronización, no es nuestra.
         'woocommerce_stripe_settings',
+        // Opciones de WooCommerce PayPal Payments: las lee la sincronización PayPal, no son nuestras.
+        'woocommerce-ppcp-data-common',
+        'woocommerce-ppcp-settings',
         'woocommerce_tax_display_shop',
     ];
 

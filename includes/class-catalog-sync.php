@@ -402,7 +402,88 @@ class Trusteed_Catalog_Sync {
 		// "giftcard" (when WC Gift Cards plugin installed) | etc.
 		$payload['product_type'] = $product->get_type();
 
+		// 2026-10-16 — variaciones de los productos variables. Sin ellas el
+		// catálogo guardaba `variants: []`, `create_cart` no podía exigir
+		// `variant_id` y la cotización de la tienda devolvía 409
+		// line_unavailable (`variation_id: 0`). Sólo los variables las llevan.
+		$variations = $this->get_product_variations( $product );
+		if ( null !== $variations ) {
+			$payload['variations'] = $variations;
+		}
+
 		return $payload;
+	}
+
+	/**
+	 * Máximo de variaciones por producto en el payload (mismo tope que la API).
+	 */
+	const MAX_VARIATIONS_PER_PRODUCT = 100;
+
+	/**
+	 * Variaciones de un producto variable para el payload; `null` si no es variable.
+	 *
+	 * Una variación sin precio se omite: la API exige `price` no vacío y una sola
+	 * fila inválida tumbaría el lote entero. `attributes` va como objeto para
+	 * que un mapa vacío se serialice `{}` y no `[]`.
+	 *
+	 * @since 2.4.9
+	 *
+	 * @param WC_Product $product WooCommerce product object.
+	 *
+	 * @return array|null
+	 */
+	private function get_product_variations( $product ) {
+		if ( ! is_callable( array( $product, 'is_type' ) ) || ! $product->is_type( 'variable' ) ) {
+			return null;
+		}
+
+		$out = array();
+		foreach ( (array) $product->get_children() as $child_id ) {
+			if ( count( $out ) >= self::MAX_VARIATIONS_PER_PRODUCT ) {
+				break;
+			}
+			$variation = wc_get_product( $child_id );
+			if ( ! $variation ) {
+				continue;
+			}
+			$price = (string) $variation->get_price();
+			if ( '' === $price ) {
+				continue;
+			}
+
+			$options = array();
+			foreach ( (array) $variation->get_variation_attributes( false ) as $key => $value ) {
+				$label = function_exists( 'wc_attribute_label' ) ? wc_attribute_label( $key, $product ) : $key;
+				$name  = (string) $value;
+				if ( taxonomy_exists( $key ) ) {
+					$term = get_term_by( 'slug', $value, $key );
+					if ( $term ) {
+						$name = $term->name;
+					}
+				}
+				if ( '' !== $name ) {
+					$options[ (string) $label ] = $name;
+				}
+			}
+
+			$title = implode( ' / ', array_values( $options ) );
+			$item  = array(
+				'external_id'  => strval( $variation->get_id() ),
+				'title'        => '' !== $title ? $title : $variation->get_name(),
+				'price'        => $price,
+				'sku'          => (string) $variation->get_sku(),
+				'stock_status' => $variation->get_stock_status(),
+				'purchasable'  => (bool) $variation->is_purchasable(),
+				'attributes'   => (object) $options,
+			);
+			$qty = $variation->get_stock_quantity();
+			if ( null !== $qty ) {
+				$item['stock_quantity'] = (int) $qty;
+			}
+			$out[] = $item;
+		}
+
+		return $out;
 	}
 
 	/**

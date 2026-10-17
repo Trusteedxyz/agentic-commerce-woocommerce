@@ -19,7 +19,7 @@
  *   create_order(array $input): array|WP_Error
  *   evaluate_rules(int $order_id, ?string $agent_did): 'ALLOW'|'BLOCK'|'UNAVAILABLE'
  *   delete_order(int): void
- *   complete_payment(int $order_id, string $payment_reference): void
+ *   complete_payment(int $order_id, string $payment_reference, string $payment_method = ''): void
  *   hold_for_review(int $order_id, string $note): void
  * Un pedido viaja como array: id, number, status, total_cents, currency,
  * trusteed_order_id, is_paid, transaction_id.
@@ -38,6 +38,8 @@ final class Trusteed_Agent_Orders_Endpoint {
 	public const OPTION_ENABLED = 'trusteed_agent_orders_enabled';
 	public const SIGNATURE_HEADER = 'x_trusteed_signature';
 
+	private const PAYREF_LOCK_PREFIX = 'trusteed_payref_lock_';
+
 	/** @var object */
 	private $port;
 
@@ -47,12 +49,17 @@ final class Trusteed_Agent_Orders_Endpoint {
 	/** @var callable */
 	private $clock;
 
+	/** @var Trusteed_Payment_Verifier|null */
+	private $verifier;
+
 	/**
 	 * @param object        $port            Puerto Woo (ver cabecera).
 	 * @param callable      $secret_provider Devuelve el secreto de instalación en claro ('' si no hay).
 	 * @param callable|null $clock           Devuelve el unix actual (inyectable en pruebas).
+	 * @param Trusteed_Payment_Verifier|null $verifier Comprueba el cobro con el PSP; sin él `/paid` responde 503 y no completa.
 	 */
-	public function __construct( $port, callable $secret_provider, ?callable $clock = null ) {
+	public function __construct( $port, callable $secret_provider, ?callable $clock = null, ?Trusteed_Payment_Verifier $verifier = null ) {
+		$this->verifier        = $verifier;
 		$this->port            = $port;
 		$this->secret_provider = $secret_provider;
 		$this->clock           = $clock ?? static function (): int {
@@ -68,14 +75,45 @@ final class Trusteed_Agent_Orders_Endpoint {
 	 */
 	public static function boot( $enforcer ): void {
 		require_once __DIR__ . '/class-agent-woo-adapter.php';
+		require_once __DIR__ . '/class-payment-verifier.php';
+		require_once __DIR__ . '/class-payref-lock.php';
+		require_once __DIR__ . '/class-stripe-sync.php';
+		require_once __DIR__ . '/class-paypal-sync.php';
 		$endpoint = new self(
 			new Trusteed_Agent_Woo_Adapter( $enforcer ),
 			static function (): string {
 				$raw = (string) Trusteed_Options::get_option( 'enforcement_hmac_secret', '' );
 				return Trusteed_Crypto_Helper::decrypt( $raw );
-			}
+			},
+			null,
+			self::production_verifier()
 		);
 		add_action( 'rest_api_init', array( $endpoint, 'register_routes' ) );
+	}
+
+	/**
+	 * Verificador de producción: credenciales del propio comercio (Stripe y PPCP)
+	 * y «referencia ya usada» sobre `_transaction_id` de los demás pedidos.
+	 *
+	 * @return Trusteed_Payment_Verifier
+	 */
+	private static function production_verifier(): Trusteed_Payment_Verifier {
+		return new Trusteed_Payment_Verifier(
+			null,
+			static function (): string {
+				$settings = get_option( Trusteed_Stripe_Sync::STRIPE_SETTINGS_OPTION, array() );
+				$creds    = Trusteed_Stripe_Sync::read_credentials( is_array( $settings ) ? $settings : array() );
+				return null === $creds ? '' : $creds['secret_key'];
+			},
+			static function (): ?array {
+				$common = get_option( Trusteed_PayPal_Sync::PPCP_COMMON_OPTION, false );
+				$legacy = get_option( Trusteed_PayPal_Sync::PPCP_LEGACY_OPTION, array() );
+				return Trusteed_PayPal_Sync::read_credentials( is_array( $common ) ? $common : null, is_array( $legacy ) ? $legacy : array() );
+			},
+			static function ( string $reference, int $order_id ): bool {
+				return self::reference_in_use( $reference, $order_id, 'wc_get_orders' );
+			}
+		);
 	}
 
 	/**
@@ -269,7 +307,9 @@ final class Trusteed_Agent_Orders_Endpoint {
 		$amt  = $body['amount_cents'] ?? null;
 		$cur  = isset( $body['currency'] ) && is_string( $body['currency'] ) ? strtoupper( $body['currency'] ) : '';
 		$id   = (int) $request->get_param( 'id' );
-		if ( 1 !== preg_match( '/^pi_[A-Za-z0-9_]{1,200}$/', $ref ) || ! is_int( $amt ) || $amt < 0 || 1 !== preg_match( '/^[A-Z]{3}$/', $cur ) || $id <= 0 ) {
+		// Rail del cobro: ausente = Stripe (referencia `pi_…`); 'paypal' = `captureId` de PayPal.
+		$method = array_key_exists( 'payment_method', $body ) ? $body['payment_method'] : '';
+		if ( ! is_string( $method ) || ! in_array( $method, array( '', 'paypal' ), true ) || ! self::is_valid_payment_reference( $ref, $method ) || ! is_int( $amt ) || $amt < 0 || 1 !== preg_match( '/^[A-Z]{3}$/', $cur ) || $id <= 0 ) {
 			return self::error( 400, 'invalid_request', 'Invalid payment confirmation.' );
 		}
 		try {
@@ -299,7 +339,23 @@ final class Trusteed_Agent_Orders_Endpoint {
 				$this->log( 'warning', sprintf( 'payment_mismatch order=%d', $id ) );
 				return self::error( 409, 'payment_mismatch', 'The paid amount does not match the order; it was put on hold for review.' );
 			}
-			$this->port->complete_payment( $id, $ref );
+			// Candado por referencia: comprobar «referencia ya usada», verificar y completar no es
+			// atómico, y dos /paid concurrentes con el mismo cobro pasarían los dos.
+			$lock = self::PAYREF_LOCK_PREFIX . sha1( $method . ':' . $ref );
+			$token = Trusteed_Payref_Lock::acquire( $lock );
+			if ( null === $token ) {
+				return self::error( 503, 'payment_verification_unavailable', 'The payment could not be verified right now.' );
+			}
+			try {
+				// El cobro se comprueba con el PSP del comercio: la firma de Trusteed no basta.
+				$denied = $this->verify_with_psp( $id, $ref, $method, $amt, $cur );
+				if ( null !== $denied ) {
+					return $denied;
+				}
+				$this->port->complete_payment( $id, $ref, $method );
+			} finally {
+				Trusteed_Payref_Lock::release( $lock, $token );
+			}
 			$fresh = $this->port->get_order( $id ) ?? $order;
 			return new WP_REST_Response( self::order_payload( $fresh ), 200 );
 		} catch ( \Throwable $e ) {
@@ -307,7 +363,94 @@ final class Trusteed_Agent_Orders_Endpoint {
 		}
 	}
 
+	/**
+	 * ¿Otro pedido distinto de $order_id usa ya esta referencia de pago? El gateway
+	 * de Stripe guarda el PaymentIntent en `_stripe_intent_id` y en `_transaction_id`
+	 * el cargo, así que se mira en los dos sitios.
+	 *
+	 * @param string   $reference Referencia de pago.
+	 * @param int      $order_id  Pedido que se quiere pagar.
+	 * @param callable $finder    `wc_get_orders` o un doble.
+	 * @return bool
+	 */
+	public static function reference_in_use( string $reference, int $order_id, callable $finder ): bool {
+		$queries = array(
+			array( 'transaction_id' => $reference ),
+			array(
+				'meta_query' => array(
+					array(
+						'key'   => '_stripe_intent_id',
+						'value' => $reference,
+					),
+				),
+			),
+		);
+		foreach ( $queries as $query ) {
+			$ids = call_user_func(
+				$finder,
+				$query + array(
+					'exclude' => array( $order_id ),
+					'limit'   => 1,
+					'return'  => 'ids',
+				)
+			);
+			if ( is_array( $ids ) && array() !== $ids ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * null ⇒ el PSP confirma el cobro. Si no, la respuesta a devolver: el pedido
+	 * queda en espera, nunca pagado. Sin verificador, tampoco se completa.
+	 *
+	 * @param int    $id     Pedido.
+	 * @param string $ref    Referencia de pago.
+	 * @param string $method '' (Stripe) o 'paypal'.
+	 * @param int    $amt    Importe en céntimos.
+	 * @param string $cur    Moneda.
+	 * @return WP_REST_Response|null
+	 */
+	private function verify_with_psp( int $id, string $ref, string $method, int $amt, string $cur ) {
+		if ( null === $this->verifier ) {
+			$this->log( 'error', sprintf( 'payment_verifier_missing order=%d', $id ) );
+			return self::error( 503, 'payment_verification_unavailable', 'The payment could not be verified right now.' );
+		}
+		$check = $this->verifier->verify( $method, $ref, $amt, $cur, $id );
+		if ( $check['ok'] ) {
+			return null;
+		}
+		$reason = $check['reason'];
+		$this->port->hold_for_review(
+			$id,
+			sprintf( 'Trusteed: payment %s could not be verified with the payment provider (%s). Do not fulfil until reviewed.', $ref, $reason )
+		);
+		$this->log( 'warning', sprintf( 'payment_not_verified order=%d reason=%s', $id, $reason ) );
+		// Transitorio o de configuración del comercio: la cola de /paid reintenta.
+		if ( in_array( $reason, array( 'psp_unreachable', 'no_credentials' ), true ) ) {
+			return self::error( 503, 'payment_verification_unavailable', 'The payment could not be verified right now.' );
+		}
+		return self::error( 409, 'payment_not_verified', 'The payment provider does not confirm this payment; the order was put on hold for review.' );
+	}
+
 	// ── helpers ──────────────────────────────────────────────────────────────
+
+	/**
+	 * La referencia de pago debe casar con el rail declarado: un PaymentIntent
+	 * de Stripe (`pi_…`) sin método, o un `captureId` de PayPal (mayúsculas y
+	 * dígitos, 10–30) con `payment_method = paypal`. Nunca una por la otra.
+	 *
+	 * @param string $ref    Referencia recibida.
+	 * @param string $method '' (Stripe) o 'paypal'.
+	 * @return bool
+	 */
+	private static function is_valid_payment_reference( string $ref, string $method ): bool {
+		if ( 'paypal' === $method ) {
+			return 1 === preg_match( '/^[A-Z0-9]{10,30}$/', $ref );
+		}
+		return 1 === preg_match( '/^pi_[A-Za-z0-9_]{1,200}$/', $ref );
+	}
 
 	/**
 	 * @param array<string,mixed> $order Pedido del puerto.

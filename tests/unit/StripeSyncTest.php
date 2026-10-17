@@ -49,10 +49,28 @@ final class StripeSyncTest extends TestCase
     {
         $this->assertNull(Trusteed_Stripe_Sync::read_credentials([]));
         $this->assertNull(Trusteed_Stripe_Sync::read_credentials(['testmode' => 'yes', 'test_secret_key' => '']));
-        // rk_ no lo soporta el conector de la plataforma.
-        $this->assertNull(Trusteed_Stripe_Sync::read_credentials(['testmode' => 'yes', 'test_secret_key' => 'rk_' . 'test_' . 'AAAAAAAAAAAAAAAAAAAAAAAAAAAA']));
+        // La publicable no es una clave secreta.
+        $this->assertNull(Trusteed_Stripe_Sync::read_credentials(['testmode' => 'yes', 'test_secret_key' => 'pk_' . 'test_' . 'AAAAAAAAAAAAAAAAAAAAAAAAAAAA']));
+        // rk_ demasiado corta.
+        $this->assertNull(Trusteed_Stripe_Sync::read_credentials(['testmode' => 'yes', 'test_secret_key' => 'rk_' . 'test_' . 'AAAA']));
         // La clave live no vale con testmode activo: no se adivina el modo.
         $this->assertNull(Trusteed_Stripe_Sync::read_credentials(['testmode' => 'yes', 'test_secret_key' => self::LIVE_KEY]));
+    }
+
+    public function test_clave_restringida_rk_se_acepta_en_ambos_modos(): void
+    {
+        $rk_test = 'rk_' . 'test_' . 'AAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+        $rk_live = 'rk_' . 'live_' . 'BBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+        $this->assertSame(
+            ['secret_key' => $rk_test, 'mode' => 'test'],
+            Trusteed_Stripe_Sync::read_credentials(['testmode' => 'yes', 'test_secret_key' => $rk_test])
+        );
+        $this->assertSame(
+            ['secret_key' => $rk_live, 'mode' => 'live'],
+            Trusteed_Stripe_Sync::read_credentials(['testmode' => 'no', 'secret_key' => $rk_live])
+        );
+        // El modo sigue saliendo del prefijo: rk_live con testmode activo no se adivina.
+        $this->assertNull(Trusteed_Stripe_Sync::read_credentials(['testmode' => 'yes', 'test_secret_key' => $rk_live]));
     }
 
     public function test_describe_no_expone_la_clave(): void
@@ -154,5 +172,17 @@ final class StripeSyncTest extends TestCase
         $r = $sync->sync(['testmode' => 'yes', 'test_secret_key' => self::TEST_KEY]);
         $this->assertSame('api_host_not_allowed', $r['code']);
         $this->assertSame(0, $calls);
+    }
+
+    public function test_l1_un_3xx_es_rechazo_sin_cuerpo(): void
+    {
+        $sync = new Trusteed_Stripe_Sync(
+            static fn() => 't',
+            'https://api.trusteed.xyz',
+            static fn(): array => ['status' => 302, 'body' => '{"error":"ignorado_por_ser_3xx"}']
+        );
+        $r = $sync->sync(['testmode' => 'yes', 'test_secret_key' => self::TEST_KEY]);
+        $this->assertSame('platform_rejected', $r['code']);
+        $this->assertSame('http_302', $r['reason']);
     }
 }

@@ -6,6 +6,8 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/AgentOrdersFakes.php';
 require_once __DIR__ . '/../../includes/class-agent-request-auth.php';
+require_once __DIR__ . '/../../includes/class-payment-verifier.php';
+require_once __DIR__ . '/../../includes/class-payref-lock.php';
 require_once __DIR__ . '/../../includes/class-agent-orders-endpoint.php';
 
 if (!function_exists('register_rest_route')) {
@@ -29,6 +31,8 @@ final class AgentOrdersEndpointTest extends TestCase
 
     private Trusteed_Test_Woo_Port $port;
     private Trusteed_Agent_Orders_Endpoint $endpoint;
+    /** Respuestas del PSP falso, por URL. @var array<string,array{status:int,body:string}> */
+    private array $psp = [];
 
     protected function setUp(): void
     {
@@ -37,7 +41,23 @@ final class AgentOrdersEndpointTest extends TestCase
         $GLOBALS['__amcp_options_store']    = ['trusteed_agent_orders_enabled' => 'yes'];
         $GLOBALS['__trusteed_test_routes']  = [];
         $this->port     = new Trusteed_Test_Woo_Port();
-        $this->endpoint = new Trusteed_Agent_Orders_Endpoint($this->port, fn(): string => self::SECRET, fn(): int => self::NOW);
+        // PSP falso que confirma el cobro del pedido de prueba (6655 EUR) en los dos rails.
+        $this->psp = [
+            'https://api.stripe.com/v1/payment_intents/pi_3Abc'                                => ['status' => 200, 'body' => '{"status":"succeeded","amount_received":6655,"currency":"eur"}'],
+            'https://api-m.paypal.com/v1/oauth2/token'                                         => ['status' => 200, 'body' => '{"access_token":"tok"}'],
+            'https://api-m.paypal.com/v2/payments/captures/8TW16685UK546374C'                  => ['status' => 200, 'body' => '{"status":"COMPLETED","amount":{"value":"66.55","currency_code":"EUR"}}'],
+        ];
+        $this->endpoint = new Trusteed_Agent_Orders_Endpoint($this->port, fn(): string => self::SECRET, fn(): int => self::NOW, $this->verifier());
+    }
+
+    private function verifier(): Trusteed_Payment_Verifier
+    {
+        return new Trusteed_Payment_Verifier(
+            fn(string $url, array $args): array => $this->psp[$url] ?? ['status' => 0, 'body' => ''],
+            fn(): string => 'sk_' . 'test_' . 'AbCdEf0123456789AbCdEf01',
+            fn(): ?array => ['client_id' => 'cid', 'client_secret' => 'sec', 'mode' => 'production'],
+            fn(string $ref, int $id): bool => false
+        );
     }
 
     /** @param array<string,mixed> $body */
@@ -249,6 +269,293 @@ final class AgentOrdersEndpointTest extends TestCase
         $this->assertSame(200, $res->get_status());
         $this->assertSame('processing', $this->port->orders[$id]['status']);
         $this->assertSame('pi_3Abc', $this->port->orders[$id]['transaction_id']);
+    }
+
+    // ── verificación del cobro con el PSP (C-A3) ──────────────────────────────
+
+    public function test_paid_with_unverified_reference_holds_for_review_and_does_not_complete(): void
+    {
+        $id = $this->createdOrderId();
+        $this->psp['https://api.stripe.com/v1/payment_intents/pi_3Abc'] = ['status' => 200, 'body' => '{"status":"requires_capture","amount_received":0,"currency":"eur"}'];
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(409, $res->get_status());
+        $this->assertSame('payment_not_verified', $res->get_data()['error']['code']);
+        $this->assertContains('hold', $this->port->calls);
+        $this->assertStringContainsString('not_succeeded', $this->port->orders[$id]['note']);
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    public function test_paid_with_psp_unreachable_holds_and_answers_503(): void
+    {
+        $id = $this->createdOrderId();
+        $this->psp = [];
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(503, $res->get_status());
+        $this->assertSame('payment_verification_unavailable', $res->get_data()['error']['code']);
+        $this->assertSame('on-hold', $this->port->orders[$id]['status']);
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    public function test_paid_with_psp_unreachable_can_be_retried_and_then_completes(): void
+    {
+        $id   = $this->createdOrderId();
+        $good = $this->psp;
+        $this->psp = [];
+        $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->psp = $good;
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id], self::NOW - 1));
+        $this->assertSame(200, $res->get_status());
+        $this->assertSame('processing', $this->port->orders[$id]['status']);
+    }
+
+    public function test_paid_verified_completes(): void
+    {
+        $id  = $this->createdOrderId();
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(200, $res->get_status());
+        $this->assertContains('complete', $this->port->calls);
+    }
+
+    public function test_paid_without_verifier_answers_503(): void
+    {
+        $endpoint = new Trusteed_Agent_Orders_Endpoint($this->port, fn(): string => self::SECRET, fn(): int => self::NOW);
+        $id       = $this->createdOrderId();
+        $res      = $endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(503, $res->get_status());
+        $this->assertSame('payment_verification_unavailable', $res->get_data()['error']['code']);
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    public function test_paid_with_amount_mismatch_at_the_psp_does_not_complete(): void
+    {
+        $id = $this->createdOrderId();
+        $this->psp['https://api.stripe.com/v1/payment_intents/pi_3Abc'] = ['status' => 200, 'body' => '{"status":"succeeded","amount_received":1,"currency":"eur"}'];
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(409, $res->get_status());
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    public function test_paid_without_credentials_answers_503_not_a_permission(): void
+    {
+        $id = $this->createdOrderId();
+        $endpoint = new Trusteed_Agent_Orders_Endpoint(
+            $this->port,
+            fn(): string => self::SECRET,
+            fn(): int => self::NOW,
+            new Trusteed_Payment_Verifier(fn(string $u, array $a): array => ['status' => 0, 'body' => ''], fn(): string => '', fn(): ?array => null, fn(string $r, int $i): bool => false)
+        );
+        $res = $endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(503, $res->get_status());
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    public function test_paid_with_reference_reused_by_another_order_is_not_verified(): void
+    {
+        $id = $this->createdOrderId();
+        $endpoint = new Trusteed_Agent_Orders_Endpoint(
+            $this->port,
+            fn(): string => self::SECRET,
+            fn(): int => self::NOW,
+            new Trusteed_Payment_Verifier(fn(string $u, array $a): array => $this->psp[$u] ?? ['status' => 0, 'body' => ''], fn(): string => 'sk_' . 'test_x', fn(): ?array => null, fn(string $r, int $i): bool => true)
+        );
+        $res = $endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(409, $res->get_status());
+        $this->assertStringContainsString('reference_reused', $this->port->orders[$id]['note']);
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    // ── ronda 1: referencia en _stripe_intent_id y candado por referencia ─────
+
+    public function test_reference_in_use_looks_at_stripe_intent_id_meta(): void
+    {
+        $seen   = [];
+        $finder = function (array $q) use (&$seen): array {
+            $seen[] = $q;
+            return isset($q['meta_query'][0]['key']) && '_stripe_intent_id' === $q['meta_query'][0]['key'] && 'pi_X' === $q['meta_query'][0]['value'] ? [77] : [];
+        };
+        $this->assertTrue(Trusteed_Agent_Orders_Endpoint::reference_in_use('pi_X', 5, $finder));
+        $this->assertSame([5], $seen[1]['exclude']);
+        $this->assertFalse(Trusteed_Agent_Orders_Endpoint::reference_in_use('pi_Y', 5, $finder));
+    }
+
+    public function test_reference_in_use_by_foreign_stripe_intent_id_is_reference_reused_without_http(): void
+    {
+        $id    = $this->createdOrderId();
+        $calls = 0;
+        $finder = fn(array $q): array => isset($q['meta_query']) ? [77] : [];
+        $endpoint = new Trusteed_Agent_Orders_Endpoint(
+            $this->port,
+            fn(): string => self::SECRET,
+            fn(): int => self::NOW,
+            new Trusteed_Payment_Verifier(
+                function (string $u, array $a) use (&$calls): array { $calls++; return ['status' => 0, 'body' => '']; },
+                fn(): string => 'sk_' . 'test_x',
+                fn(): ?array => null,
+                fn(string $r, int $i): bool => Trusteed_Agent_Orders_Endpoint::reference_in_use($r, $i, $finder)
+            )
+        );
+        $res = $endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(409, $res->get_status());
+        $this->assertStringContainsString('reference_reused', $this->port->orders[$id]['note']);
+        $this->assertSame(0, $calls);
+    }
+
+    private function lockName(): string
+    {
+        return 'trusteed_payref_lock_' . sha1(':pi_3Abc');
+    }
+
+    public function test_paid_with_lock_taken_answers_503_without_completing(): void
+    {
+        $id = $this->createdOrderId();
+        $GLOBALS['__amcp_options_store'][$this->lockName()] = time() . ':ajeno';
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(503, $res->get_status());
+        $this->assertSame('payment_verification_unavailable', $res->get_data()['error']['code']);
+        $this->assertNotContains('complete', $this->port->calls);
+        $this->assertArrayHasKey($this->lockName(), $GLOBALS['__amcp_options_store'], 'el candado ajeno no se libera');
+    }
+
+    public function test_paid_with_expired_lock_proceeds_and_releases(): void
+    {
+        $id = $this->createdOrderId();
+        $GLOBALS['__amcp_options_store'][$this->lockName()] = (time() - 121) . ':viejo';
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(200, $res->get_status());
+        $this->assertArrayNotHasKey($this->lockName(), $GLOBALS['__amcp_options_store']);
+    }
+
+    public function test_lock_is_released_after_success_and_after_verifier_error(): void
+    {
+        $id = $this->createdOrderId();
+        $this->psp = [];
+        $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertArrayNotHasKey($this->lockName(), $GLOBALS['__amcp_options_store']);
+        $this->psp['https://api.stripe.com/v1/payment_intents/pi_3Abc'] = ['status' => 200, 'body' => '{"status":"requires_capture"}'];
+        $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id], self::NOW - 1));
+        $this->assertArrayNotHasKey($this->lockName(), $GLOBALS['__amcp_options_store']);
+    }
+
+    public function test_owner_release_does_not_delete_a_lock_taken_over_by_another(): void
+    {
+        $name = 'trusteed_payref_lock_x';
+        $a    = Trusteed_Payref_Lock::acquire($name);
+        $this->assertNotNull($a);
+        $GLOBALS['__amcp_options_store'][$name] = (time() - 200) . ':' . 'a-caducado'; // A tarda más de 120 s
+        $b = Trusteed_Payref_Lock::acquire($name);
+        $this->assertNotNull($b);
+        Trusteed_Payref_Lock::release($name, $a); // A termina tarde
+        $this->assertSame($b, $GLOBALS['__amcp_options_store'][$name]);
+        Trusteed_Payref_Lock::release($name, $b);
+        $this->assertArrayNotHasKey($name, $GLOBALS['__amcp_options_store']);
+    }
+
+    public function test_two_takeovers_of_the_same_expired_value_only_one_wins(): void
+    {
+        $name = 'trusteed_payref_lock_y';
+        $old  = (time() - 200) . ':viejo';
+        $GLOBALS['__amcp_options_store'][$name] = $old;
+        $b = Trusteed_Payref_Lock::take_over($name, $old);
+        $c = Trusteed_Payref_Lock::take_over($name, $old);
+        $this->assertNotNull($b);
+        $this->assertNull($c);
+        $this->assertSame($b, $GLOBALS['__amcp_options_store'][$name]);
+    }
+
+    public function test_release_after_verifier_error_still_happens_for_the_owner(): void
+    {
+        $id = $this->createdOrderId();
+        $this->psp = [];
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(503, $res->get_status());
+        $this->assertArrayNotHasKey($this->lockName(), $GLOBALS['__amcp_options_store']);
+    }
+
+    public function test_two_acquires_on_the_same_free_key_only_the_first_gets_a_token(): void
+    {
+        $name = 'trusteed_payref_lock_z';
+        $first  = Trusteed_Payref_Lock::acquire($name);
+        $second = Trusteed_Payref_Lock::acquire($name);
+        $this->assertNotNull($first);
+        $this->assertNull($second);
+        $this->assertSame($first, $GLOBALS['__amcp_options_store'][$name]);
+    }
+
+    // ── rail PayPal (plan 2026-10-14) ─────────────────────────────────────────
+
+    public function test_paid_con_paypal_acepta_el_capture_id_y_pasa_el_metodo_al_puerto(): void
+    {
+        $id  = $this->createdOrderId();
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(['payment_reference' => '8TW16685UK546374C', 'payment_method' => 'paypal']), ['id' => (string) $id], self::NOW));
+        $this->assertSame(200, $res->get_status());
+        $this->assertSame('processing', $this->port->orders[$id]['status']);
+        $this->assertSame('8TW16685UK546374C', $this->port->orders[$id]['transaction_id']);
+        $this->assertSame('paypal', $this->port->orders[$id]['payment_method']);
+    }
+
+    public function test_paid_sin_metodo_sigue_siendo_stripe_y_no_pasa_metodo(): void
+    {
+        $id = $this->createdOrderId();
+        $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id], self::NOW));
+        $this->assertSame('', $this->port->orders[$id]['payment_method'] ?? '');
+    }
+
+    public function test_paid_un_capture_id_de_paypal_sin_metodo_da_400(): void
+    {
+        $id  = $this->createdOrderId();
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(['payment_reference' => '8TW16685UK546374C']), ['id' => (string) $id]));
+        $this->assertSame(400, $res->get_status());
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    public function test_paid_con_metodo_paypal_y_referencia_de_stripe_da_400(): void
+    {
+        $id  = $this->createdOrderId();
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(['payment_method' => 'paypal']), ['id' => (string) $id]));
+        $this->assertSame(400, $res->get_status());
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    public function test_paid_con_un_metodo_desconocido_da_400(): void
+    {
+        $id  = $this->createdOrderId();
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(['payment_method' => 'bitcoin']), ['id' => (string) $id]));
+        $this->assertSame(400, $res->get_status());
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    /**
+     * @dataProvider referencias_paypal_invalidas
+     */
+    public function test_paid_con_paypal_rechaza_referencias_mal_formadas(string $ref): void
+    {
+        $id  = $this->createdOrderId();
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(['payment_reference' => $ref, 'payment_method' => 'paypal']), ['id' => (string) $id]));
+        $this->assertSame(400, $res->get_status());
+        $this->assertNotContains('complete', $this->port->calls);
+    }
+
+    /** @return array<string,array{string}> */
+    public static function referencias_paypal_invalidas(): array
+    {
+        return array(
+            'corta'         => array('ABC123'),
+            'minusculas'    => array('8tw16685uk546374c'),
+            'con guion'     => array('8TW16685-UK546374C'),
+            'demasiado larga' => array(str_repeat('A', 31)),
+            'con espacios'  => array('8TW16685UK 546374C'),
+        );
+    }
+
+    public function test_paid_con_paypal_es_idempotente_con_la_misma_referencia(): void
+    {
+        $id   = $this->createdOrderId();
+        $body = $this->paidBody(['payment_reference' => '8TW16685UK546374C', 'payment_method' => 'paypal']);
+        $this->endpoint->handle_paid($this->signed($body, ['id' => (string) $id]));
+        $res = $this->endpoint->handle_paid($this->signed($body, ['id' => (string) $id], self::NOW - 1));
+        $this->assertSame(200, $res->get_status());
+        $this->assertTrue($res->get_data()['already_paid']);
+        $this->assertSame(1, count(array_keys($this->port->calls, 'complete', true)));
     }
 
     public function test_paid_con_importe_incorrecto_deja_on_hold_con_nota_y_da_409(): void

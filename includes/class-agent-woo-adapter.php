@@ -289,16 +289,22 @@ final class Trusteed_Agent_Woo_Adapter {
 
 	/**
 	 * @param int    $order_id          Pedido.
-	 * @param string $payment_reference PaymentIntent (pi_…).
+	 * @param string $payment_reference PaymentIntent (pi_…) o, con `paypal`, captureId de PayPal.
+	 * @param string $payment_method    '' (Stripe, como siempre) o 'paypal'.
 	 * @return void
 	 */
-	public function complete_payment( int $order_id, string $payment_reference ): void {
+	public function complete_payment( int $order_id, string $payment_reference, string $payment_method = '' ): void {
 		$order = wc_get_order( $order_id );
 		if ( ! ( $order instanceof WC_Order ) ) {
 			return;
 		}
-		$order->set_payment_method( self::GATEWAY_ID );
-		$order->set_payment_method_title( 'Trusteed (agente)' );
+		if ( 'paypal' === $payment_method ) {
+			$order->set_payment_method( 'paypal' );
+			$order->set_payment_method_title( 'PayPal (Trusteed)' );
+		} else {
+			$order->set_payment_method( self::GATEWAY_ID );
+			$order->set_payment_method_title( 'Trusteed (agente)' );
+		}
 		$order->set_transaction_id( $payment_reference );
 		$order->save();
 		// Descuenta stock (hook wc_maybe_reduce_stock_levels) y pasa a processing/completed.

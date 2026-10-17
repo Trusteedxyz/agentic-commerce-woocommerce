@@ -80,6 +80,17 @@ if (!function_exists('get_option')) {
     }
 }
 
+if (!function_exists('add_option')) {
+    function add_option($key, $value = '', $deprecated = '', $autoload = 'yes'): bool
+    {
+        if (array_key_exists($key, $GLOBALS['__amcp_options_store'] ?? [])) {
+            return false;
+        }
+        $GLOBALS['__amcp_options_store'][$key] = $value;
+        return true;
+    }
+}
+
 if (!function_exists('delete_option')) {
     function delete_option($key): bool
     {
@@ -339,4 +350,61 @@ if (!function_exists('wp_remote_retrieve_body')) {
     {
         return is_array($response) ? (string) ($response['body'] ?? '') : '';
     }
+}
+
+// `$wpdb` mínimo: emula sólo las dos consultas del candado de /paid sobre el
+// mismo array que usan get_option/add_option.
+if (!class_exists('Amcp_Test_Wpdb')) {
+    class Amcp_Test_Wpdb
+    {
+        public string $options = 'wp_options';
+
+        public function prepare(string $query, ...$args): string
+        {
+            $i = 0;
+            return (string) preg_replace_callback('/%s/', function () use (&$i, $args): string {
+                return "'" . addslashes((string) $args[$i++]) . "'";
+            }, $query);
+        }
+
+        public function query(string $sql)
+        {
+            $store = &$GLOBALS['__amcp_options_store'];
+            $q     = "'((?:[^'\\\\]|\\\\.)*)'";
+            if (preg_match("/^UPDATE \\S+ SET option_value = $q WHERE option_name = $q AND option_value = $q$/", $sql, $m)) {
+                [$new, $name, $old] = [stripslashes($m[1]), stripslashes($m[2]), stripslashes($m[3])];
+                if (($store[$name] ?? null) === $old) {
+                    $store[$name] = $new;
+                    return 1;
+                }
+                return 0;
+            }
+            if (preg_match("/^DELETE FROM \\S+ WHERE option_name = $q AND option_value = $q$/", $sql, $m)) {
+                [$name, $val] = [stripslashes($m[1]), stripslashes($m[2])];
+                if (($store[$name] ?? null) === $val) {
+                    unset($store[$name]);
+                    return 1;
+                }
+                return 0;
+            }
+            if (preg_match("/^INSERT IGNORE INTO \\S+ \\(option_name, option_value, autoload\\) VALUES \\($q, $q, 'no'\\)$/", $sql, $m)) {
+                [$name, $val] = [stripslashes($m[1]), stripslashes($m[2])];
+                if (array_key_exists($name, $store)) {
+                    return 0;
+                }
+                $store[$name] = $val;
+                return 1;
+            }
+            return false;
+        }
+
+        public function get_var(string $sql)
+        {
+            if (preg_match("/^SELECT option_value FROM \\S+ WHERE option_name = '((?:[^'\\\\]|\\\\.)*)'$/", $sql, $m)) {
+                return $GLOBALS['__amcp_options_store'][stripslashes($m[1])] ?? null;
+            }
+            return null;
+        }
+    }
+    $GLOBALS['wpdb'] = new Amcp_Test_Wpdb();
 }

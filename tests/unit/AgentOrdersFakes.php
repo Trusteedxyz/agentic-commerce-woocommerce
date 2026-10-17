@@ -159,9 +159,10 @@ final class Trusteed_Test_Woo_Port
         unset($this->orders[$order_id]);
     }
 
-    public function complete_payment(int $order_id, string $payment_reference): void
+    public function complete_payment(int $order_id, string $payment_reference, string $payment_method = ''): void
     {
         $this->calls[] = 'complete';
+        $this->orders[$order_id]['payment_method'] = $payment_method;
         $this->orders[$order_id]['is_paid']        = true;
         $this->orders[$order_id]['status']         = 'processing';
         $this->orders[$order_id]['transaction_id'] = $payment_reference;
