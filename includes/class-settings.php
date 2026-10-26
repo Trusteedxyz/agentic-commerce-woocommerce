@@ -541,14 +541,25 @@ class Trusteed_Settings {
 		) {
 			$submitted = sanitize_text_field( wp_unslash( $_POST['trusteed_failure_mode'] ) );
 			$value     = 'observe' === $submitted ? 'observe' : 'enforce';
+			$failure_mode_changed = $value !== (string) Trusteed_Options::get_option( 'failure_mode', 'enforce' );
 			update_option( 'trusteed_failure_mode', $value );
+			if ( isset( $_POST['trusteed_browser_agent_signature_mode'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+				update_option(
+					'trusteed_browser_agent_signature_mode',
+					Trusteed_Browser_Agent_Signature::normalize_mode( sanitize_text_field( wp_unslash( $_POST['trusteed_browser_agent_signature_mode'] ) ) ) // phpcs:ignore WordPress.Security.NonceVerification
+				);
+			}
+			// Solo el modo de fallo se lee al arrancar el plugin; el de firmas aplica al instante.
 			echo '<div class="notice notice-success is-dismissible"><p>'
-				. esc_html__( 'Fallback mode updated. Reload the plugin (deactivate + activate) to apply.', 'trusteed-for-woocommerce' )
+				. ( $failure_mode_changed
+					? esc_html__( 'Fallback mode updated. Reload the plugin (deactivate + activate) to apply.', 'trusteed-for-woocommerce' )
+					: esc_html__( 'Settings saved.', 'trusteed-for-woocommerce' ) )
 				. '</p></div>';
 		}
 
 		$current = (string) Trusteed_Options::get_option( 'failure_mode', 'enforce' );
 		$current = 'observe' === $current ? 'observe' : 'enforce';
+		$sig_mode = Trusteed_Browser_Agent_Signature::normalize_mode( (string) Trusteed_Options::get_option( 'browser_agent_signature_mode', Trusteed_Browser_Agent_Signature::DEFAULT_MODE ) );
 		?>
 		<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Enforcement', 'trusteed-for-woocommerce' ); ?>" style="margin-top:24px;">
 			<h2><?php esc_html_e( 'Checkout enforcement (Spec-048)', 'trusteed-for-woocommerce' ); ?></h2>
@@ -570,6 +581,17 @@ class Trusteed_Settings {
 									<strong><?php esc_html_e( 'Observe (canary only)', 'trusteed-for-woocommerce' ); ?></strong> —
 									<?php esc_html_e( 'allows checkout through and sends telemetry to Prometheus (enforcement_api_fail_total). Use only during burn-in.', 'trusteed-for-woocommerce' ); ?>
 								</label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Browser agents with a signature', 'trusteed-for-woocommerce' ); ?></th>
+							<td>
+								<select name="trusteed_browser_agent_signature_mode">
+									<option value="observe" <?php selected( $sig_mode, 'observe' ); ?>><?php esc_html_e( 'Observe: check the signature and record it, change nothing', 'trusteed-for-woocommerce' ); ?></option>
+									<option value="enforce" <?php selected( $sig_mode, 'enforce' ); ?>><?php esc_html_e( 'Enforce: treat a verified signature as an AI agent so agent rules apply', 'trusteed-for-woocommerce' ); ?></option>
+									<option value="off" <?php selected( $sig_mode, 'off' ); ?>><?php esc_html_e( 'Off: do not check signatures', 'trusteed-for-woocommerce' ); ?></option>
+								</select>
+								<p class="description"><?php esc_html_e( 'An AI agent that buys by browsing your site looks like a person unless it signs its requests. If the check fails or is slow, the buyer is treated as a person. This setting applies immediately. For Enforce to work, Trusteed must be running with AGENT_HTTP_SIGNATURE_REQUIRE_CORE_COMPONENTS=true and AGENT_HTTP_SIGNATURE_REPLAY_CACHE_MODE=enforce.', 'trusteed-for-woocommerce' ); ?></p>
 							</td>
 						</tr>
 					</tbody>

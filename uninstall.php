@@ -173,6 +173,7 @@ $trusteed_prefixed_options = array(
 	'enforcement_installation_id',
 	'enforcement_installation_stub_notice',
 	'failure_mode',
+	'browser_agent_signature_mode',
 	'merchant_id',
 	'woo_webhook_secret',
 );

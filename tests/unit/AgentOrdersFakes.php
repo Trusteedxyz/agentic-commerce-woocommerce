@@ -82,7 +82,10 @@ final class Trusteed_Test_Woo_Port
     /** @var array<string,mixed>|\WP_Error */
     public $quote_result;
     public string $rules_decision = 'ALLOW';
+    /** @var array<string,string>|null */
+    public ?array $rules_agent_reason = null;
     public ?string $rules_agent_did = null;
+    public ?string $rules_identity_level = null;
 
     public function __construct()
     {
@@ -146,11 +149,17 @@ final class Trusteed_Test_Woo_Port
         return $this->orders[$id];
     }
 
-    public function evaluate_rules(int $order_id, ?string $agent_did): string
+    public function evaluate_rules(int $order_id, ?string $agent_did, ?string $identity_level = null): string
     {
         $this->calls[] = 'rules';
         $this->rules_agent_did = $agent_did;
+        $this->rules_identity_level = $identity_level;
         return $this->rules_decision;
+    }
+
+    public function last_agent_reason(): ?array
+    {
+        return $this->rules_agent_reason;
     }
 
     public function delete_order(int $order_id): void

@@ -94,11 +94,169 @@ class Trusteed_Eval_Result {
 	 */
 	public ?array $hitl_payload;
 
-	public function __construct( string $outcome, string $reason, ?int $http_status = null, ?array $hitl_payload = null ) {
+	/**
+	 * 2.5.2: veredicto estructurado del servidor en un BLOCK (`agent_reason`), ya saneado:
+	 * reason_category, reason, next_action y, si viene, rule_code. Null = servidor antiguo.
+	 *
+	 * @var array<string,string>|null
+	 */
+	public ?array $agent_reason;
+
+	public function __construct( string $outcome, string $reason, ?int $http_status = null, ?array $hitl_payload = null, ?array $agent_reason = null ) {
 		$this->outcome      = $outcome;
 		$this->reason       = $reason;
 		$this->http_status  = $http_status;
 		$this->hitl_payload = $hitl_payload;
+		$this->agent_reason = $agent_reason;
+	}
+
+	/**
+	 * El servidor va firmado, pero el motivo se trata como entrada: sólo las cuatro claves,
+	 * sólo strings, sin caracteres de control y con longitud acotada.
+	 *
+	 * @param mixed $raw `agent_reason` tal como llega.
+	 * @return array<string,mixed>|null Null si falta lo imprescindible.
+	 */
+	public static function sanitize_agent_reason( $raw ): ?array {
+		if ( ! is_array( $raw ) ) {
+			return null;
+		}
+		$limits = array(
+			'reason_category' => 64,
+			'rule_code'       => 64,
+			'reason'          => 400,
+			'next_action'     => 64,
+		);
+		$out    = array();
+		foreach ( $limits as $key => $max ) {
+			if ( ! isset( $raw[ $key ] ) || ! is_string( $raw[ $key ] ) ) {
+				continue;
+			}
+			// Controles, formato (bidi, ancho cero) y separadores U+2028/9: se descarta el valor entero.
+			// UTF-8 inválido: preg devuelve false => también se descarta.
+			$clean = $raw[ $key ];
+			if ( 0 !== preg_match( '/[\p{Cc}\p{Cf}\x{2028}\x{2029}]/u', $clean ) ) {
+				continue;
+			}
+			if ( 'rule_code' === $key ) {
+				// Se descarta, no se trunca: un código cortado apunta a otra regla.
+				if ( strlen( $clean ) > $max || 1 !== preg_match( '/^R\d{3}(\.[a-z0-9-]+)?$/', $clean ) ) {
+					continue;
+				}
+				$out[ $key ] = $clean;
+				continue;
+			}
+			// Se descarta, no se trunca: un texto cortado cambia de sentido.
+			if ( '' === $clean || preg_match_all( '/./su', $clean ) > $max ) {
+				continue;
+			}
+			// La frase del contrato no lleva digitos (umbrales), '<' '>' ni entidades HTML.
+			if ( 'reason' === $key && 1 === preg_match( '/[\p{Nd}<>]|&#?[A-Za-z0-9]+;/u', $clean ) ) {
+				return null;
+			}
+			$out[ $key ] = $clean;
+		}
+		foreach ( array( 'reason_category', 'reason', 'next_action' ) as $required ) {
+			if ( ! isset( $out[ $required ] ) ) {
+				return null;
+			}
+		}
+		// Claves opcionales nuevas: cada una se valida sola; una inválida se descarta sin tocar el resto.
+		$extras = array(
+			'human_checkout'  => self::sanitize_human_checkout( $raw['human_checkout'] ?? null ),
+			'blocked_item'    => self::sanitize_blocked_item( $raw['blocked_item'] ?? null ),
+			'published_limit' => self::sanitize_published_limit( $raw['published_limit'] ?? null ),
+		);
+		return array_merge( $out, array_filter( $extras, static fn( $v ): bool => null !== $v ) );
+	}
+
+	/** Texto libre acotado: sin controles/formato, sin '<' '>' ni entidades HTML. Las cifras sí valen. */
+	private static function clean_text( $v, int $max ): ?string {
+		if ( ! is_string( $v ) || '' === $v || 0 !== preg_match( '/[\p{Cc}\p{Cf}\x{2028}\x{2029}<>]|&#?[A-Za-z0-9]+;/u', $v ) ) {
+			return null;
+		}
+		$len = preg_match_all( '/./su', $v );
+		return ( false === $len || $len > $max ) ? null : $v;
+	}
+
+	/** @param mixed $raw */
+	private static function sanitize_human_checkout( $raw ): ?array {
+		if ( ! is_array( $raw ) || ! isset( $raw['available'] ) || ! is_bool( $raw['available'] ) ) {
+			return null;
+		}
+		$message = self::clean_text( $raw['message'] ?? null, 400 );
+		if ( null === $message ) {
+			return null;
+		}
+		$out = array( 'available' => $raw['available'], 'message' => $message );
+		if ( array_key_exists( 'url', $raw ) ) {
+			$url = $raw['url'];
+			// Un url presente pero inválido (p. ej. javascript:) descarta todo el bloque.
+			if ( ! is_string( $url ) || strlen( $url ) > 2048 || 1 === preg_match( '/[\x00-\x20\x7f<>"\']/', $url )
+				|| ! in_array( strtolower( (string) parse_url( $url, PHP_URL_SCHEME ) ), array( 'http', 'https' ), true )
+				|| false === filter_var( $url, FILTER_VALIDATE_URL ) ) {
+				return null;
+			}
+			$out['url'] = $url;
+		}
+		return $out;
+	}
+
+	/** @param mixed $raw */
+	private static function sanitize_blocked_item( $raw ): ?array {
+		if ( ! is_array( $raw ) || ! in_array( $raw['kind'] ?? null, array( 'category', 'sku', 'digital_good_type' ), true ) ) {
+			return null;
+		}
+		$value = $raw['value'] ?? null;
+		if ( ! is_string( $value ) || 1 !== preg_match( '/^[\p{L}\p{N}_.:\/ -]{1,64}$/u', $value ) ) {
+			return null;
+		}
+		return array( 'kind' => $raw['kind'], 'value' => $value );
+	}
+
+	/** @param mixed $raw */
+	private static function sanitize_published_limit( $raw ): ?array {
+		if ( ! is_array( $raw ) ) {
+			return null;
+		}
+		$source = self::clean_text( $raw['source'] ?? null, 128 );
+		if ( null === $source ) {
+			return null;
+		}
+		$kind = $raw['kind'] ?? null;
+		if ( 'max_cart_value' === $kind && is_int( $raw['amount_cents'] ?? null ) && $raw['amount_cents'] >= 0 && 'minor_units_of_store_currency' === ( $raw['unit'] ?? null ) ) {
+			return array( 'kind' => $kind, 'amount_cents' => $raw['amount_cents'], 'unit' => $raw['unit'], 'source' => $source );
+		}
+		if ( 'max_units_per_line' === $kind && is_int( $raw['units'] ?? null ) && $raw['units'] >= 0 ) {
+			return array( 'kind' => $kind, 'units' => $raw['units'], 'source' => $source );
+		}
+		return null;
+	}
+
+	/**
+	 * Frase breve para la persona que compra: elemento bloqueado, límite y salida humana.
+	 * Texto plano ya escapado (esc_html); vacío si el servidor no mandó nada de esto.
+	 *
+	 * @param array<string,mixed> $reason agent_reason saneado.
+	 */
+	public static function human_detail( array $reason ): string {
+		$esc   = static fn( string $t ): string => function_exists( 'esc_html' ) ? esc_html( $t ) : htmlspecialchars( $t, ENT_QUOTES, 'UTF-8' );
+		$parts = array();
+		if ( isset( $reason['blocked_item']['value'] ) ) {
+			$parts[] = 'Item: ' . $esc( (string) $reason['blocked_item']['value'] ) . '.';
+		}
+		$limit = $reason['published_limit'] ?? null;
+		if ( is_array( $limit ) && 'max_cart_value' === $limit['kind'] ) {
+			$cur     = function_exists( 'get_woocommerce_currency' ) ? (string) get_woocommerce_currency() : '';
+			$parts[] = 'Limit: ' . $esc( trim( number_format( $limit['amount_cents'] / 100, 2, '.', '' ) . ' ' . $cur ) ) . '.';
+		} elseif ( is_array( $limit ) && 'max_units_per_line' === $limit['kind'] ) {
+			$parts[] = 'Limit: max. ' . (int) $limit['units'] . ' units per line.';
+		}
+		$hc = $reason['human_checkout'] ?? null;
+		if ( is_array( $hc ) ) {
+			$parts[] = ( $hc['available'] && isset( $hc['url'] ) ) ? 'Complete your purchase here: ' . $esc( $hc['url'] ) : $esc( $hc['message'] );
+		}
+		return implode( ' ', $parts );
 	}
 }
 
@@ -214,7 +372,7 @@ class Trusteed_Enforcement_Api_Client {
 					'evaluation_id' => (string) ( $body['evaluationId'] ?? '' ),
 				);
 			}
-			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::BLOCK, 'ok', $status, $hitl );
+			return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::BLOCK, 'ok', $status, $hitl, Trusteed_Eval_Result::sanitize_agent_reason( $body['agent_reason'] ?? null ) );
 		}
 
 		return new Trusteed_Eval_Result( Trusteed_Eval_Outcome::ALLOW, 'ok', $status );

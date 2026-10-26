@@ -8,6 +8,13 @@ require_once __DIR__ . '/AgentOrdersFakes.php';
 require_once __DIR__ . '/../../includes/class-agent-request-auth.php';
 require_once __DIR__ . '/../../includes/class-payment-verifier.php';
 require_once __DIR__ . '/../../includes/class-payref-lock.php';
+require_once __DIR__ . '/../../includes/class-cart-bridge.php';
+require_once __DIR__ . '/../../includes/class-enforcement-api-client.php';
+require_once __DIR__ . '/../../includes/class-offline-safety-valve-evaluator.php';
+require_once __DIR__ . '/../../includes/class-agent-event-webhook.php';
+require_once __DIR__ . '/../../includes/class-multi-add-handler.php';
+require_once __DIR__ . '/../../includes/class-cart-signals.php';
+require_once __DIR__ . '/../../includes/class-checkout-enforcer.php';
 require_once __DIR__ . '/../../includes/class-agent-orders-endpoint.php';
 
 if (!function_exists('register_rest_route')) {
@@ -202,6 +209,31 @@ final class AgentOrdersEndpointTest extends TestCase
         $this->assertSame('did:web:agent.example', $this->port->rules_agent_did);
     }
 
+    public function test_reenvia_el_nivel_valido_al_evaluar(): void
+    {
+        $res = $this->endpoint->handle_create_order($this->signed($this->orderBody(['agent_identity_level' => 'verified_signature'])));
+        $this->assertSame(201, $res->get_status());
+        $this->assertSame('verified_signature', $this->port->rules_identity_level);
+    }
+
+    public function test_descarta_un_nivel_fuera_del_vocabulario(): void
+    {
+        foreach (['root', '', 7, ['verified_signature'], 'VERIFIED_SIGNATURE'] as $i => $raw) {
+            $this->port->rules_identity_level = 'sentinel';
+            $this->endpoint->handle_create_order($this->signed($this->orderBody([
+                'trusteed_order_id'    => 'ord_bad_' . $i,
+                'agent_identity_level' => $raw,
+            ])));
+            $this->assertNull($this->port->rules_identity_level, 'nivel inválido: ' . json_encode($raw));
+        }
+    }
+
+    public function test_sin_nivel_el_puerto_recibe_null(): void
+    {
+        $this->endpoint->handle_create_order($this->signed($this->orderBody()));
+        $this->assertNull($this->port->rules_identity_level);
+    }
+
     public function test_orders_es_idempotente_por_trusteed_order_id(): void
     {
         $a = $this->endpoint->handle_create_order($this->signed($this->orderBody()));
@@ -230,6 +262,82 @@ final class AgentOrdersEndpointTest extends TestCase
         $this->assertSame(422, $res->get_status());
         $this->assertSame('rule_blocked', $res->get_data()['error']['code']);
         $this->assertSame([], $this->port->orders);
+    }
+
+    public function test_orders_bloqueado_lleva_el_motivo_del_servidor_en_el_422(): void
+    {
+        $this->port->rules_decision     = 'BLOCK';
+        $this->port->rules_agent_reason = [
+            'reason_category' => 'order_limits',
+            'rule_code'       => 'R018',
+            'reason'          => 'Checkout declined: adjust the order.',
+            'next_action'     => 'adjust_order',
+        ];
+        $res = $this->endpoint->handle_create_order($this->signed($this->orderBody()));
+        $err = $res->get_data()['error'];
+        $this->assertSame(422, $res->get_status());
+        $this->assertSame('rule_blocked', $err['code']);
+        $this->assertSame('order_limits', $err['reason_category']);
+        $this->assertSame('R018', $err['rule_code']);
+        $this->assertSame('adjust_order', $err['next_action']);
+        $this->assertSame('Checkout declined: adjust the order.', $err['reason']);
+        $this->assertSame($err['reason'], $err['public_reason']);
+    }
+
+    public function test_orders_bloqueado_con_motivo_derivado_por_el_plugin_lo_declara(): void
+    {
+        $this->port->rules_decision     = 'BLOCK';
+        $this->port->rules_agent_reason = [
+            'reason_category' => 'merchant_policy',
+            'reason'          => 'x',
+            'next_action'     => 'escalate_human',
+            'source'          => 'plugin_fallback',
+        ];
+        $err = $this->endpoint->handle_create_order($this->signed($this->orderBody()))->get_data()['error'];
+        $this->assertSame('plugin_fallback', $err['reason_source']);
+        $this->assertArrayNotHasKey('source', $err);
+    }
+
+    public function test_orders_bloqueado_con_motivo_del_servidor_no_lleva_reason_source(): void
+    {
+        $this->port->rules_decision     = 'BLOCK';
+        $this->port->rules_agent_reason = ['reason_category' => 'order_limits', 'reason' => 'x', 'next_action' => 'adjust_order'];
+        $err = $this->endpoint->handle_create_order($this->signed($this->orderBody()))->get_data()['error'];
+        $this->assertArrayNotHasKey('reason_source', $err);
+    }
+
+    public function test_orders_bloqueado_reenvia_las_claves_nuevas_en_el_422(): void
+    {
+        $this->port->rules_decision     = 'BLOCK';
+        $this->port->rules_agent_reason = [
+            'reason_category' => 'order_limits',
+            'reason'          => 'x',
+            'next_action'     => 'adjust_order',
+            'blocked_item'    => ['kind' => 'sku', 'value' => 'ABC-1'],
+            'published_limit' => ['kind' => 'max_units_per_line', 'units' => 2, 'source' => 's'],
+            'human_checkout'  => ['available' => false, 'message' => 'm'],
+        ];
+        $err = $this->endpoint->handle_create_order($this->signed($this->orderBody()))->get_data()['error'];
+        $this->assertSame(['kind' => 'sku', 'value' => 'ABC-1'], $err['blocked_item']);
+        $this->assertSame(2, $err['published_limit']['units']);
+        $this->assertFalse($err['human_checkout']['available']);
+    }
+
+    public function test_orders_bloqueado_sin_motivo_del_servidor_degrada_sin_campos_inventados(): void
+    {
+        $this->port->rules_decision = 'BLOCK';
+        $res = $this->endpoint->handle_create_order($this->signed($this->orderBody()));
+        $err = $res->get_data()['error'];
+        $this->assertSame('rule_blocked', $err['code']);
+        $this->assertArrayNotHasKey('reason_category', $err);
+        $this->assertArrayNotHasKey('public_reason', $err);
+    }
+
+    public function test_un_wp_error_sin_codigo_no_se_llama_rule_blocked(): void
+    {
+        $this->port->quote_result = new WP_Error('', 'raro');
+        $res = $this->endpoint->handle_quote($this->signed($this->orderBody()));
+        $this->assertSame('order_invalid', $res->get_data()['error']['code']);
     }
 
     public function test_orders_con_el_evaluador_no_disponible_cierra_con_503_y_borra_el_pedido(): void

@@ -37,6 +37,10 @@ class Trusteed_Checkout_Enforcer {
 	/** 2.3.6 (5b): our own failure closed an agent — not a rule; own message. */
 	const DECISION_UNAVAILABLE = 'UNAVAILABLE';
 
+	/** 2.5.2: mismas frases que AGENT_REASON_TEXT del servidor (merchant_policy / checks_unavailable). */
+	const REASON_MERCHANT_POLICY    = 'Checkout declined: the merchant does not accept this purchase from automated agents. The order was not placed and nothing was charged. Escalate to a human buyer.';
+	const REASON_CHECKS_UNAVAILABLE = 'Checkout not completed: the checks for this order could not run right now. This is not a merchant decision, the order was not placed and nothing was charged. Wait a few minutes and retry.';
+
 	/** 2.3.6 (5b): DID proven by a VALID token in the last run_evaluation(); '' otherwise. */
 	private string $verified_did = '';
 
@@ -51,6 +55,28 @@ class Trusteed_Checkout_Enforcer {
 	 * Sólo lo fija evaluate_order_for_agent_api(); null en el checkout normal.
 	 */
 	private ?string $trusted_agent_did = null;
+
+	/**
+	 * Niveles de identidad que el servidor entiende (AGENT_IDENTITY_LEVELS). Cualquier otro
+	 * valor se descarta: nunca se reenvía una cadena desconocida.
+	 */
+	const IDENTITY_LEVELS = array( 'verified_signature', 'oauth_person', 'credential_only', 'anonymous' );
+
+	/**
+	 * 2.5.1: nivel de identidad que Trusteed resolvió para el agente (canal firmado por el HMAC
+	 * de instalación). Sólo lo fija evaluate_order_for_agent_api(); null en el checkout normal,
+	 * donde el payload no lo lleva.
+	 */
+	private ?string $trusted_identity_level = null;
+
+	/** 2.5.2: motivo estructurado del último run_evaluation() (BLOCK/UNAVAILABLE); null en ALLOW. */
+	private ?array $last_agent_reason = null;
+
+	/** 2.5.2: verificador de la firma RFC 9421 de un agente de navegador (null = desactivado). */
+	private ?Trusteed_Browser_Agent_Signature $browser_signature;
+
+	/** 2.5.2: resultado de la verificación en el último run_evaluation() (null = sin firma o apagado). */
+	private ?array $browser_result = null;
 
 	/**
 	 * Enforcement API client.
@@ -124,8 +150,10 @@ class Trusteed_Checkout_Enforcer {
 		string $installation_id,
 		?Trusteed_Snapshot_Client_Woo $snapshot_client = null,
 		string $failure_mode = 'enforce',
-		?Trusteed_Agent_Event_Webhook $event_webhook = null
+		?Trusteed_Agent_Event_Webhook $event_webhook = null,
+		?Trusteed_Browser_Agent_Signature $browser_signature = null
 	) {
+		$this->browser_signature = $browser_signature;
 		$this->api_client      = $api_client;
 		$this->merchant_id     = $merchant_id;
 		$this->installation_id = $installation_id;
@@ -134,6 +162,15 @@ class Trusteed_Checkout_Enforcer {
 		// resuelto (p. ej. `permissive` de otra plataforma) cierra: 'enforce'.
 		$this->failure_mode    = Trusteed_Enforcement_Failure_Policy::normalize_failure_mode( $failure_mode ) ?? 'enforce';
 		$this->event_webhook   = $event_webhook;
+	}
+
+	/** 2.5.2: JSON {status, provider, keyId} de la firma verificada en esta petición; '' si no hubo. */
+	public function browser_signature_meta(): string {
+		if ( null === $this->browser_result ) {
+			return '';
+		}
+		$r = $this->browser_result;
+		return (string) wp_json_encode( array( 'status' => $r['status'], 'provider' => $r['provider'], 'keyId' => $r['keyId'] ) );
 	}
 
 	/**
@@ -174,18 +211,21 @@ class Trusteed_Checkout_Enforcer {
 	 *
 	 * @param \WC_Order  $order     Pedido creado (estado pending, con dirección y método).
 	 * @param string|null $agent_did DID del agente, o null si no viene.
+	 * @param string|null $identity_level Nivel de identidad (2.5.1); fuera del vocabulario se descarta.
 	 * @return string 'ALLOW', 'BLOCK' o self::DECISION_UNAVAILABLE.
 	 */
-	public function evaluate_order_for_agent_api( $order, ?string $agent_did = null ): string {
-		$this->force_agentic     = true;
-		$this->trusted_agent_did = ( null !== $agent_did && '' !== $agent_did ) ? $agent_did : null;
+	public function evaluate_order_for_agent_api( $order, ?string $agent_did = null, ?string $identity_level = null ): string {
+		$this->force_agentic          = true;
+		$this->trusted_agent_did      = ( null !== $agent_did && '' !== $agent_did ) ? $agent_did : null;
+		$this->trusted_identity_level = ( null !== $identity_level && in_array( $identity_level, self::IDENTITY_LEVELS, true ) ) ? $identity_level : null;
 		try {
 			return $this->run_evaluation(
 				fn(): array => $this->build_order_context_from_order( $order, null )
 			);
 		} finally {
-			$this->force_agentic     = false;
-			$this->trusted_agent_did = null;
+			$this->force_agentic          = false;
+			$this->trusted_agent_did      = null;
+			$this->trusted_identity_level = null;
 		}
 	}
 
@@ -309,6 +349,8 @@ class Trusteed_Checkout_Enforcer {
 			);
 		}
 
+		Trusteed_Browser_Agent_Signature::stamp_next_classic_order( $this->browser_signature_meta() );
+
 		// ALLOW path — delegate to Trusteed_Classic_Meta_Persister which registers
 		// a one-shot `woocommerce_checkout_create_order` hook to stamp the
 		// three metas the Blocks path writes inline. Only a DID proven by a
@@ -348,7 +390,8 @@ class Trusteed_Checkout_Enforcer {
 			throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException(
 				'trusteed_agent_unverifiable',
 				__( 'Your order could not be verified right now. Please try again in a few minutes.', 'agenticmcpstores' ),
-				503
+				503,
+				$this->block_additional_data()
 			);
 		}
 
@@ -356,11 +399,14 @@ class Trusteed_Checkout_Enforcer {
 			if ( class_exists( '\Automattic\WooCommerce\StoreApi\Exceptions\RouteException' ) ) {
 				throw new \Automattic\WooCommerce\StoreApi\Exceptions\RouteException(
 					'trusteed_agent_blocked',
-					__(
-						'Your order could not be completed because it did not pass the store\'s agent verification rules. Please contact the store if you believe this is an error.',
-						'agenticmcpstores'
+					trim(
+						__(
+							'Your order could not be completed because it did not pass the store\'s agent verification rules. Please contact the store if you believe this is an error.',
+							'agenticmcpstores'
+						) . ' ' . ( is_array( $this->last_agent_reason ) ? Trusteed_Eval_Result::human_detail( $this->last_agent_reason ) : '' )
 					),
-					403
+					403,
+					$this->block_additional_data()
 				);
 			}
 			// Fallback: add notice (will surface on next page load).
@@ -374,6 +420,11 @@ class Trusteed_Checkout_Enforcer {
 				'error'
 			);
 			return;
+		}
+
+		// 2.5.2: la verificación de firma se anota (observe y enforce), sin cambiar nada más.
+		if ( '' !== $this->browser_signature_meta() ) {
+			$order->update_meta_data( Trusteed_Browser_Agent_Signature::META_KEY, $this->browser_signature_meta() );
 		}
 
 		// ALLOW path: persist agent DID + R022 cart-attr status so the order webhook
@@ -446,6 +497,60 @@ class Trusteed_Checkout_Enforcer {
 	 * @return string 'ALLOW', 'BLOCK' (a rule) or self::DECISION_UNAVAILABLE (our failure).
 	 */
 	private function run_evaluation( \Closure $build_context, array $request_tokens = array() ): string {
+		$this->last_agent_reason = null;
+		$decision                = $this->run_evaluation_guarded( $build_context, $request_tokens );
+		// Sin motivo del servidor (válvula offline, avería, servidor antiguo) se deriva una categoría
+		// segura: nunca se inventa una regla ni se calla.
+		if ( null === $this->last_agent_reason && ( 'BLOCK' === $decision || self::DECISION_UNAVAILABLE === $decision ) ) {
+			$this->last_agent_reason = self::DECISION_UNAVAILABLE === $decision
+				? array( 'reason_category' => 'checks_unavailable', 'reason' => self::REASON_CHECKS_UNAVAILABLE, 'next_action' => 'wait_and_retry', 'source' => 'plugin_fallback' )
+				: array( 'reason_category' => 'merchant_policy', 'reason' => self::REASON_MERCHANT_POLICY, 'next_action' => 'escalate_human', 'source' => 'plugin_fallback' );
+		}
+		return $decision;
+	}
+
+	/**
+	 * 2.5.2: motivo del último veredicto BLOCK/UNAVAILABLE (reason_category, reason, next_action y,
+	 * si el servidor la dio, rule_code). Null si la última evaluación fue ALLOW.
+	 *
+	 * @return array<string,string>|null
+	 */
+	public function get_last_agent_reason(): ?array {
+		return $this->last_agent_reason;
+	}
+
+	/**
+	 * Motivo estructurado del último bloqueo, como datos adicionales de la
+	 * RouteException 403 de la Store API (un agente headless los lee; el texto
+	 * humano no cambia). El motivo derivado por el propio plugin se declara con
+	 * `reason_source`, no se hace pasar por veredicto del servidor.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function block_additional_data(): array {
+		$reason = $this->last_agent_reason;
+		if ( ! is_array( $reason ) ) {
+			return array();
+		}
+		$data = array();
+		foreach ( array( 'reason_category', 'rule_code', 'reason', 'next_action' ) as $key ) {
+			if ( isset( $reason[ $key ] ) && is_string( $reason[ $key ] ) && '' !== $reason[ $key ] ) {
+				$data[ $key ] = $reason[ $key ];
+			}
+		}
+		foreach ( array( 'human_checkout', 'blocked_item', 'published_limit' ) as $key ) {
+			if ( isset( $reason[ $key ] ) && is_array( $reason[ $key ] ) ) {
+				$data[ $key ] = $reason[ $key ];
+			}
+		}
+		if ( 'plugin_fallback' === ( $reason['source'] ?? '' ) ) {
+			$data['reason_source'] = 'plugin_fallback';
+		}
+		return $data;
+	}
+
+	/** Cuerpo guardado de {@see run_evaluation()}: captura las averías propias. */
+	private function run_evaluation_guarded( \Closure $build_context, array $request_tokens = array() ): string {
 		// Task 27c (M6): la señal agéntica se lee ANTES (el cuerpo borra la sesión
 		// a mitad) y, si ni eso se puede leer, se trata como agente (D1 sólo
 		// ampara a la persona probada).
@@ -493,8 +598,9 @@ class Trusteed_Checkout_Enforcer {
 	 * @return string 'ALLOW', 'BLOCK' or self::DECISION_UNAVAILABLE.
 	 */
 	private function run_evaluation_unguarded( \Closure $build_context, array $request_tokens = array() ): string {
-		$this->verified_did = '';
-		$order_context      = $build_context();
+		$this->verified_did   = '';
+		$this->browser_result = null;
+		$order_context        = $build_context();
 		$token              = Trusteed_Agent_Identity::resolve_token( WC()->session, $request_tokens );
 
 		// Merchant not connected — nothing to evaluate against. Since 2.3.6
@@ -516,6 +622,16 @@ class Trusteed_Checkout_Enforcer {
 
 		// Read BEFORE the session is cleared below (and before the token check).
 		$is_agentic = $this->resolve_is_agentic( $agent_id, $token );
+
+		// 2.5.2: agente de navegador con firma RFC 9421. Sólo en `enforce` cambia la
+		// clasificación, y sólo con verified/spoofed: unverified, error o timeout siguen
+		// como humano (fail-open — una avería de la verificación no reclasifica a nadie).
+		$this->browser_result = null !== $this->browser_signature ? $this->browser_signature->resolve( $_SERVER ) : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		$browser_enforced     = null !== $this->browser_result && 'enforce' === $this->browser_signature->mode();
+		$browser_key          = $browser_enforced && 'verified' === $this->browser_result['status'] ? $this->browser_result['agentId'] : '';
+		if ( $browser_enforced && in_array( $this->browser_result['status'], array( 'verified', 'spoofed' ), true ) ) {
+			$is_agentic = true;
+		}
 
 		// Verify agent token signature and enrich orderContext cartAttributes.
 		// No-op when there is no token. 5b: the token is bound to the declared
@@ -545,6 +661,11 @@ class Trusteed_Checkout_Enforcer {
 		if ( null === $agent_id && null !== $this->trusted_agent_did ) {
 			$agent_id = $this->trusted_agent_did;
 		}
+		// 2.5.2: `wba:<origen del Signature-Agent>#<keyId>` es la identidad (spoofed ⇒ agente anónimo).
+		if ( null === $agent_id && '' !== $browser_key ) {
+			$agent_id           = $browser_key;
+			$this->verified_did = $browser_key;
+		}
 
 		// Decision 2: the signature verified and only the anti-replay check could
 		// not run (our nonce store did not answer). The failure mode decides, as
@@ -567,6 +688,13 @@ class Trusteed_Checkout_Enforcer {
 		);
 		// Sólo en agénticos: el payload orgánico queda byte a byte como antes.
 		$payload = $is_agentic ? array_merge( $payload, array( 'endpointClass' => 'agentic_endpoint' ) ) : $payload;
+
+		// 2.5.1: sólo la vía de la API de pedidos de Trusteed lleva el nivel; el checkout normal no.
+		if ( null !== $this->trusted_identity_level ) {
+			$payload['agentIdentityLevel'] = $this->trusted_identity_level;
+		} elseif ( '' !== $browser_key && $agent_id === $browser_key ) {
+			$payload['agentIdentityLevel'] = 'verified_signature';
+		}
 
 		$result = $this->api_client->evaluate( $payload );
 
@@ -625,6 +753,7 @@ class Trusteed_Checkout_Enforcer {
 		if ( Trusteed_Eval_Outcome::BLOCK !== $result->outcome ) {
 			return 'ALLOW';
 		}
+		$this->last_agent_reason = $result->agent_reason;
 		return 'BLOCK';
 	}
 
@@ -918,11 +1047,8 @@ class Trusteed_Checkout_Enforcer {
 				'priceCents' => (int) round( (float) $product->get_price() * 100 ),
 			);
 			// Collect server-side product categories (R012 high-risk-category enforcement).
-			$terms = wp_get_post_terms( (int) $item['product_id'], 'product_cat', array( 'fields' => 'slugs' ) );
-			if ( is_array( $terms ) ) {
-				foreach ( $terms as $slug ) {
-					$product_cat_slugs[ $slug ] = true;
-				}
+			foreach ( Trusteed_Cart_Signals::product_term_slugs( (int) $item['product_id'] ) as $slug ) {
+				$product_cat_slugs[ $slug ] = true;
 			}
 		}
 
@@ -1003,11 +1129,8 @@ class Trusteed_Checkout_Enforcer {
 			$item_count  += $qty;
 
 			// Collect server-side product categories (R012 high-risk-category enforcement).
-			$terms = wp_get_post_terms( $product_id, 'product_cat', array( 'fields' => 'slugs' ) );
-			if ( is_array( $terms ) ) {
-				foreach ( $terms as $slug ) {
-					$product_cat_slugs[ $slug ] = true;
-				}
+			foreach ( Trusteed_Cart_Signals::product_term_slugs( $product_id ) as $slug ) {
+				$product_cat_slugs[ $slug ] = true;
 			}
 		}
 

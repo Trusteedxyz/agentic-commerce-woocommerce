@@ -538,3 +538,27 @@ msgstr ""
 #: trusteed-for-woocommerce.php:106
 msgid "requires WooCommerce to be installed and active."
 msgstr ""
+
+#: includes/class-settings.php
+msgid "Browser agents with a signature"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Observe: check the signature and record it, change nothing"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Enforce: treat a verified signature as an AI agent so agent rules apply"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Off: do not check signatures"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "An AI agent that buys by browsing your site looks like a person unless it signs its requests. If the check fails or is slow, the buyer is treated as a person. This setting applies immediately. For Enforce to work, Trusteed must be running with AGENT_HTTP_SIGNATURE_REQUIRE_CORE_COMPONENTS=true and AGENT_HTTP_SIGNATURE_REPLAY_CACHE_MODE=enforce."
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Settings saved."
+msgstr ""

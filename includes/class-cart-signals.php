@@ -300,6 +300,31 @@ final class Trusteed_Cart_Signals
     // ═════════════════════════════════════════════════════════════════════
 
     /**
+     * Slugs de categoría Y etiqueta de un producto, para R012/R032/R003.
+     *
+     * El comerciante marca `alcohol` o `restringido` como etiqueta, no siempre
+     * como categoría: leer solo `product_cat` dejaba esa señal fuera del motor.
+     *
+     * @return string[] slugs sin repetir, categorías primero.
+     */
+    public static function product_term_slugs(int $product_id): array
+    {
+        $slugs = [];
+        foreach (['product_cat', 'product_tag'] as $taxonomy) {
+            $terms = wp_get_post_terms($product_id, $taxonomy, ['fields' => 'slugs']);
+            if (!is_array($terms)) {
+                continue;
+            }
+            foreach ($terms as $slug) {
+                if (is_string($slug) && $slug !== '') {
+                    $slugs[$slug] = true;
+                }
+            }
+        }
+        return array_keys($slugs);
+    }
+
+    /**
      * R032 signal: returns true iff any cart item has a category id in $blocked.
      *
      * @param array<int,array<string,mixed>> $items each item: ['categoryIds' => string[]]

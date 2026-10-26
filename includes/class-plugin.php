@@ -162,6 +162,7 @@ class Trusteed_Plugin {
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-classic-meta-persister.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-enforcement-failure-policy.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-identity.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-browser-agent-signature.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-checkout-enforcer.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-r043-hitl-gate.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-event-webhook.php';
@@ -225,7 +226,14 @@ class Trusteed_Plugin {
 			$installation_id,
 			$snapshot_client,
 			$failure_mode,
-			$this->agent_event_webhook
+			$this->agent_event_webhook,
+			new Trusteed_Browser_Agent_Signature(
+				$api_base_url,
+				$merchant_id,
+				static fn(): string => Trusteed_Crypto_Helper::decrypt( (string) Trusteed_Options::get_option( 'embed_wp_secret', '' ) ),
+				(string) Trusteed_Options::get_option( 'browser_agent_signature_mode', Trusteed_Browser_Agent_Signature::DEFAULT_MODE ),
+				home_url()
+			)
 		);
 
 		// 2.4.0 — pedidos que Trusteed crea y cobra fuera de WooCommerce. La pasarela

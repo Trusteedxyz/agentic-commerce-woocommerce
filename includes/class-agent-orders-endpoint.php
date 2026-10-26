@@ -17,7 +17,8 @@
  *   find_order_by_trusteed_id(string): ?array
  *   get_order(int): ?array
  *   create_order(array $input): array|WP_Error
- *   evaluate_rules(int $order_id, ?string $agent_did): 'ALLOW'|'BLOCK'|'UNAVAILABLE'
+ *   evaluate_rules(int $order_id, ?string $agent_did, ?string $identity_level = null): 'ALLOW'|'BLOCK'|'UNAVAILABLE'
+ *   last_agent_reason(): ?array  (opcional, 2.5.2: motivo del último BLOCK)
  *   delete_order(int): void
  *   complete_payment(int $order_id, string $payment_reference, string $payment_method = ''): void
  *   hold_for_review(int $order_id, string $note): void
@@ -222,10 +223,16 @@ final class Trusteed_Agent_Orders_Endpoint {
 		$did = isset( $body['agent_did'] ) && is_string( $body['agent_did'] ) && 1 === preg_match( '/^[A-Za-z0-9:._%\-]{1,256}$/', $body['agent_did'] )
 			? $body['agent_did']
 			: null;
+		// 2.5.1: nivel de identidad que resolvió Trusteed; sólo los cuatro valores del vocabulario.
+		$level = isset( $body['agent_identity_level'] ) && is_string( $body['agent_identity_level'] )
+			&& in_array( $body['agent_identity_level'], Trusteed_Checkout_Enforcer::IDENTITY_LEVELS, true )
+			? $body['agent_identity_level']
+			: null;
 
 		$input['trusteed_order_id']   = $tid;
 		$input['checkout_session_id'] = $sid;
 		$input['agent_did']           = $did;
+		$input['agent_identity_level'] = $level;
 
 		// Idempotencia: el mismo trusteed_order_id nunca crea dos pedidos.
 		$lock_key = 'trusteed_agent_order_lock_' . $tid;
@@ -281,11 +288,12 @@ final class Trusteed_Agent_Orders_Endpoint {
 		}
 
 		// Reglas locales del comerciante, evaluadas a mano (aquí no hay checkout).
-		$decision = (string) $this->port->evaluate_rules( $id, $input['agent_did'] );
+		$decision = (string) $this->port->evaluate_rules( $id, $input['agent_did'], $input['agent_identity_level'] );
 		if ( 'ALLOW' !== $decision ) {
 			$this->port->delete_order( $id );
 			if ( 'BLOCK' === $decision ) {
-				return self::error( 422, 'rule_blocked', 'The order did not pass the store\'s verification rules.' );
+				$reason = method_exists( $this->port, 'last_agent_reason' ) ? $this->port->last_agent_reason() : null;
+				return self::rule_blocked( is_array( $reason ) ? $reason : null );
 			}
 			return self::error( 503, 'rules_unavailable', 'The order could not be verified right now.' );
 		}
@@ -578,10 +586,45 @@ final class Trusteed_Agent_Orders_Endpoint {
 		return new WP_REST_Response( array( 'error' => array( 'code' => $code, 'message' => $message ) ), $status );
 	}
 
+	/**
+	 * 422 con el motivo para el agente. `public_reason` es el mismo texto que `reason`
+	 * (el cliente de Trusteed lee ese nombre). Sin motivo (servidor antiguo) no se inventa nada.
+	 *
+	 * @param array<string,string>|null $reason agent_reason ya saneado.
+	 */
+	private static function rule_blocked( ?array $reason ): WP_REST_Response {
+		$res = self::error( 422, 'rule_blocked', 'The order did not pass the store\'s verification rules.' );
+		if ( null === $reason ) {
+			return $res;
+		}
+		$data = $res->get_data();
+		foreach ( array( 'reason_category', 'rule_code', 'reason', 'next_action' ) as $key ) {
+			if ( isset( $reason[ $key ] ) && is_string( $reason[ $key ] ) ) {
+				$data['error'][ $key ] = $reason[ $key ];
+			}
+		}
+		foreach ( array( 'human_checkout', 'blocked_item', 'published_limit' ) as $key ) {
+			if ( isset( $reason[ $key ] ) && is_array( $reason[ $key ] ) ) {
+				$data['error'][ $key ] = $reason[ $key ];
+			}
+		}
+		// Motivo derivado por el propio plugin (servidor sin `agent_reason`): se declara.
+		if ( isset( $reason['source'] ) && 'plugin_fallback' === $reason['source'] ) {
+			$data['error']['reason_source'] = 'plugin_fallback';
+		}
+		if ( isset( $data['error']['reason'] ) ) {
+			$data['error']['public_reason'] = $data['error']['reason'];
+		}
+		return new WP_REST_Response( $data, 422 );
+	}
+
 	private static function from_wp_error( WP_Error $e ): WP_REST_Response {
 		$data   = $e->get_error_data();
 		$status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 422;
-		return self::error( $status, $e->get_error_code(), $e->get_error_message() );
+		$code   = $e->get_error_code();
+		// Un error sin código propio jamás puede pasar por «bloqueado por reglas».
+		$code = ( is_string( $code ) && '' !== $code && 'rule_blocked' !== $code ) ? $code : 'order_invalid';
+		return self::error( $status, $code, $e->get_error_message() );
 	}
 
 	private function internal_error( string $where, \Throwable $e ): WP_REST_Response {

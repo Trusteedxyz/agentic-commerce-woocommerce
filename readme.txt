@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.0
+Stable tag: 2.5.2
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,14 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.2 =
+* New: browser agents (browser-use style) that sign their requests with RFC 9421 HTTP Message Signatures are now recognised at checkout, according to the `browser_agent_signature_mode` setting. This release also contains the change below, so it bundles two independent changes.
+* Change: when the store's rules block an order that an agent placed through Trusteed, the plugin now tells Trusteed why (`reason_category`, `rule_code`, `reason`, `next_action` on the `422 rule_blocked` answer), so the agent knows what to do next instead of getting a bare refusal. With a Trusteed server that sends `agent_reason` the reason is the server's verdict. With an older server the plugin derives a generic reason itself (`merchant_policy` or `checks_unavailable`) and marks it with `reason_source: plugin_fallback` so it is never taken for the server's verdict; it does not stay silent. `rule_code` is kept only if it looks like a rule code (up to 64 characters); anything else is dropped. An error that is not a rule block no longer answers as `rule_blocked` (it uses `order_invalid`).
+* Change: the same answer can also say what caused the block when Trusteed knows it: `blocked_item` (a category, a SKU or a digital product type), `published_limit` (the limit the store published, only when the rule that fired has one) and `human_checkout` (a link to your own human checkout, only if you provided one). Each key is checked on its own and dropped if it does not look right.
+
+= 2.5.1 =
+* Fix: when a store requires a verified agent identity, orders that Trusteed creates for a verified agent are no longer blocked by the plugin's own second check. The plugin now passes along the identity level Trusteed resolved (only the four known values are accepted; anything else is ignored). Update the plugin before turning that rule option on.
 
 = 2.5.0 =
 * Change: an agent order is no longer marked as paid unless the payment provider confirms the charge. The plugin now checks the payment (Stripe PaymentIntent or PayPal capture) with the credentials of your own account; if it cannot confirm it, the order stays On hold and the agent orders endpoint answers `409 payment_not_verified` (definitive) or `503 payment_verification_unavailable` (provider unreachable or no credentials; Trusteed retries). Review On hold orders from agents in WooCommerce > Orders. If the charge was made on a Trusteed demo account instead of your own, it will not be confirmed by design.
@@ -363,6 +371,9 @@ See full sprint detail in repository docs: `docs/CLAUDE/specifications.md` (Spec
 * Full i18n support (English + Spanish)
 
 == Upgrade Notice ==
+
+= 2.5.2 =
+When the store's rules block an order placed by an agent, the plugin now tells Trusteed why, so the agent can react. Also recognises browser agents that sign their requests (RFC 9421). Update the server-side integration together with the plugin for the full reason.
 
 = 2.5.0 =
 Agent orders are only marked as paid once your own payment provider (Stripe or PayPal) confirms the charge. Unconfirmed ones stay On hold for review.

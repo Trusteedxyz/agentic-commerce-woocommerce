@@ -262,18 +262,28 @@ final class Trusteed_Agent_Woo_Adapter {
 	/**
 	 * @param int         $order_id  Pedido.
 	 * @param string|null $agent_did DID declarado por Trusteed (canal firmado).
+	 * @param string|null $identity_level Nivel de identidad declarado por Trusteed (canal firmado).
 	 * @return string 'ALLOW' | 'BLOCK' | 'UNAVAILABLE'
 	 */
-	public function evaluate_rules( int $order_id, ?string $agent_did ): string {
+	public function evaluate_rules( int $order_id, ?string $agent_did, ?string $identity_level = null ): string {
 		$order = wc_get_order( $order_id );
 		if ( ! ( $order instanceof WC_Order ) || null === $this->enforcer ) {
 			return 'UNAVAILABLE';
 		}
-		$decision = $this->enforcer->evaluate_order_for_agent_api( $order, $agent_did );
+		$decision = $this->enforcer->evaluate_order_for_agent_api( $order, $agent_did, $identity_level );
 		if ( 'ALLOW' === $decision || 'BLOCK' === $decision ) {
 			return $decision;
 		}
 		return 'UNAVAILABLE';
+	}
+
+	/**
+	 * 2.5.2: motivo estructurado de la última evaluate_rules() (null si no hay o fue ALLOW).
+	 *
+	 * @return array<string,string>|null
+	 */
+	public function last_agent_reason(): ?array {
+		return null === $this->enforcer ? null : $this->enforcer->get_last_agent_reason();
 	}
 
 	/**

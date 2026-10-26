@@ -91,6 +91,12 @@ class Trusteed_Offline_Safety_Valve_Evaluator {
 		return self::normalize_country( $order_context['billingCountry'] ?? $order_context['shippingCountry'] ?? null );
 	}
 
+	/** R014 is about DELIVERY: shippingCountry ?? billingCountry (R019/R030 keep order_country). */
+	private static function delivery_country( array $order_context ): ?string {
+		return self::normalize_country( $order_context['shippingCountry'] ?? null )
+			?? self::normalize_country( $order_context['billingCountry'] ?? null );
+	}
+
 	/** trim + uppercase; empty / non-string => null (mirror of normalizeCountryCode in TS). */
 	private static function normalize_country( $value ): ?string {
 		if ( ! is_string( $value ) ) {
@@ -143,7 +149,7 @@ class Trusteed_Offline_Safety_Valve_Evaluator {
 
 	private static function eval_r014( array $params, array $order_context, array $cart_attributes ): ?string {
 		$high_risk = self::normalize_country_list( $params['highRiskCountries'] ?? self::DEFAULT_HIGH_RISK_COUNTRIES );
-		$country   = self::order_country( $order_context );
+		$country   = self::delivery_country( $order_context );
 		if ( null !== $country && in_array( $country, $high_risk, true ) ) {
 			return "delivery country {$country} is high-risk";
 		}
