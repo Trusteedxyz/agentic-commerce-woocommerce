@@ -41,7 +41,12 @@ final class Trusteed_Agent_Discovery {
 		if ( '' === $slug || '' === $endpoint ) {
 			return '';
 		}
-		return $endpoint;
+		return self::normalize_endpoint( $endpoint );
+	}
+
+	/** Un alta anterior a 2.5.5 guardó el /mcp unificado, retirado (410): se publica su sucesor, el bucket de descubrimiento. */
+	public static function normalize_endpoint( string $endpoint ): string {
+		return preg_match( '#/mcp/?$#', $endpoint ) ? rtrim( $endpoint, '/' ) . '/discovery' : $endpoint;
 	}
 
 	public function print_head_link(): void {

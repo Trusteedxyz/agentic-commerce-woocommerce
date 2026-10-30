@@ -467,6 +467,23 @@ class Trusteed_Api_Client {
 	}
 
 	/**
+	 * Whether a /api/v1/health answer means the API is serving.
+	 *
+	 * @since 2.5.5
+	 *
+	 * @param int   $status HTTP status.
+	 * @param mixed $body   Decoded body.
+	 * @return bool
+	 */
+	public static function is_health_operational( int $status, $body ): bool {
+		// `degraded` = todas las comprobaciones obligatorias pasan y falla alguna tolerada: la API atiende.
+		return 200 === $status
+			&& is_array( $body )
+			&& isset( $body['status'] )
+			&& in_array( $body['status'], array( 'ok', 'degraded' ), true );
+	}
+
+	/**
 	 * Test the connection to the Trusteed API.
 	 *
 	 * Calls GET /api/v1/health and measures round-trip latency.
@@ -491,20 +508,10 @@ class Trusteed_Api_Client {
 			);
 		}
 
-		$is_connected = (
-			200 === $response['status']
-			&& isset( $response['body']['status'] )
-			&& 'ok' === $response['body']['status']
-		);
-
-		if ( ! $is_connected ) {
+		if ( ! self::is_health_operational( (int) $response['status'], $response['body'] ) ) {
 			return new WP_Error(
 				'agenticmcp_api_unhealthy',
-				sprintf(
-					/* translators: 1: HTTP status code */
-					__( 'API health check returned status %1$d. Expected 200 with status "ok".', 'trusteed-for-woocommerce' ),
-					$response['status']
-				),
+				__( 'Trusteed is not responding normally right now. Please try again in a few minutes.', 'trusteed-for-woocommerce' ),
 				array(
 					'latency_ms' => $latency_ms,
 					'status'     => $response['status'],

@@ -40,8 +40,12 @@ final class AgentDiscoveryTest extends TestCase
         $this->assertSame('', (new Trusteed_Agent_Discovery())->mcp_endpoint());
 
         update_option('agenticmcp_store_slug', 'xures');
-        update_option('agenticmcp_mcp_endpoint', 'https://www.trusteed.xyz/xures/mcp');
-        $this->assertSame('https://www.trusteed.xyz/xures/mcp', (new Trusteed_Agent_Discovery())->mcp_endpoint());
+        update_option('agenticmcp_mcp_endpoint', 'https://api.trusteed.xyz/xures/mcp/discovery');
+        $this->assertSame('https://api.trusteed.xyz/xures/mcp/discovery', (new Trusteed_Agent_Discovery())->mcp_endpoint());
+
+        // Guardado por un alta anterior a 2.5.5: el /mcp unificado está retirado (410), se publica su sucesor.
+        update_option('agenticmcp_mcp_endpoint', 'https://api.trusteed.xyz/xures/mcp');
+        $this->assertSame('https://api.trusteed.xyz/xures/mcp/discovery', (new Trusteed_Agent_Discovery())->mcp_endpoint());
 
         update_option('agenticmcp_store_slug', '');
         update_option('agenticmcp_mcp_endpoint', '');

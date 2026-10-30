@@ -5,17 +5,7 @@
 #
 #, fuzzy
 msgid ""
-msgstr ""
-"Project-Id-Version: Trusteed for WooCommerce 2.2.2\n"
-"Report-Msgid-Bugs-To: https://github.com/Trusteedxyz/agentic-commerce-woocommerce/issues\n"
-"POT-Creation-Date: 2026-08-18 14:05+0000\n"
-"PO-Revision-Date: 2026-08-18 00:00+0000\n"
-"Last-Translator: Trusteed <support@trusteed.xyz>\n"
-"Language-Team: Spanish (Spain) <es@li.org>\n"
-"Language: es_ES\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+msgstr "Project-Id-Version: Trusteed for WooCommerce 2.2.2\nReport-Msgid-Bugs-To: https://github.com/Trusteedxyz/agentic-commerce-woocommerce/issues\nPOT-Creation-Date: 2026-08-18 14:05+0000\nPO-Revision-Date: 2026-08-18 00:00+0000\nLast-Translator: Trusteed <support@trusteed.xyz>\nLanguage-Team: Spanish (Spain) <es@li.org>\nLanguage: es_ES\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n"
 
 #: includes/class-multi-add-handler.php:88
 #, php-format
@@ -73,12 +63,8 @@ msgid "Invalid or missing API key."
 msgstr "API key no válida o ausente."
 
 #: includes/admin/class-admin-spa-loader.php:189
-msgid ""
-"Trusteed: the admin-spa bundle has not been built. Run pnpm build in "
-"packages/wp-plugin."
-msgstr ""
-"Trusteed: el bundle admin-spa no ha sido compilado. Ejecuta pnpm build en "
-"packages/wp-plugin."
+msgid "Trusteed: the admin-spa bundle has not been built. Run pnpm build in packages/wp-plugin."
+msgstr "Trusteed: el bundle admin-spa no ha sido compilado. Ejecuta pnpm build en packages/wp-plugin."
 
 #: includes/admin/views/spa-mount.php:40
 msgid "Loading Trusteed..."
@@ -176,46 +162,24 @@ msgstr "Error interno: vista SPA no encontrada."
 
 #: includes/class-checkout-enforcer.php:226
 #: includes/class-checkout-enforcer.php:269
-msgid ""
-"Your order could not be completed because it did not pass the store's agent "
-"verification rules. Please contact the store if you believe this is an "
-"error."
-msgstr ""
-"Tu pedido no se pudo completar porque no superó las reglas de verificación "
-"de agentes de la tienda. Contacta con la tienda si crees que esto es un "
-"error."
+msgid "Your order could not be completed because it did not pass the store's agent verification rules. Please contact the store if you believe this is an error."
+msgstr "Tu pedido no se pudo completar porque no superó las reglas de verificación de agentes de la tienda. Contacta con la tienda si crees que esto es un error."
 
 #: includes/class-checkout-enforcer.php:278
-msgid ""
-"Your order could not be completed because it did not pass the store's agent "
-"verification rules."
-msgstr ""
-"Tu pedido no se pudo completar porque no superó las reglas de verificación "
-"de agentes de la tienda."
+msgid "Your order could not be completed because it did not pass the store's agent verification rules."
+msgstr "Tu pedido no se pudo completar porque no superó las reglas de verificación de agentes de la tienda."
 
 #: includes/class-api-client.php:311
-msgid ""
-"Refusing to send credentials to a link-local, unique-local or cloud metadata"
-" address."
-msgstr ""
-"Se rechaza el envío de credenciales a una dirección link-local, unique-local"
-" o de metadatos de nube."
+msgid "Refusing to send credentials to a link-local, unique-local or cloud metadata address."
+msgstr "Se rechaza el envío de credenciales a una dirección link-local, unique-local o de metadatos de nube."
 
 #: includes/class-api-client.php:329
-msgid ""
-"Refusing to send credentials over an insecure (non-HTTPS) connection. "
-"Configure an HTTPS API URL."
-msgstr ""
-"Se rechaza el envío de credenciales por una conexión insegura (no HTTPS). "
-"Configura una URL de API con HTTPS."
+msgid "Refusing to send credentials over an insecure (non-HTTPS) connection. Configure an HTTPS API URL."
+msgstr "Se rechaza el envío de credenciales por una conexión insegura (no HTTPS). Configura una URL de API con HTTPS."
 
 #: includes/class-api-client.php:335
-msgid ""
-"Refusing to send credentials to an untrusted API host. Configure a Trusteed "
-"API URL."
-msgstr ""
-"Se rechaza el envío de credenciales a un host de API no confiable. Configura"
-" una URL de API de Trusteed."
+msgid "Refusing to send credentials to an untrusted API host. Configure a Trusteed API URL."
+msgstr "Se rechaza el envío de credenciales a un host de API no confiable. Configura una URL de API de Trusteed."
 
 #: includes/class-api-client.php:392
 #, php-format
@@ -236,12 +200,6 @@ msgstr "La solicitud a %1$s falló con estado %2$d tras %3$d intentos."
 msgid "Unexpected error during API request."
 msgstr "Error inesperado durante la solicitud a la API."
 
-#: includes/class-api-client.php:505
-#, php-format
-msgid "API health check returned status %1$d. Expected 200 with status \"ok\"."
-msgstr ""
-"La comprobación de salud de la API devolvió el estado %1$d. Se esperaba 200 "
-"con estado \"ok\"."
 
 #: includes/class-api-client.php:588
 msgid "Incorrect email or password."
@@ -275,52 +233,32 @@ msgstr "AgenticMCPStores:"
 
 #: includes/class-billing-webhooks.php:384
 #, php-format
-msgid ""
-"Your %1$s subscription has expired. Your store is now on the FREE tier with "
-"limited features. %2$s to restore full functionality."
-msgstr ""
-"Tu suscripción %1$s ha caducado. Tu tienda está ahora en el plan gratuito "
-"con funciones limitadas. %2$s para restaurar la funcionalidad completa."
+msgid "Your %1$s subscription has expired. Your store is now on the FREE tier with limited features. %2$s to restore full functionality."
+msgstr "Tu suscripción %1$s ha caducado. Tu tienda está ahora en el plan gratuito con funciones limitadas. %2$s para restaurar la funcionalidad completa."
 
 #: includes/class-billing-webhooks.php:387
 msgid "Upgrade now"
 msgstr "Mejorar plan ahora"
 
 #: includes/class-settings.php:166
-msgid ""
-"Trusteed — enforcement is not configured. Click Reconnect to enable agent "
-"verification."
-msgstr ""
-"Trusteed — el enforcement no está configurado. Haz clic en Reconectar para "
-"activar la verificación de agentes."
+msgid "Trusteed — enforcement is not configured. Click Reconnect to enable agent verification."
+msgstr "Trusteed — el enforcement no está configurado. Haz clic en Reconectar para activar la verificación de agentes."
 
 #: includes/class-settings.php:197
 msgid "Trusteed — incomplete integration"
 msgstr "Trusteed — integración incompleta"
 
 #: includes/class-settings.php:201
-msgid ""
-"Could not sign a backend call because the installation's HMAC secret is "
-"missing. Your Trusteed integration is not fully configured. Reconnect the "
-"plugin to restore agent-event sync."
-msgstr ""
-"No se ha podido firmar una llamada al backend porque falta el HMAC secret de"
-" la instalación. Tu integración Trusteed no está completamente configurada. "
-"Reconecta el plugin para restaurar la sincronización de eventos de agente."
+msgid "Could not sign a backend call because the installation's HMAC secret is missing. Your Trusteed integration is not fully configured. Reconnect the plugin to restore agent-event sync."
+msgstr "No se ha podido firmar una llamada al backend porque falta el HMAC secret de la instalación. Tu integración Trusteed no está completamente configurada. Reconecta el plugin para restaurar la sincronización de eventos de agente."
 
 #: includes/class-settings.php:227
 msgid "Trusteed — possible misconfiguration"
 msgstr "Trusteed — posible configuración incorrecta"
 
 #: includes/class-settings.php:231
-msgid ""
-"The remote evaluator is frequently returning 4xx errors. This usually "
-"indicates incorrect credentials or identifiers. Check the following values "
-"on the Trusteed tab:"
-msgstr ""
-"El evaluador remoto está devolviendo errores 4xx con frecuencia. Esto suele "
-"indicar credenciales o identificadores incorrectos. Verifica los siguientes "
-"valores en la pestaña de Trusteed:"
+msgid "The remote evaluator is frequently returning 4xx errors. This usually indicates incorrect credentials or identifiers. Check the following values on the Trusteed tab:"
+msgstr "El evaluador remoto está devolviendo errores 4xx con frecuencia. Esto suele indicar credenciales o identificadores incorrectos. Verifica los siguientes valores en la pestaña de Trusteed:"
 
 #: includes/class-settings.php:335 trusteed-for-woocommerce.php:105
 msgid "Trusteed for WooCommerce"
@@ -335,12 +273,8 @@ msgid "Connect your store to Trusteed"
 msgstr "Conecta tu tienda a Trusteed"
 
 #: includes/class-settings.php:341
-msgid ""
-"Enter your Trusteed email and password. If you don't have an account, we'll "
-"create one automatically."
-msgstr ""
-"Introduce tu correo y contraseña de Trusteed. Si no tienes cuenta la "
-"crearemos automáticamente."
+msgid "Enter your Trusteed email and password. If you don't have an account, we'll create one automatically."
+msgstr "Introduce tu correo y contraseña de Trusteed. Si no tienes cuenta la crearemos automáticamente."
 
 #: includes/class-settings.php:347
 msgid "Your email"
@@ -372,12 +306,8 @@ msgstr "¿Prefieres no usar contraseña?"
 
 #: includes/class-settings.php:398
 #, php-format
-msgid ""
-"Paste an API key from your %s and connect without entering your password in "
-"WordPress."
-msgstr ""
-"Pega una API key de tu %s y conecta sin introducir tu contraseña en "
-"WordPress."
+msgid "Paste an API key from your %s and connect without entering your password in WordPress."
+msgstr "Pega una API key de tu %s y conecta sin introducir tu contraseña en WordPress."
 
 #: includes/class-settings.php:399
 msgid "Trusteed dashboard"
@@ -432,53 +362,40 @@ msgid "Disconnect store"
 msgstr "Desconectar tienda"
 
 #: includes/class-settings.php:546
-msgid ""
-"Fallback mode updated. Reload the plugin (deactivate + activate) to apply."
-msgstr ""
-"Modo de fallo actualizado. Recarga el plugin (deactivate + activate) para "
-"aplicar."
+msgid "Fallback mode updated. Reload the plugin (deactivate + activate) to apply."
+msgstr "Modo de fallo actualizado. Recarga el plugin (deactivate + activate) para aplicar."
 
 #: includes/class-settings.php:553
 msgid "Enforcement"
 msgstr "Enforcement"
 
 #: includes/class-settings.php:554
-msgid "Checkout enforcement (Spec-048)"
-msgstr "Enforcement de checkout (Spec-048)"
+msgid "Checkout protection"
+msgstr "Protección del checkout"
 
 #: includes/class-settings.php:555
-msgid ""
-"When the remote evaluator doesn't respond (timeout, 5xx, invalid payload), "
-"the plugin must decide whether to block checkout or allow it and log "
-"telemetry."
-msgstr ""
-"Cuando el evaluador remoto no responde (timeout, 5xx, payload inválido), el "
-"plugin debe decidir si bloquear el checkout o permitirlo y registrar "
-"telemetría."
+msgid "Choose what happens to a checkout that needs a Trusteed check if Trusteed does not answer in time."
+msgstr "Elige qué pasa con un checkout que necesita la comprobación de Trusteed si Trusteed no responde a tiempo."
 
 #: includes/class-settings.php:561
-msgid "Fallback mode"
-msgstr "Modo de fallo"
+msgid "If Trusteed does not answer"
+msgstr "Si Trusteed no responde"
 
 #: includes/class-settings.php:565
-msgid "Enforce (recommended)"
-msgstr "Enforce (recomendado)"
+msgid "Block (recommended)"
+msgstr "Bloquear (recomendado)"
 
 #: includes/class-settings.php:566
-msgid "evaluator failures block checkout (fail-closed)."
-msgstr "fallos del evaluador bloquean el checkout (fail-closed)."
+msgid "an AI agent that cannot be checked does not get through. Shoppers are not blocked because of it."
+msgstr "un agente de IA que no se puede comprobar no pasa. Los compradores no se bloquean por ello."
 
 #: includes/class-settings.php:570
-msgid "Observe (canary only)"
-msgstr "Observe (solo canary)"
+msgid "Allow and record"
+msgstr "Dejar pasar y registrarlo"
 
 #: includes/class-settings.php:571
-msgid ""
-"allows checkout through and sends telemetry to Prometheus "
-"(enforcement_api_fail_total). Use only during burn-in."
-msgstr ""
-"permite el checkout y envía telemetría a Prometheus "
-"(enforcement_api_fail_total). Usar solo durante burn-in."
+msgid "the checkout usually goes through and the missed check is recorded; an agent whose identity cannot be verified is still stopped. Meant for a short trial period."
+msgstr "el checkout normalmente sigue y la comprobación que faltó queda registrada; un agente cuya identidad no se puede verificar se sigue parando. Pensado para un periodo de prueba corto."
 
 #: includes/class-settings.php:578
 msgid "Save mode"
@@ -493,12 +410,8 @@ msgid "Unlock More Features"
 msgstr "Desbloquea más funciones"
 
 #: includes/class-settings.php:602
-msgid ""
-"Upgrade to a paid plan to get higher rate limits, advanced analytics, and "
-"priority support for your AI agent integrations."
-msgstr ""
-"Mejora a un plan de pago para obtener límites más altos, analíticas "
-"avanzadas y soporte prioritario para tus integraciones con agentes de IA."
+msgid "Upgrade to a paid plan to get higher rate limits, advanced analytics, and priority support for your AI agent integrations."
+msgstr "Mejora a un plan de pago para obtener límites más altos, analíticas avanzadas y soporte prioritario para tus integraciones con agentes de IA."
 
 #: includes/class-settings.php:610
 msgid "View Plans &amp; Pricing"
@@ -572,8 +485,7 @@ msgstr "Error"
 
 #: includes/class-r043-hitl-gate.php:120
 msgid "Agent checkout requires merchant approval (R043 HITL)."
-msgstr ""
-"El checkout del agente requiere aprobación del comerciante (R043 HITL)."
+msgstr "El checkout del agente requiere aprobación del comerciante (R043 HITL)."
 
 #: trusteed-for-woocommerce.php:106
 msgid "requires WooCommerce to be installed and active."
@@ -596,8 +508,8 @@ msgid "Off: do not check signatures"
 msgstr "Desactivado: no comprobar firmas"
 
 #: includes/class-settings.php
-msgid "An AI agent that buys by browsing your site looks like a person unless it signs its requests. If the check fails or is slow, the buyer is treated as a person. This setting applies immediately. For Enforce to work, Trusteed must be running with AGENT_HTTP_SIGNATURE_REQUIRE_CORE_COMPONENTS=true and AGENT_HTTP_SIGNATURE_REPLAY_CACHE_MODE=enforce."
-msgstr "Un agente de IA que compra navegando por tu web parece una persona si no firma sus peticiones. Si la comprobación falla o tarda, se le trata como a una persona. Este ajuste se aplica al instante. Para que Aplicar funcione, Trusteed debe ejecutarse con AGENT_HTTP_SIGNATURE_REQUIRE_CORE_COMPONENTS=true y AGENT_HTTP_SIGNATURE_REPLAY_CACHE_MODE=enforce."
+msgid "An AI agent that buys by browsing your site looks like a person unless it signs its requests. If the check fails or is slow, the buyer is treated as a person. This setting applies immediately. Enforce takes effect once Trusteed enables full signature verification."
+msgstr "Un agente de IA que compra navegando por tu web parece una persona si no firma sus peticiones. Si la comprobación falla o tarda, se le trata como a una persona. Este ajuste se aplica al instante. Aplicar tiene efecto cuando Trusteed activa la verificación completa de firmas."
 
 #: includes/class-settings.php
 msgid "Settings saved."
@@ -618,3 +530,7 @@ msgstr "Encendido: los agentes de navegador pueden leer y rellenar el checkout, 
 #: includes/class-settings.php
 msgid "Adds tools to the checkout page for AI agents that browse your site. They never place the order or charge: the buyer confirms. This setting applies immediately."
 msgstr "Añade herramientas a la página de checkout para los agentes de IA que navegan por tu sitio. Nunca hacen el pedido ni cobran: confirma el comprador. Este ajuste se aplica al instante."
+
+#: includes/class-api-client.php
+msgid "Trusteed is not responding normally right now. Please try again in a few minutes."
+msgstr "Trusteed no está respondiendo con normalidad ahora mismo. Vuelve a intentarlo en unos minutos."

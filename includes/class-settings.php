@@ -160,6 +160,10 @@ class Trusteed_Settings {
 		if ( ! Trusteed_Options::get_option( 'enforcement_installation_stub_notice' ) ) {
 			return;
 		}
+		// Sin conectar, el formulario de alta ya es la llamada a la acción: el aviso sólo aplica a una tienda conectada.
+		if ( '' === (string) Trusteed_Options::get_option( 'merchant_id', '' ) ) {
+			return;
+		}
 		?>
 		<div class="notice notice-error">
 			<p>
@@ -326,7 +330,7 @@ class Trusteed_Settings {
 		}
 
 		$store_slug   = get_option( 'agenticmcp_store_slug', '' );
-		$mcp_endpoint = get_option( 'agenticmcp_mcp_endpoint', '' );
+		$mcp_endpoint = Trusteed_Agent_Discovery::normalize_endpoint( (string) get_option( 'agenticmcp_mcp_endpoint', '' ) );
 		$tier         = get_option( 'agenticmcp_tier', 'FREE' );
 		$last_sync    = get_option( 'agenticmcp_last_sync', '' );
 		$is_connected = ! empty( $store_slug );
@@ -564,24 +568,24 @@ class Trusteed_Settings {
 		$webmcp_on = 'on' === Trusteed_Options::get_option( 'webmcp_checkout_tools', 'off' );
 		?>
 		<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Enforcement', 'trusteed-for-woocommerce' ); ?>" style="margin-top:24px;">
-			<h2><?php esc_html_e( 'Checkout enforcement (Spec-048)', 'trusteed-for-woocommerce' ); ?></h2>
-			<p><?php esc_html_e( 'When the remote evaluator doesn\'t respond (timeout, 5xx, invalid payload), the plugin must decide whether to block checkout or allow it and log telemetry.', 'trusteed-for-woocommerce' ); ?></p>
+			<h2><?php esc_html_e( 'Checkout protection', 'trusteed-for-woocommerce' ); ?></h2>
+			<p><?php esc_html_e( 'Choose what happens to a checkout that needs a Trusteed check if Trusteed does not answer in time.', 'trusteed-for-woocommerce' ); ?></p>
 			<form method="post" action="">
 				<?php wp_nonce_field( 'trusteed_failure_mode_save', 'trusteed_failure_mode_nonce' ); ?>
 				<table class="form-table" role="presentation">
 					<tbody>
 						<tr>
-							<th scope="row"><?php esc_html_e( 'Fallback mode', 'trusteed-for-woocommerce' ); ?></th>
+							<th scope="row"><?php esc_html_e( 'If Trusteed does not answer', 'trusteed-for-woocommerce' ); ?></th>
 							<td>
 								<label style="display:block;margin-bottom:8px;">
 									<input type="radio" name="trusteed_failure_mode" value="enforce" <?php checked( $current, 'enforce' ); ?> />
-									<strong><?php esc_html_e( 'Enforce (recommended)', 'trusteed-for-woocommerce' ); ?></strong> —
-									<?php esc_html_e( 'evaluator failures block checkout (fail-closed).', 'trusteed-for-woocommerce' ); ?>
+									<strong><?php esc_html_e( 'Block (recommended)', 'trusteed-for-woocommerce' ); ?></strong> —
+									<?php esc_html_e( 'an AI agent that cannot be checked does not get through. Shoppers are not blocked because of it.', 'trusteed-for-woocommerce' ); ?>
 								</label>
 								<label style="display:block;">
 									<input type="radio" name="trusteed_failure_mode" value="observe" <?php checked( $current, 'observe' ); ?> />
-									<strong><?php esc_html_e( 'Observe (canary only)', 'trusteed-for-woocommerce' ); ?></strong> —
-									<?php esc_html_e( 'allows checkout through and sends telemetry to Prometheus (enforcement_api_fail_total). Use only during burn-in.', 'trusteed-for-woocommerce' ); ?>
+									<strong><?php esc_html_e( 'Allow and record', 'trusteed-for-woocommerce' ); ?></strong> —
+									<?php esc_html_e( 'the checkout usually goes through and the missed check is recorded; an agent whose identity cannot be verified is still stopped. Meant for a short trial period.', 'trusteed-for-woocommerce' ); ?>
 								</label>
 							</td>
 						</tr>
@@ -593,7 +597,7 @@ class Trusteed_Settings {
 									<option value="enforce" <?php selected( $sig_mode, 'enforce' ); ?>><?php esc_html_e( 'Enforce: treat a verified signature as an AI agent so agent rules apply', 'trusteed-for-woocommerce' ); ?></option>
 									<option value="off" <?php selected( $sig_mode, 'off' ); ?>><?php esc_html_e( 'Off: do not check signatures', 'trusteed-for-woocommerce' ); ?></option>
 								</select>
-								<p class="description"><?php esc_html_e( 'An AI agent that buys by browsing your site looks like a person unless it signs its requests. If the check fails or is slow, the buyer is treated as a person. This setting applies immediately. For Enforce to work, Trusteed must be running with AGENT_HTTP_SIGNATURE_REQUIRE_CORE_COMPONENTS=true and AGENT_HTTP_SIGNATURE_REPLAY_CACHE_MODE=enforce.', 'trusteed-for-woocommerce' ); ?></p>
+								<p class="description"><?php esc_html_e( 'An AI agent that buys by browsing your site looks like a person unless it signs its requests. If the check fails or is slow, the buyer is treated as a person. This setting applies immediately. Enforce takes effect once Trusteed enables full signature verification.', 'trusteed-for-woocommerce' ); ?></p>
 							</td>
 						</tr>
 						<tr>

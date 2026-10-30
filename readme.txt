@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.4
+Stable tag: 2.5.5
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,12 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.5 =
+* Fix: "Test connection" no longer shows "Request error" while Trusteed is serving normally with a non-critical check degraded. A real outage now shows a plain message instead of status codes.
+* Fix: the MCP endpoint shown after connecting (and published in your llms.txt) is the current discovery endpoint on api.trusteed.xyz, not the retired one. Reconnect, or use "Sync catalog now", to refresh the saved value; the llms.txt already publishes the current endpoint after the update.
+* Fix: the "enforcement is not configured" notice no longer appears before the store is connected; the connect form is the next step.
+* Changed: the checkout protection settings are written for merchants (no internal names, metrics or server variables).
 
 = 2.5.4 =
 * Fix: the Home card "Agents" no longer says "No agents" when guest agents exist; it now counts guest agents too, and it no longer adds up a number labelled "calls" that only meant "new in the last 30 days". The Agents list now shows "New in the last 30 days" instead of "N purchases".

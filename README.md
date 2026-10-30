@@ -159,6 +159,12 @@ Investigating the report surfaced something it did not flag: an OAuth scope (`mc
 
 ## Changelog
 
+### 2.5.5
+- Fix: "Test connection" no longer shows "Request error" while Trusteed is serving normally with a non-critical check degraded. A real outage now shows a plain message instead of status codes.
+- Fix: the MCP endpoint shown after connecting (and published in your llms.txt) is the current discovery endpoint on api.trusteed.xyz, not the retired one. Reconnect, or use "Sync catalog now", to refresh the saved value; the llms.txt already publishes the current endpoint after the update.
+- Fix: the "enforcement is not configured" notice no longer appears before the store is connected; the connect form is the next step.
+- Changed: the checkout protection settings are written for merchants (no internal names, metrics or server variables).
+
 ### 2.5.4
 - Fix: the Home card "Agents" no longer says "No agents" when guest agents exist; it now counts guest agents too, and it no longer adds up a number labelled "calls" that only meant "new in the last 30 days". The Agents list now shows "New in the last 30 days" instead of "N purchases".
 - Fix: "Latest sales to agents" on Home was empty when the purchases came through Trusteed without an agent key; it now uses the same rule as the sales summary. "View receipt" now works: it opens that receipt in Sales > AI sales.
