@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.3
+Stable tag: 2.5.4
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,17 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.4 =
+* Fix: the Home card "Agents" no longer says "No agents" when guest agents exist; it now counts guest agents too, and it no longer adds up a number labelled "calls" that only meant "new in the last 30 days". The Agents list now shows "New in the last 30 days" instead of "N purchases".
+* Fix: "Latest sales to agents" on Home was empty when the purchases came through Trusteed without an agent key; it now uses the same rule as the sales summary. "View receipt" now works: it opens that receipt in Sales > AI sales.
+* Fix: Trust panel. "Calculated on" shows when the score was calculated (it showed the time of the page load). Orders are labelled "with / without an identified agent" instead of "from humans". Returns and shipping are shown as done, missing, or "We could not check it on your store" (neutral, not counted) instead of a green tick when the store could not be read. The button that creates your signing key is now called "Activate my protection".
+* Fix: Rules. Unticking a box now sends an explicit "off"; before, the field was erased and the rule's default (often "on") kept applying. Rule descriptions that said "we review" or "we wait" now say what activating does: the order is blocked. The provisional-list notice no longer promises that changes will be saved later.
+* Fix: Settings > General. On WooCommerce the "failure mode" selector (which did not control checkout) is replaced by a link to WooCommerce > Trusteed, where the real setting lives.
+* Fix: texts that promised more than the product does: receipts no longer claim a time-stamp from a third party (they carry Trusteed's signature and issue time), the keys screen no longer says "change them every 90 days" without a button, "Watch" on an agent is described as a note for you that does not restrict purchases, and the payment-order notice no longer says you choose the order there.
+* Fix: dates in Orders, AI sales, Keys and other screens follow the panel language (they were always Spanish). The receipts "learn more" link follows the panel language too.
+* New: when the store is not connected yet, the panel shows "Connect your store first" with a link to WooCommerce > Trusteed instead of a wall of "could not load" cards.
+* Fix: the password field on the connect form now states the real requirement for new accounts (at least 10 characters with upper and lower case letters, numbers and symbols).
 
 = 2.5.3 =
 * New: the plugin now answers `/llms.txt` on your site (only when that address does not exist yet) and adds a link to it in the page header. It points AI agents to your store's MCP endpoint and tells them that buying through the website's own buttons carries no verifiable agent identity. It is plain public text, it changes no checkout behaviour, and it does nothing until the store is connected to Trusteed.

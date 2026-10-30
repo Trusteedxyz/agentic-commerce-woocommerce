@@ -366,7 +366,7 @@ class Trusteed_Settings {
 									id="amcp-onboard-password"
 									class="regular-text"
 									autocomplete="new-password"
-									placeholder="<?php esc_attr_e( 'Minimum 8 characters', 'trusteed-for-woocommerce' ); ?>"
+									placeholder="<?php esc_attr_e( 'At least 10 characters, with upper and lower case letters, numbers and symbols', 'trusteed-for-woocommerce' ); ?>"
 								/>
 								<p class="description">
 									<?php esc_html_e( 'If you already have a Trusteed account, use the same password.', 'trusteed-for-woocommerce' ); ?>

@@ -323,7 +323,7 @@ msgid "Password"
 msgstr ""
 
 #: includes/class-settings.php:369
-msgid "Minimum 8 characters"
+msgid "At least 10 characters, with upper and lower case letters, numbers and symbols"
 msgstr ""
 
 #: includes/class-settings.php:372

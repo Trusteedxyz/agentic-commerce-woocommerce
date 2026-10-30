@@ -351,8 +351,8 @@ msgid "Password"
 msgstr "Contraseña"
 
 #: includes/class-settings.php:369
-msgid "Minimum 8 characters"
-msgstr "Mínimo 8 caracteres"
+msgid "At least 10 characters, with upper and lower case letters, numbers and symbols"
+msgstr "Mínimo 10 caracteres, con mayúsculas, minúsculas, números y símbolos"
 
 #: includes/class-settings.php:372
 msgid "If you already have a Trusteed account, use the same password."
