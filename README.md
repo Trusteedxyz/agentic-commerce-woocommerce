@@ -159,6 +159,10 @@ Investigating the report surfaced something it did not flag: an OAuth scope (`mc
 
 ## Changelog
 
+### 2.5.3
+- New: the plugin now answers `/llms.txt` on your site (only when that address does not exist yet) and adds a link to it in the page header. It points AI agents to your store's MCP endpoint and tells them that buying through the website's own buttons carries no verifiable agent identity. It is plain public text, it changes no checkout behaviour, and it does nothing until the store is connected to Trusteed.
+- New: when an agent order is created and still waits for payment, the agent orders endpoint now also returns `payment_url`, the WooCommerce pay-for-order link, so a person can pay it with your own payment methods. It is only returned while the order is Pending payment, and it is never used to take payment on the agent's behalf.
+
 ### 2.5.2
 - New: browser agents (browser-use style) that sign their requests with RFC 9421 HTTP Message Signatures are now recognised at checkout, according to the `browser_agent_signature_mode` setting. This release also contains the change below, so it bundles two independent changes.
 - Change: when the store's rules block an order that an agent placed through Trusteed, the plugin now tells Trusteed why (`reason_category`, `rule_code`, `reason`, `next_action` on the `422 rule_blocked` answer), so the agent knows what to do next instead of getting a bare refusal. With a Trusteed server that sends `agent_reason` the reason is the server's verdict. With an older server the plugin derives a generic reason itself (`merchant_policy` or `checks_unavailable`) and marks it with `reason_source: plugin_fallback` so it is never taken for the server's verdict; it does not stay silent. `rule_code` is kept only if it looks like a rule code (up to 64 characters); anything else is dropped. An error that is not a rule block no longer answers as `rule_blocked` (it uses `order_invalid`).

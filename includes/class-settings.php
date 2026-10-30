@@ -549,6 +549,7 @@ class Trusteed_Settings {
 					Trusteed_Browser_Agent_Signature::normalize_mode( sanitize_text_field( wp_unslash( $_POST['trusteed_browser_agent_signature_mode'] ) ) ) // phpcs:ignore WordPress.Security.NonceVerification
 				);
 			}
+			update_option( 'trusteed_webmcp_checkout_tools', isset( $_POST['trusteed_webmcp_checkout_tools'] ) && 'on' === sanitize_text_field( wp_unslash( $_POST['trusteed_webmcp_checkout_tools'] ) ) ? 'on' : 'off' ); // phpcs:ignore WordPress.Security.NonceVerification
 			// Solo el modo de fallo se lee al arrancar el plugin; el de firmas aplica al instante.
 			echo '<div class="notice notice-success is-dismissible"><p>'
 				. ( $failure_mode_changed
@@ -560,6 +561,7 @@ class Trusteed_Settings {
 		$current = (string) Trusteed_Options::get_option( 'failure_mode', 'enforce' );
 		$current = 'observe' === $current ? 'observe' : 'enforce';
 		$sig_mode = Trusteed_Browser_Agent_Signature::normalize_mode( (string) Trusteed_Options::get_option( 'browser_agent_signature_mode', Trusteed_Browser_Agent_Signature::DEFAULT_MODE ) );
+		$webmcp_on = 'on' === Trusteed_Options::get_option( 'webmcp_checkout_tools', 'off' );
 		?>
 		<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Enforcement', 'trusteed-for-woocommerce' ); ?>" style="margin-top:24px;">
 			<h2><?php esc_html_e( 'Checkout enforcement (Spec-048)', 'trusteed-for-woocommerce' ); ?></h2>
@@ -592,6 +594,16 @@ class Trusteed_Settings {
 									<option value="off" <?php selected( $sig_mode, 'off' ); ?>><?php esc_html_e( 'Off: do not check signatures', 'trusteed-for-woocommerce' ); ?></option>
 								</select>
 								<p class="description"><?php esc_html_e( 'An AI agent that buys by browsing your site looks like a person unless it signs its requests. If the check fails or is slow, the buyer is treated as a person. This setting applies immediately. For Enforce to work, Trusteed must be running with AGENT_HTTP_SIGNATURE_REQUIRE_CORE_COMPONENTS=true and AGENT_HTTP_SIGNATURE_REPLAY_CACHE_MODE=enforce.', 'trusteed-for-woocommerce' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'WebMCP checkout tools', 'trusteed-for-woocommerce' ); ?></th>
+							<td>
+								<select name="trusteed_webmcp_checkout_tools">
+									<option value="off" <?php selected( $webmcp_on, false ); ?>><?php esc_html_e( 'Off: do not offer checkout tools to browser agents', 'trusteed-for-woocommerce' ); ?></option>
+									<option value="on" <?php selected( $webmcp_on, true ); ?>><?php esc_html_e( 'On: browser agents can read and fill the checkout, and your agent rules apply to them', 'trusteed-for-woocommerce' ); ?></option>
+								</select>
+								<p class="description"><?php esc_html_e( 'Adds tools to the checkout page for AI agents that browse your site. They never place the order or charge: the buyer confirms. This setting applies immediately.', 'trusteed-for-woocommerce' ); ?></p>
 							</td>
 						</tr>
 					</tbody>

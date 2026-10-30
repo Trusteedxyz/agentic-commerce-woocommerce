@@ -562,3 +562,19 @@ msgstr ""
 #: includes/class-settings.php
 msgid "Settings saved."
 msgstr ""
+
+#: includes/class-settings.php
+msgid "WebMCP checkout tools"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Off: do not offer checkout tools to browser agents"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "On: browser agents can read and fill the checkout, and your agent rules apply to them"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Adds tools to the checkout page for AI agents that browse your site. They never place the order or charge: the buyer confirms. This setting applies immediately."
+msgstr ""

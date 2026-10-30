@@ -209,6 +209,39 @@ final class AgentOrdersEndpointTest extends TestCase
         $this->assertSame('did:web:agent.example', $this->port->rules_agent_did);
     }
 
+    public function test_orders_pending_con_enlace_de_pago_lo_devuelve_como_payment_url(): void
+    {
+        $this->port->payment_url = 'https://tienda.example/checkout/order-pay/100/?pay_for_order=true&key=wc_order_x';
+        $res = $this->endpoint->handle_create_order($this->signed($this->orderBody()));
+        $this->assertSame(201, $res->get_status());
+        $this->assertSame($this->port->payment_url, $res->get_data()['payment_url']);
+    }
+
+    public function test_orders_sin_enlace_de_pago_no_lleva_la_clave(): void
+    {
+        $res = $this->endpoint->handle_create_order($this->signed($this->orderBody()));
+        $this->assertArrayNotHasKey('payment_url', $res->get_data());
+    }
+
+    public function test_orders_con_enlace_vacio_o_no_texto_no_lleva_la_clave(): void
+    {
+        foreach (['', 123] as $i => $raw) {
+            $id = $this->createdOrderId();
+            $this->port->orders[$id]['payment_url'] = $raw;
+            $res = $this->endpoint->handle_create_order($this->signed($this->orderBody(['trusteed_order_id' => $this->port->orders[$id]['trusteed_order_id']])));
+            $this->assertArrayNotHasKey('payment_url', $res->get_data(), 'enlace: ' . json_encode($raw));
+        }
+    }
+
+    public function test_pedido_ya_pagado_no_expone_enlace_de_pago_aunque_el_puerto_lo_traiga(): void
+    {
+        $id = $this->createdOrderId();
+        $this->port->orders[$id]['payment_url'] = 'https://tienda.example/checkout/order-pay/' . $id . '/?key=k';
+        $res = $this->endpoint->handle_paid($this->signed($this->paidBody(), ['id' => (string) $id]));
+        $this->assertSame(200, $res->get_status());
+        $this->assertArrayNotHasKey('payment_url', $res->get_data());
+    }
+
     public function test_reenvia_el_nivel_valido_al_evaluar(): void
     {
         $res = $this->endpoint->handle_create_order($this->signed($this->orderBody(['agent_identity_level' => 'verified_signature'])));
@@ -321,6 +354,15 @@ final class AgentOrdersEndpointTest extends TestCase
         $this->assertSame(['kind' => 'sku', 'value' => 'ABC-1'], $err['blocked_item']);
         $this->assertSame(2, $err['published_limit']['units']);
         $this->assertFalse($err['human_checkout']['available']);
+    }
+
+    public function test_orders_bloqueado_reenvia_limit_exceeded_en_el_422(): void
+    {
+        $le = ['rule' => 'R038', 'rule_code' => 'R038.max-items-per-order', 'rule_name' => 'n', 'kind' => 'max_items_per_order', 'limit' => 5, 'observed' => 10, 'unit' => 'units', 'message' => 'Regla R038: máximo 5; lleva 10.'];
+        $this->port->rules_decision     = 'BLOCK';
+        $this->port->rules_agent_reason = ['reason_category' => 'order_limits', 'reason' => 'x', 'next_action' => 'adjust_order', 'limit_exceeded' => $le];
+        $err = $this->endpoint->handle_create_order($this->signed($this->orderBody()))->get_data()['error'];
+        $this->assertSame($le, $err['limit_exceeded']);
     }
 
     public function test_orders_bloqueado_sin_motivo_del_servidor_degrada_sin_campos_inventados(): void

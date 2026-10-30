@@ -36,7 +36,7 @@ final class Trusteed_Browser_Agent_Signature {
 	const KNOWN_STATUSES  = array( 'verified', 'spoofed', 'unverified', 'skipped' );
 
 	/** Nunca se reenvían, aunque `Signature-Input` los cubra (credenciales del navegador). */
-	const NEVER_FORWARD = array( 'cookie', 'authorization', 'proxy-authorization', 'x-wp-nonce' );
+	const NEVER_FORWARD = array( 'cookie', 'authorization', 'proxy-authorization', 'x-wp-nonce', 'x-trusteed-nonce' );
 
 	private string $api_base;
 	private string $merchant_id;

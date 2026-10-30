@@ -149,6 +149,7 @@ class Trusteed_Plugin {
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-crypto-helper.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-api-client.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-domain-challenge.php';
+		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-agent-discovery.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-disconnect.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-catalog-sync.php';
 		require_once TRUSTEED_PLUGIN_DIR . 'includes/class-cart-bridge.php';
@@ -290,9 +291,20 @@ class Trusteed_Plugin {
 		// Token del reto de dominio al reconectar (`/.well-known/amcp-verify.txt`).
 		Trusteed_Domain_Challenge::register();
 
+		// 2.5.3 — `/llms.txt` y `<link>` que dicen dónde comprar como agente.
+		( new Trusteed_Agent_Discovery() )->init();
+
 		// REST API endpoints for cart bridge and billing webhooks.
 		add_action( 'rest_api_init', array( $this->cart_bridge, 'register_routes' ) );
 		add_action( 'rest_api_init', array( $this->billing_webhooks, 'register_routes' ) );
+
+		// WebMCP checkout tools (off by default): route only exists when enabled.
+		if ( 'on' === Trusteed_Options::get_option( 'webmcp_checkout_tools', 'off' ) ) {
+			require_once TRUSTEED_PLUGIN_DIR . 'includes/class-webmcp-checkout.php';
+			$webmcp_checkout = new Trusteed_Webmcp_Checkout();
+			add_action( 'rest_api_init', array( $webmcp_checkout, 'register_routes' ) );
+			add_action( 'wp_enqueue_scripts', array( $webmcp_checkout, 'enqueue' ) );
+		}
 
 		// Sync products on save/update/delete/stock change.
 		add_action( 'save_post_product', array( $this->catalog_sync, 'on_product_save' ), 10, 3 );

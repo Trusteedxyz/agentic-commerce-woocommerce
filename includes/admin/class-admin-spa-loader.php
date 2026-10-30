@@ -89,6 +89,17 @@ class Trusteed_Admin_Spa_Loader {
 	}
 
 	/**
+	 * Cache-busting version for a bundle file: its mtime, so it changes on every update.
+	 *
+	 * @param string $path Absolute path of the file.
+	 * @return string
+	 */
+	private function asset_version( string $path ): string {
+		$mtime = is_file( $path ) ? filemtime( $path ) : false;
+		return false === $mtime ? '0' : (string) $mtime;
+	}
+
+	/**
 	 * Conditionally enqueue the SPA bundle on Trusteed admin pages.
 	 *
 	 * Hooked to admin_enqueue_scripts.
@@ -132,13 +143,16 @@ class Trusteed_Admin_Spa_Loader {
 		$base_url   = $this->plugin_url . 'assets/admin-spa/';
 		$script_url = $base_url . $entry['file'];
 
-		wp_enqueue_script( self::HANDLE_PREFIX, $script_url, array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters
+		$asset_dir = $this->plugin_path . 'assets/admin-spa/';
+
+		// El bundle tiene nombre estable: sin versión el navegador sigue con el JS viejo tras actualizar.
+		wp_enqueue_script( self::HANDLE_PREFIX, $script_url, array(), $this->asset_version( $asset_dir . $entry['file'] ), true );
 
 		// Enqueue all CSS chunks referenced in the manifest entry.
 		foreach ( $entry['css'] ?? array() as $css_file ) {
 			$css_handle = self::HANDLE_PREFIX . '-' . md5( $css_file );
 			$css_url    = $base_url . $css_file;
-			wp_enqueue_style( $css_handle, $css_url, array(), null ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters
+			wp_enqueue_style( $css_handle, $css_url, array(), $this->asset_version( $asset_dir . $css_file ) );
 		}
 
 		// Pass only public, non-sensitive config to the SPA (constraint C-003).

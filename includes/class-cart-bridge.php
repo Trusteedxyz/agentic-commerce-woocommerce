@@ -144,6 +144,15 @@ class Trusteed_Cart_Bridge {
 	const SESSION_AGENTIC_ORIGIN = 'trusteed_agentic_origin';
 
 	/**
+	 * Clave de sesión WC con el canal por el que el agente llegó ('webmcp').
+	 * Sólo la escribe el servidor (endpoint WebMCP de checkout).
+	 *
+	 * @since 2.6.0
+	 * @var string
+	 */
+	const SESSION_AGENTIC_CHANNEL = 'trusteed_agentic_channel';
+
+	/**
 	 * Handle POST /wp-json/trusteed/v1/cart (legacy alias: /wp-json/agenticmcp/v1/cart).
 	 *
 	 * Validates each line item, builds a native WooCommerce checkout URL,

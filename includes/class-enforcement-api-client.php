@@ -128,6 +128,8 @@ class Trusteed_Eval_Result {
 			'next_action'     => 64,
 		);
 		$out    = array();
+		// Se valida antes: un limit_exceeded válido es lo que permite cifras en `reason` (bloqueos order_limits).
+		$limit_exceeded = self::sanitize_limit_exceeded( $raw['limit_exceeded'] ?? null );
 		foreach ( $limits as $key => $max ) {
 			if ( ! isset( $raw[ $key ] ) || ! is_string( $raw[ $key ] ) ) {
 				continue;
@@ -150,8 +152,9 @@ class Trusteed_Eval_Result {
 			if ( '' === $clean || preg_match_all( '/./su', $clean ) > $max ) {
 				continue;
 			}
-			// La frase del contrato no lleva digitos (umbrales), '<' '>' ni entidades HTML.
-			if ( 'reason' === $key && 1 === preg_match( '/[\p{Nd}<>]|&#?[A-Za-z0-9]+;/u', $clean ) ) {
+			// La frase del contrato no lleva digitos (umbrales) salvo con limit_exceeded válido; nunca '<' '>' ni entidades HTML.
+			$digits = null === $limit_exceeded ? '\p{Nd}' : '';
+			if ( 'reason' === $key && 1 === preg_match( '/[' . $digits . '<>]|&#?[A-Za-z0-9]+;/u', $clean ) ) {
 				return null;
 			}
 			$out[ $key ] = $clean;
@@ -166,6 +169,7 @@ class Trusteed_Eval_Result {
 			'human_checkout'  => self::sanitize_human_checkout( $raw['human_checkout'] ?? null ),
 			'blocked_item'    => self::sanitize_blocked_item( $raw['blocked_item'] ?? null ),
 			'published_limit' => self::sanitize_published_limit( $raw['published_limit'] ?? null ),
+			'limit_exceeded'  => $limit_exceeded,
 		);
 		return array_merge( $out, array_filter( $extras, static fn( $v ): bool => null !== $v ) );
 	}
@@ -233,6 +237,38 @@ class Trusteed_Eval_Result {
 		return null;
 	}
 
+	/** @param mixed $raw */
+	private static function sanitize_limit_exceeded( $raw ): ?array {
+		if ( ! is_array( $raw ) ) {
+			return null;
+		}
+		$kind = $raw['kind'] ?? null;
+		// Un campo inválido descarta TODO el bloque. unit se valida contra el enum, sin cruzarlo con kind.
+		if ( ! in_array( $kind, array( 'max_cart_value', 'max_line_value', 'max_items_per_order', 'max_units_per_line' ), true )
+			|| ! is_string( $raw['rule'] ?? null ) || 1 !== preg_match( '/^R\d{3}$/D', $raw['rule'] )
+			|| ! is_string( $raw['rule_code'] ?? null ) || 1 !== preg_match( '/^R\d{3}\.[a-z0-9-]{1,60}$/D', $raw['rule_code'] )
+			|| ! is_int( $raw['limit'] ?? null ) || $raw['limit'] < 0
+			|| ! is_int( $raw['observed'] ?? null ) || $raw['observed'] < 0
+			|| ! in_array( $raw['unit'] ?? null, array( 'minor_units_of_store_currency', 'units' ), true ) ) {
+			return null;
+		}
+		$name    = self::clean_text( $raw['rule_name'] ?? null, 80 );
+		$message = self::clean_text( $raw['message'] ?? null, 400 );
+		if ( null === $name || null === $message ) {
+			return null;
+		}
+		return array(
+			'rule'      => $raw['rule'],
+			'rule_code' => $raw['rule_code'],
+			'rule_name' => $name,
+			'kind'      => $kind,
+			'limit'     => $raw['limit'],
+			'observed'  => $raw['observed'],
+			'unit'      => $raw['unit'],
+			'message'   => $message,
+		);
+	}
+
 	/**
 	 * Frase breve para la persona que compra: elemento bloqueado, límite y salida humana.
 	 * Texto plano ya escapado (esc_html); vacío si el servidor no mandó nada de esto.
@@ -246,7 +282,10 @@ class Trusteed_Eval_Result {
 			$parts[] = 'Item: ' . $esc( (string) $reason['blocked_item']['value'] ) . '.';
 		}
 		$limit = $reason['published_limit'] ?? null;
-		if ( is_array( $limit ) && 'max_cart_value' === $limit['kind'] ) {
+		if ( isset( $reason['limit_exceeded']['message'] ) ) {
+			// Texto del servidor (ya validado, con cifras): sustituye a la línea genérica de published_limit.
+			$parts[] = $esc( (string) $reason['limit_exceeded']['message'] );
+		} elseif ( is_array( $limit ) && 'max_cart_value' === $limit['kind'] ) {
 			$cur     = function_exists( 'get_woocommerce_currency' ) ? (string) get_woocommerce_currency() : '';
 			$parts[] = 'Limit: ' . $esc( trim( number_format( $limit['amount_cents'] / 100, 2, '.', '' ) . ' ' . $cur ) ) . '.';
 		} elseif ( is_array( $limit ) && 'max_units_per_line' === $limit['kind'] ) {

@@ -233,13 +233,30 @@ final class HumanCheckoutNotBlockedByOutageTest extends TestCase
         self::assertNull($this->session->get(Trusteed_Cart_Bridge::SESSION_AGENT_ID), 'la sesión sí se borra');
     }
 
-    public function test_session_markers_are_cleared_after_evaluation(): void
+    public function test_session_markers_are_cleared_after_an_allow(): void
     {
         $this->session->set(Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, '1');
+        $this->session->set(Trusteed_Cart_Bridge::SESSION_AGENTIC_CHANNEL, 'webmcp');
         $this->session->set(Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, 'aGVhZGVy.cGF5bG9hZA.c2ln');
-        $this->run_eval();
+        self::assertSame('ALLOW', $this->run_eval('merchant-1', 'observe'));
         self::assertNull($this->session->get(Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN));
+        self::assertNull($this->session->get(Trusteed_Cart_Bridge::SESSION_AGENTIC_CHANNEL));
         self::assertNull($this->session->get(Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN));
+    }
+
+    /** Un agente retenido que reenvía sin llamar a ninguna tool sigue evaluándose como agente. */
+    public function test_agentic_mark_survives_a_block_and_the_resubmit_is_still_an_agent(): void
+    {
+        $this->session->set(Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, '1');
+        $this->session->set(Trusteed_Cart_Bridge::SESSION_AGENTIC_CHANNEL, 'webmcp');
+        $this->session->set(Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, 'aGVhZGVy.cGF5bG9hZA.c2ln');
+        self::assertSame(Trusteed_Checkout_Enforcer::DECISION_UNAVAILABLE, $this->run_eval());
+        self::assertSame('1', $this->session->get(Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN));
+        self::assertSame('webmcp', $this->session->get(Trusteed_Cart_Bridge::SESSION_AGENTIC_CHANNEL));
+        self::assertNull($this->session->get(Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN), 'el token sí se consume');
+        // Reenvío sin tool: sigue siendo agente.
+        self::assertSame(Trusteed_Checkout_Enforcer::DECISION_UNAVAILABLE, $this->run_eval());
+        self::assertSame('agentic_endpoint', $this->client->last_payload['endpointClass']);
     }
 
     /**

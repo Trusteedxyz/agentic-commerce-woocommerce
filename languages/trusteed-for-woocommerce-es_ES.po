@@ -602,3 +602,19 @@ msgstr "Un agente de IA que compra navegando por tu web parece una persona si no
 #: includes/class-settings.php
 msgid "Settings saved."
 msgstr "Ajustes guardados."
+
+#: includes/class-settings.php
+msgid "WebMCP checkout tools"
+msgstr "Herramientas WebMCP del checkout"
+
+#: includes/class-settings.php
+msgid "Off: do not offer checkout tools to browser agents"
+msgstr "Apagado: no ofrecer herramientas de checkout a los agentes de navegador"
+
+#: includes/class-settings.php
+msgid "On: browser agents can read and fill the checkout, and your agent rules apply to them"
+msgstr "Encendido: los agentes de navegador pueden leer y rellenar el checkout, y se les aplican tus reglas de agente"
+
+#: includes/class-settings.php
+msgid "Adds tools to the checkout page for AI agents that browse your site. They never place the order or charge: the buyer confirms. This setting applies immediately."
+msgstr "Añade herramientas a la página de checkout para los agentes de IA que navegan por tu sitio. Nunca hacen el pedido ni cobran: confirma el comprador. Este ajuste se aplica al instante."

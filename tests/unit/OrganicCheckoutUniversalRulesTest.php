@@ -95,7 +95,7 @@ final class OrganicCheckoutUniversalRulesTest extends TestCase
     public function test_session_set_calls_are_null_safe(): void
     {
         $src = $this->enforcerSource();
-        $pos = strpos($src, 'Clear session regardless of decision');
+        $pos = strpos($src, 'Id/token se limpian sin importar la decisión');
         $this->assertNotFalse($pos);
         $snippet = substr($src, $pos, 200);
         $this->assertStringContainsString('if ( WC()->session ) {', $snippet);

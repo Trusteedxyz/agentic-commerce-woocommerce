@@ -465,13 +465,19 @@ final class Trusteed_Agent_Orders_Endpoint {
 	 * @return array<string,mixed>
 	 */
 	private static function order_payload( array $order ): array {
-		return array(
+		$payload = array(
 			'order_id'     => (int) $order['id'],
 			'order_number' => (string) $order['number'],
 			'total_cents'  => (int) $order['total_cents'],
 			'currency'     => (string) $order['currency'],
 			'status'       => (string) $order['status'],
 		);
+		// Enlace para que una persona pague el pedido; solo mientras sigue pendiente de pago.
+		$url = $order['payment_url'] ?? null;
+		if ( 'pending' === $payload['status'] && is_string( $url ) && '' !== $url ) {
+			$payload['payment_url'] = $url;
+		}
+		return $payload;
 	}
 
 	/**
@@ -603,7 +609,7 @@ final class Trusteed_Agent_Orders_Endpoint {
 				$data['error'][ $key ] = $reason[ $key ];
 			}
 		}
-		foreach ( array( 'human_checkout', 'blocked_item', 'published_limit' ) as $key ) {
+		foreach ( array( 'human_checkout', 'blocked_item', 'published_limit', 'limit_exceeded' ) as $key ) {
 			if ( isset( $reason[ $key ] ) && is_array( $reason[ $key ] ) ) {
 				$data['error'][ $key ] = $reason[ $key ];
 			}

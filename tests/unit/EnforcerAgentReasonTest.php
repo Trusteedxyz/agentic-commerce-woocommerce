@@ -315,4 +315,65 @@ final class EnforcerAgentReasonTest extends TestCase
         self::assertSame('No online checkout.', Trusteed_Eval_Result::human_detail(['human_checkout' => ['available' => false, 'message' => 'No online checkout.']]));
         self::assertSame('', Trusteed_Eval_Result::human_detail(self::BASE));
     }
+
+    // ── limit_exceeded ──
+
+    private const LIMIT_EXCEEDED = [
+        'rule' => 'R038', 'rule_code' => 'R038.max-items-per-order', 'rule_name' => 'Máximo de artículos por pedido',
+        'kind' => 'max_items_per_order', 'limit' => 5, 'observed' => 10, 'unit' => 'units',
+        'message' => 'Regla R038 (Máximo de artículos por pedido): el comercio acepta como máximo 5 artículos por pedido de un agente; este pedido lleva 10.',
+    ];
+
+    public function test_limit_exceeded_valido_pasa_y_permite_cifras_en_reason(): void
+    {
+        $c = Trusteed_Eval_Result::sanitize_agent_reason(['reason_category' => 'order_limits', 'reason' => 'Max 5 items per order.', 'next_action' => 'adjust_order', 'rule_code' => 'R038.max-items-per-order', 'limit_exceeded' => self::LIMIT_EXCEEDED]);
+        self::assertSame(self::LIMIT_EXCEEDED, $c['limit_exceeded']);
+        self::assertSame('Max 5 items per order.', $c['reason']);
+        self::assertSame('R038.max-items-per-order', $c['rule_code']);
+    }
+
+    /** @return array<string,array{0:string,1:mixed}> */
+    public static function limit_exceeded_invalidos(): array
+    {
+        return array(
+            'rule mal'         => array('rule', 'R38'),
+            'rule_code mal'    => array('rule_code', 'R038'),
+            'rule_code mayus'  => array('rule_code', 'R038.Max'),
+            'rule_code largo'  => array('rule_code', 'R038.' . str_repeat('a', 61)),
+            'rule_name vacio'  => array('rule_name', ''),
+            'rule_name largo'  => array('rule_name', str_repeat('a', 81)),
+            'kind desconocido' => array('kind', 'max_x'),
+            'limit string'     => array('limit', '5'),
+            'limit negativo'   => array('limit', -1),
+            'observed float'   => array('observed', 1.5),
+            'unit incorrecto'  => array('unit', 'eur'),
+            'message vacio'    => array('message', ''),
+            'message largo'    => array('message', str_repeat('a', 401)),
+            'message con <'    => array('message', 'a <b>10</b>'),
+        );
+    }
+
+    /** @dataProvider limit_exceeded_invalidos */
+    public function test_limit_exceeded_con_un_campo_invalido_se_descarta_entero(string $field, $value): void
+    {
+        $c = Trusteed_Eval_Result::sanitize_agent_reason(self::BASE + ['blocked_item' => ['kind' => 'sku', 'value' => 'ABC-1'], 'limit_exceeded' => array_merge(self::LIMIT_EXCEEDED, [$field => $value])]);
+        self::assertNotNull($c);
+        self::assertArrayNotHasKey('limit_exceeded', $c);
+        self::assertSame(['kind' => 'sku', 'value' => 'ABC-1'], $c['blocked_item']);
+    }
+
+    public function test_sin_limit_exceeded_valido_reason_con_cifras_sigue_descartando_el_bloque(): void
+    {
+        $r = ['reason_category' => 'order_limits', 'reason' => 'Max 5 items.', 'next_action' => 'adjust_order'];
+        self::assertNull(Trusteed_Eval_Result::sanitize_agent_reason($r));
+        self::assertNull(Trusteed_Eval_Result::sanitize_agent_reason($r + ['limit_exceeded' => array_merge(self::LIMIT_EXCEEDED, ['limit' => -1])]));
+    }
+
+    public function test_limit_exceeded_se_reenvia_y_se_muestra_escapado(): void
+    {
+        $reason = self::BASE + ['limit_exceeded' => ['message' => 'Regla R038 (A & B): como máximo 5; lleva 10.'] + self::LIMIT_EXCEEDED];
+        [, $e] = $this->eval_with(new Trusteed_Eval_Result(Trusteed_Eval_Outcome::BLOCK, 'ok', 200, null, Trusteed_Eval_Result::sanitize_agent_reason($reason)));
+        self::assertEquals($reason['limit_exceeded'], self::additional_data($e)['limit_exceeded']);
+        self::assertSame('Regla R038 (A &amp; B): como máximo 5; lleva 10.', Trusteed_Eval_Result::human_detail($reason));
+    }
 }

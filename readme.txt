@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.2
+Stable tag: 2.5.3
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,10 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.3 =
+* New: the plugin now answers `/llms.txt` on your site (only when that address does not exist yet) and adds a link to it in the page header. It points AI agents to your store's MCP endpoint and tells them that buying through the website's own buttons carries no verifiable agent identity. It is plain public text, it changes no checkout behaviour, and it does nothing until the store is connected to Trusteed.
+* New: when an agent order is created and still waits for payment, the agent orders endpoint now also returns `payment_url`, the WooCommerce pay-for-order link, so a person can pay it with your own payment methods. It is only returned while the order is Pending payment, and it is never used to take payment on the agent's behalf.
 
 = 2.5.2 =
 * New: browser agents (browser-use style) that sign their requests with RFC 9421 HTTP Message Signatures are now recognised at checkout, according to the `browser_agent_signature_mode` setting. This release also contains the change below, so it bundles two independent changes.

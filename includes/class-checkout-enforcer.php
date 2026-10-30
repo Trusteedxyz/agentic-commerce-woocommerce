@@ -37,12 +37,23 @@ class Trusteed_Checkout_Enforcer {
 	/** 2.3.6 (5b): our own failure closed an agent — not a rule; own message. */
 	const DECISION_UNAVAILABLE = 'UNAVAILABLE';
 
+	/** Meta del pedido con el canal por el que el agente llegó ('webmcp'). */
+	const CHANNEL_META_KEY = '_trusteed_agentic_channel';
+
 	/** 2.5.2: mismas frases que AGENT_REASON_TEXT del servidor (merchant_policy / checks_unavailable). */
 	const REASON_MERCHANT_POLICY    = 'Checkout declined: the merchant does not accept this purchase from automated agents. The order was not placed and nothing was charged. Escalate to a human buyer.';
 	const REASON_CHECKS_UNAVAILABLE = 'Checkout not completed: the checks for this order could not run right now. This is not a merchant decision, the order was not placed and nothing was charged. Wait a few minutes and retry.';
 
 	/** 2.3.6 (5b): DID proven by a VALID token in the last run_evaluation(); '' otherwise. */
 	private string $verified_did = '';
+
+	/**
+	 * Canal por el que llegó el agente ('webmcp'), leído de la sesión ANTES de limpiarla.
+	 * Sólo lo escribe el servidor; '' si no hay.
+	 *
+	 * @var string
+	 */
+	private string $agentic_channel = '';
 
 	/**
 	 * 2.4.0: sólo lo activa evaluate_order_for_agent_api() (pedido creado por la API de
@@ -162,6 +173,11 @@ class Trusteed_Checkout_Enforcer {
 		// resuelto (p. ej. `permissive` de otra plataforma) cierra: 'enforce'.
 		$this->failure_mode    = Trusteed_Enforcement_Failure_Policy::normalize_failure_mode( $failure_mode ) ?? 'enforce';
 		$this->event_webhook   = $event_webhook;
+	}
+
+	/** 2.6.0: canal de agente ('webmcp') del checkout evaluado; '' si no hay. */
+	public function agentic_channel(): string {
+		return $this->agentic_channel;
 	}
 
 	/** 2.5.2: JSON {status, provider, keyId} de la firma verificada en esta petición; '' si no hubo. */
@@ -350,6 +366,7 @@ class Trusteed_Checkout_Enforcer {
 		}
 
 		Trusteed_Browser_Agent_Signature::stamp_next_classic_order( $this->browser_signature_meta() );
+		$this->stamp_next_classic_channel();
 
 		// ALLOW path — delegate to Trusteed_Classic_Meta_Persister which registers
 		// a one-shot `woocommerce_checkout_create_order` hook to stamp the
@@ -427,6 +444,10 @@ class Trusteed_Checkout_Enforcer {
 			$order->update_meta_data( Trusteed_Browser_Agent_Signature::META_KEY, $this->browser_signature_meta() );
 		}
 
+		if ( '' !== $this->agentic_channel ) {
+			$order->update_meta_data( self::CHANNEL_META_KEY, $this->agentic_channel );
+		}
+
 		// ALLOW path: persist agent DID + R022 cart-attr status so the order webhook
 		// can propagate agentIdHash to PlatformOrder for R023 refund-abuse-guard
 		// enforcement and downstream readers can verify agent provenance. Only a
@@ -499,6 +520,12 @@ class Trusteed_Checkout_Enforcer {
 	private function run_evaluation( \Closure $build_context, array $request_tokens = array() ): string {
 		$this->last_agent_reason = null;
 		$decision                = $this->run_evaluation_guarded( $build_context, $request_tokens );
+		// La marca agéntica sobrevive a BLOCK/UNAVAILABLE: un agente bloqueado que reenvía sin
+		// llamar a ninguna tool no pasa a evaluarse como persona. Sólo ALLOW la consume.
+		if ( 'ALLOW' === $decision && WC()->session ) {
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, null );
+			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_CHANNEL, null );
+		}
 		// Sin motivo del servidor (válvula offline, avería, servidor antiguo) se deriva una categoría
 		// segura: nunca se inventa una regla ni se calla.
 		if ( null === $this->last_agent_reason && ( 'BLOCK' === $decision || self::DECISION_UNAVAILABLE === $decision ) ) {
@@ -538,7 +565,7 @@ class Trusteed_Checkout_Enforcer {
 				$data[ $key ] = $reason[ $key ];
 			}
 		}
-		foreach ( array( 'human_checkout', 'blocked_item', 'published_limit' ) as $key ) {
+		foreach ( array( 'human_checkout', 'blocked_item', 'published_limit', 'limit_exceeded' ) as $key ) {
 			if ( isset( $reason[ $key ] ) && is_array( $reason[ $key ] ) ) {
 				$data[ $key ] = $reason[ $key ];
 			}
@@ -598,8 +625,9 @@ class Trusteed_Checkout_Enforcer {
 	 * @return string 'ALLOW', 'BLOCK' or self::DECISION_UNAVAILABLE.
 	 */
 	private function run_evaluation_unguarded( \Closure $build_context, array $request_tokens = array() ): string {
-		$this->verified_did   = '';
-		$this->browser_result = null;
+		$this->verified_did    = '';
+		$this->agentic_channel = '';
+		$this->browser_result  = null;
 		$order_context        = $build_context();
 		$token              = Trusteed_Agent_Identity::resolve_token( WC()->session, $request_tokens );
 
@@ -622,6 +650,8 @@ class Trusteed_Checkout_Enforcer {
 
 		// Read BEFORE the session is cleared below (and before the token check).
 		$is_agentic = $this->resolve_is_agentic( $agent_id, $token );
+		$channel    = WC()->session ? WC()->session->get( Trusteed_Cart_Bridge::SESSION_AGENTIC_CHANNEL ) : null;
+		$this->agentic_channel = 'webmcp' === $channel ? 'webmcp' : '';
 
 		// 2.5.2: agente de navegador con firma RFC 9421. Sólo en `enforce` cambia la
 		// clasificación, y sólo con verified/spoofed: unverified, error o timeout siguen
@@ -698,11 +728,10 @@ class Trusteed_Checkout_Enforcer {
 
 		$result = $this->api_client->evaluate( $payload );
 
-		// Clear session regardless of decision to avoid re-checking on retry.
+		// Id/token se limpian sin importar la decisión; la marca agéntica NO (sólo en ALLOW, en run_evaluation()).
 		if ( WC()->session ) {
 			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_ID, null );
 			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, null );
-			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, null );
 			WC()->session->set( Trusteed_Agent_Identity::SESSION_TOKEN_REJECTED, null );
 		}
 
@@ -1011,12 +1040,29 @@ class Trusteed_Checkout_Enforcer {
 		return '' !== $token['token'] || $token['rejected'];
 	}
 
+	/** Estampa el canal de agente en el próximo pedido clásico (mismo patrón que la firma). */
+	private function stamp_next_classic_channel(): void {
+		if ( '' === $this->agentic_channel ) {
+			return;
+		}
+		$channel = $this->agentic_channel;
+		add_action(
+			'woocommerce_checkout_create_order',
+			static function ( $order ) use ( $channel ): void {
+				if ( $order instanceof \WC_Order ) {
+					$order->update_meta_data( Trusteed_Checkout_Enforcer::CHANNEL_META_KEY, $channel );
+				}
+			},
+			10,
+			1
+		);
+	}
+
 	/** Same session cleanup as after evaluate(), for the early return of Task 23a. */
 	private function clear_agent_session(): void {
 		if ( WC()->session ) {
 			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_ID, null );
 			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENT_TOKEN, null );
-			WC()->session->set( Trusteed_Cart_Bridge::SESSION_AGENTIC_ORIGIN, null );
 			WC()->session->set( Trusteed_Agent_Identity::SESSION_TOKEN_REJECTED, null );
 		}
 	}

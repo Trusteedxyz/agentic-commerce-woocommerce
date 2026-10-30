@@ -340,7 +340,7 @@ final class Trusteed_Agent_Woo_Adapter {
 	 * @return array<string,mixed>
 	 */
 	private function snapshot( $order ): array {
-		return array(
+		$snapshot = array(
 			'id'                => (int) $order->get_id(),
 			'number'            => (string) $order->get_order_number(),
 			'status'            => (string) $order->get_status(),
@@ -350,6 +350,11 @@ final class Trusteed_Agent_Woo_Adapter {
 			'is_paid'           => (bool) $order->is_paid(),
 			'transaction_id'    => (string) $order->get_transaction_id(),
 		);
+		// La pasarela `trusteed_agent` no se ofrece a humanos, asi que order-pay muestra las reales.
+		if ( 'pending' === $snapshot['status'] ) {
+			$snapshot['payment_url'] = (string) $order->get_checkout_payment_url();
+		}
+		return $snapshot;
 	}
 
 	/**

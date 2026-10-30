@@ -86,6 +86,8 @@ final class Trusteed_Test_Woo_Port
     public ?array $rules_agent_reason = null;
     public ?string $rules_agent_did = null;
     public ?string $rules_identity_level = null;
+    /** Enlace de pago que el adaptador real pondria en un pedido pending; null = ninguno. */
+    public ?string $payment_url = null;
 
     public function __construct()
     {
@@ -146,6 +148,9 @@ final class Trusteed_Test_Woo_Port
             'is_paid'           => false,
             'transaction_id'    => '',
         ];
+        if (null !== $this->payment_url) {
+            $this->orders[$id]['payment_url'] = $this->payment_url;
+        }
         return $this->orders[$id];
     }
 

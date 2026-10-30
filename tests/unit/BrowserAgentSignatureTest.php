@@ -298,6 +298,20 @@ final class BrowserAgentSignatureTest extends TestCase
         self::assertSame('covered', $headers['x-custom']);
     }
 
+    public function test_our_own_csrf_header_is_never_forwarded(): void
+    {
+        $_SERVER['HTTP_SIGNATURE_INPUT'] = 'sig1=("@authority" "x-trusteed-nonce" "x-custom");keyid="k1"';
+        $_SERVER['HTTP_SIGNATURE']       = 'sig1=:YWJj:';
+        $_SERVER['HTTP_SIGNATURE_AGENT'] = '"https://agent.example"';
+        $_SERVER['HTTP_X_CUSTOM']        = 'covered';
+        $_SERVER['HTTP_X_TRUSTEED_NONCE'] = 'good-nonce';
+        $this->api_says('verified');
+        $this->run_eval('observe');
+        $headers = json_decode($GLOBALS['__amcp_wp_remote_post_last_args']['body'], true)['headers'];
+        self::assertArrayNotHasKey('x-trusteed-nonce', $headers);
+        self::assertSame('covered', $headers['x-custom']);
+    }
+
     public function test_verified_without_authority_or_target_uri_covered_is_not_verified(): void
     {
         $_SERVER['HTTP_SIGNATURE_INPUT'] = 'sig1=("@method" "x-custom");keyid="k1"';
