@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.5
+Stable tag: 2.5.6
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,11 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.6 =
+* Fix: My rules always shows a rule that is switched on, even when it is only partly enforced on WooCommerce (for example "approval required"). Before, such a rule stayed active but hidden: it could not be seen or switched off, and the counter showed one rule less.
+* Fix: Payment methods. With PayPal connected, the credential fields are folded behind "Change credentials" instead of showing empty fields under "Connected". KYApay is named and described correctly in every language: it verifies agent identity and does not charge (the old text described a buy-now-pay-later service).
+* Fix: the plugin description in the WordPress plugin list is translated, and the email example on the connect form is a generic address.
 
 = 2.5.5 =
 * Fix: "Test connection" no longer shows "Request error" while Trusteed is serving normally with a non-critical check degraded. A real outage now shows a plain message instead of status codes.

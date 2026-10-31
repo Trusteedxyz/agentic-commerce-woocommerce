@@ -356,7 +356,7 @@ class Trusteed_Settings {
 									id="amcp-onboard-email"
 									class="regular-text"
 									autocomplete="email"
-									placeholder="paco@tusandias.es"
+									placeholder="<?php esc_attr_e( 'you@yourstore.com', 'trusteed-for-woocommerce' ); ?>"
 								/>
 							</td>
 						</tr>

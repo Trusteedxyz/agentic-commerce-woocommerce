@@ -159,6 +159,11 @@ Investigating the report surfaced something it did not flag: an OAuth scope (`mc
 
 ## Changelog
 
+### 2.5.6
+- Fix: My rules always shows a rule that is switched on, even when it is only partly enforced on WooCommerce (for example "approval required"). Before, such a rule stayed active but hidden: it could not be seen or switched off, and the counter showed one rule less.
+- Fix: Payment methods. With PayPal connected, the credential fields are folded behind "Change credentials" instead of showing empty fields under "Connected". KYApay is named and described correctly in every language: it verifies agent identity and does not charge (the old text described a buy-now-pay-later service).
+- Fix: the plugin description in the WordPress plugin list is translated, and the email example on the connect form is a generic address.
+
 ### 2.5.5
 - Fix: "Test connection" no longer shows "Request error" while Trusteed is serving normally with a non-critical check degraded. A real outage now shows a plain message instead of status codes.
 - Fix: the MCP endpoint shown after connecting (and published in your llms.txt) is the current discovery endpoint on api.trusteed.xyz, not the retired one. Reconnect, or use "Sync catalog now", to refresh the saved value; the llms.txt already publishes the current endpoint after the update.
