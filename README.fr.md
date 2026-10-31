@@ -12,6 +12,14 @@ Les agents IA sont un nouveau type d'acheteur en ligne. Avec Trusteed, le résea
 - Laissez agents et marchands échanger directement, de pair à pair.
 - Vérifiez si les agents peuvent acheter chez vous. Le tableau de bord Agent Readiness teste en direct si les agents IA peuvent réellement acheter dans votre boutique aujourd'hui. Il donne trois vues indépendantes (ce que disent les autres, ce que vous promettez par rapport à ce que vous faites, ce que nous avons observé), et rien n'est noté tant que ce n'est pas vérifié.
 
+## Guide vidéo
+
+Présentation du plugin : installation, connexion de la boutique et utilisation de chaque panneau. Vidéo en anglais (sous-titres disponibles) ou en espagnol.
+
+[![English (anglais)](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A) [![Español (espagnol)](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4)
+
+[English (anglais)](https://youtu.be/GygOzOj7U7A) · [Español (espagnol)](https://youtu.be/oEEeFR15Rm4)
+
 ## Captures d'écran
 
 Chaque panneau ci-dessous correspond à un élément du menu **Trusteed** dans WooCommerce.

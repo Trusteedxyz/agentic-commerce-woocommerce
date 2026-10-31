@@ -12,6 +12,14 @@ KI-Agenten sind eine neue Art von Online-Käufern. Mit Trusteed, dem Netzwerk, d
 - Lassen Sie Agenten und Händler direkt miteinander handeln, Peer-to-Peer.
 - Prüfen Sie, ob Agenten bei Ihnen einkaufen können. Das Agent-Readiness-Dashboard testet live, ob KI-Agenten heute wirklich in Ihrem Shop einkaufen können. Es bietet drei unabhängige Ansichten (was andere sagen, was Sie versprechen im Vergleich zu dem, was Sie tun, was wir beobachtet haben), und nichts wird bewertet, bevor es verifiziert ist.
 
+## Video-Anleitung
+
+Überblick über das Plugin: Installation, Shop verbinden und jedes Panel nutzen. Video auf Englisch (Untertitel verfügbar) oder Spanisch.
+
+[![English (Englisch)](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A) [![Español (Spanisch)](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4)
+
+[English (Englisch)](https://youtu.be/GygOzOj7U7A) · [Español (Spanisch)](https://youtu.be/oEEeFR15Rm4)
+
 ## Screenshots
 
 Jedes Panel unten entspricht einem Eintrag im **Trusteed**-Menü innerhalb von WooCommerce.

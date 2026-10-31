@@ -12,6 +12,14 @@ Los agentes de IA son un tipo nuevo de comprador online. Con Trusteed, la red qu
 - Deja que agentes y comercios comercien directamente entre pares (peer-to-peer).
 - Comprueba si los agentes pueden comprarte. El panel de preparación para agentes comprueba en vivo si los agentes de IA pueden comprar hoy en tu tienda. Ofrece tres vistas independientes (lo que dicen otros, lo que prometes frente a lo que haces, lo que hemos observado), y nada se puntúa hasta que se verifica.
 
+## Vídeo guía
+
+Explicación del plugin: instalación, conexión de la tienda y uso de cada panel.
+
+[![Español](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4) [![English (inglés)](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A)
+
+[Español](https://youtu.be/oEEeFR15Rm4) · [English (inglés)](https://youtu.be/GygOzOj7U7A)
+
 ## Capturas de pantalla
 
 Cada panel de abajo corresponde a un elemento del menú **Trusteed** dentro de WooCommerce.

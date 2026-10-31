@@ -12,6 +12,14 @@ AI agents are a new kind of online shopper. With Trusteed, the network that conn
 - Let agents and merchants trade directly, peer to peer.
 - Check whether agents can buy from you. The agent readiness dashboard tests live whether AI agents can actually buy in your store today. It gives three independent views (what others say, what you promise versus what you do, what we've observed), and nothing is scored until it's verified.
 
+## Video guide
+
+A walkthrough of the plugin: install, connect your store and use every panel.
+
+[![English](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A) [![Español (Spanish)](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4)
+
+[English](https://youtu.be/GygOzOj7U7A) · [Español (Spanish)](https://youtu.be/oEEeFR15Rm4)
+
 ## Screenshots
 
 Each panel below maps to an item in the **Trusteed** menu inside WooCommerce.
