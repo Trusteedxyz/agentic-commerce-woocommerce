@@ -16,7 +16,7 @@ KI-Agenten sind eine neue Art von Online-Käufern. Mit Trusteed, dem Netzwerk, d
 
 Überblick über das Plugin: Installation, Shop verbinden und jedes Panel nutzen. Video auf Englisch (Untertitel verfügbar) oder Spanisch.
 
-[![English (Englisch)](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A) [![Español (Spanisch)](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4)
+[![English (Englisch)](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A)
 
 [English (Englisch)](https://youtu.be/GygOzOj7U7A) · [Español (Spanisch)](https://youtu.be/oEEeFR15Rm4)
 

@@ -16,7 +16,7 @@ Los agentes de IA son un tipo nuevo de comprador online. Con Trusteed, la red qu
 
 Explicación del plugin: instalación, conexión de la tienda y uso de cada panel.
 
-[![Español](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4) [![English (inglés)](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A)
+[![Español](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4)
 
 [Español](https://youtu.be/oEEeFR15Rm4) · [English (inglés)](https://youtu.be/GygOzOj7U7A)
 

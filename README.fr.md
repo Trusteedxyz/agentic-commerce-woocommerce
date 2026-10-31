@@ -16,7 +16,7 @@ Les agents IA sont un nouveau type d'acheteur en ligne. Avec Trusteed, le résea
 
 Présentation du plugin : installation, connexion de la boutique et utilisation de chaque panneau. Vidéo en anglais (sous-titres disponibles) ou en espagnol.
 
-[![English (anglais)](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A) [![Español (espagnol)](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4)
+[![English (anglais)](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A)
 
 [English (anglais)](https://youtu.be/GygOzOj7U7A) · [Español (espagnol)](https://youtu.be/oEEeFR15Rm4)
 

@@ -16,7 +16,7 @@ AI agents are a new kind of online shopper. With Trusteed, the network that conn
 
 A walkthrough of the plugin: install, connect your store and use every panel.
 
-[![English](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A) [![Español (Spanish)](assets/video-preview-es.gif)](https://youtu.be/oEEeFR15Rm4)
+[![English](assets/video-preview-en.gif)](https://youtu.be/GygOzOj7U7A)
 
 [English](https://youtu.be/GygOzOj7U7A) · [Español (Spanish)](https://youtu.be/oEEeFR15Rm4)
 
