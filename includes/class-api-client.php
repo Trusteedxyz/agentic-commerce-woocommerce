@@ -750,14 +750,42 @@ class Trusteed_Api_Client {
 			);
 		}
 
-		$store_data = $data['data'];
+		return self::register_result_from_data( $data['data'] );
+	}
+
+	/**
+	 * Whitelist the fields of a /plugin/register `data` payload.
+	 *
+	 * `api_key` is only kept when it is a plugin key (`amcp_wc_`): the API issues
+	 * one when it is called with a dashboard key, which then must replace it.
+	 *
+	 * @param array $store_data The `data` object of the response.
+	 * @return array
+	 */
+	public static function register_result_from_data( array $store_data ): array {
+		$issued = isset( $store_data['api_key'] ) && is_string( $store_data['api_key'] )
+			? sanitize_text_field( $store_data['api_key'] )
+			: '';
 
 		return array(
 			'merchant_id'  => isset( $store_data['merchant_id'] ) ? sanitize_text_field( $store_data['merchant_id'] ) : '',
 			'store_slug'   => isset( $store_data['store_slug'] ) ? sanitize_text_field( $store_data['store_slug'] ) : '',
 			'mcp_endpoint' => isset( $store_data['mcp_endpoint'] ) ? esc_url_raw( $store_data['mcp_endpoint'] ) : '',
 			'tier'         => isset( $store_data['tier'] ) ? sanitize_text_field( $store_data['tier'] ) : '',
+			'api_key'      => 0 === strpos( $issued, 'amcp_wc_' ) ? $issued : '',
 		);
+	}
+
+	/**
+	 * Key to persist after a successful register: the one the API issued, else
+	 * the pasted one (older APIs approved the pasted key as is).
+	 *
+	 * @param array  $result Output of register_store().
+	 * @param string $pasted The key the merchant pasted.
+	 * @return string
+	 */
+	public static function key_to_persist( array $result, string $pasted ): string {
+		return ! empty( $result['api_key'] ) ? $result['api_key'] : $pasted;
 	}
 
 	/**

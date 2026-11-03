@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.6
+Stable tag: 2.5.7
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,12 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.7 =
+* Fix: the idempotency lock on order creation is now atomic, so two simultaneous requests with the same payment reference can no longer both create an order, and a fatal PHP error no longer leaves the lock held for 120 seconds.
+* Security: agent tokens without a merchant identifier are now rejected, as in the PrestaShop and Odoo integrations. Conforming agents always send it.
+* Fix: product changes are synced after WooCommerce has saved the price and stock, and the call to Trusteed runs in a background task instead of slowing down the save.
+* Fix: when you connect with a dashboard key, the plugin now stores the plugin key that Trusteed issues in exchange, instead of keeping the dashboard key.
 
 = 2.5.6 =
 * Fix: My rules always shows a rule that is switched on, even when it is only partly enforced on WooCommerce (for example "approval required"). Before, such a rule stayed active but hidden: it could not be seen or switched off, and the counter showed one rule less.

@@ -793,7 +793,7 @@ class Trusteed_Settings {
 		}
 
 		// Key validated by the backend — persist it (encrypted at rest) and metadata.
-		Trusteed_Api_Client::store_api_key( $api_key );
+		Trusteed_Api_Client::store_api_key( Trusteed_Api_Client::key_to_persist( $result, $api_key ) );
 		if ( ! empty( $result['merchant_id'] ) ) {
 			update_option( 'trusteed_merchant_id', sanitize_text_field( $result['merchant_id'] ) );
 		}

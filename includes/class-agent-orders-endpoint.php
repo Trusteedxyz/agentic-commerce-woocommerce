@@ -234,26 +234,27 @@ final class Trusteed_Agent_Orders_Endpoint {
 		$input['agent_did']           = $did;
 		$input['agent_identity_level'] = $level;
 
-		// Idempotencia: el mismo trusteed_order_id nunca crea dos pedidos.
-		$lock_key = 'trusteed_agent_order_lock_' . $tid;
-		$locked   = false;
+		// Idempotencia: el mismo trusteed_order_id nunca crea dos pedidos. El cerrojo es atómico
+		// (INSERT IGNORE, como el de /paid); un transient dejaba pasar dos peticiones cruzadas.
+		$lock_key = self::PAYREF_LOCK_PREFIX . 'order_' . $tid;
+		$token    = null;
 		try {
+			$token = Trusteed_Payref_Lock::acquire( $lock_key );
+			if ( null === $token ) {
+				return self::error( 409, 'in_progress', 'This order is already being created.' );
+			}
+			// Se busca DENTRO del cerrojo: quien lo tenía antes pudo terminar de crear el pedido.
 			$existing = $this->port->find_order_by_trusteed_id( $tid );
 			if ( null !== $existing ) {
 				return new WP_REST_Response( self::order_payload( $existing ), 200 );
 			}
-			if ( false !== get_transient( $lock_key ) ) {
-				return self::error( 409, 'in_progress', 'This order is already being created.' );
-			}
-			set_transient( $lock_key, 1, 30 );
-			$locked = true;
 			return $this->create_and_validate( $input, $exp );
 		} catch ( \Throwable $e ) {
 			return $this->internal_error( 'create_order', $e );
 		} finally {
 			// Sólo suelta el cerrojo quien lo tomó: otra petición en curso lo conserva.
-			if ( $locked ) {
-				delete_transient( $lock_key );
+			if ( null !== $token ) {
+				Trusteed_Payref_Lock::release( $lock_key, $token );
 			}
 		}
 	}

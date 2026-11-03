@@ -207,7 +207,8 @@ class Trusteed_Token_Verifier {
 			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'wrong_aud' );
 		}
 
-		if ( isset( $payload['merchantId'] ) && $payload['merchantId'] !== $merchant_id ) {
+		// SEC-238: merchantId is REQUIRED (canonical schema; PrestaShop/Odoo reject its absence).
+		if ( ! isset( $payload['merchantId'] ) || $payload['merchantId'] !== $merchant_id ) {
 			return new Trusteed_Token_Verify_Result( Trusteed_Token_State::INVALID, $did, 0.0, 'merchant_id_mismatch' );
 		}
 

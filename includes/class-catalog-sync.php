@@ -49,59 +49,30 @@ class Trusteed_Catalog_Sync {
 	}
 
 	/**
-	 * Handle product save (create or update).
+	 * Hook name of the async worker (Action Scheduler / WP-Cron).
+	 */
+	const SYNC_HOOK = 'trusteed_catalog_sync_product';
+
+	/**
+	 * Handle product created/updated.
 	 *
-	 * Hooked to 'save_post_product'. Sends the product payload to the API
-	 * so the remote catalog stays in sync.
+	 * Hooked to 'woocommerce_new_product' and 'woocommerce_update_product',
+	 * which fire AFTER WooCommerce has persisted price/stock (unlike
+	 * 'save_post_product'). Never does HTTP: it only schedules the sync.
 	 *
-	 * @since 1.0.0
-	 *
-	 * @param int     $post_id Post ID.
-	 * @param WP_Post $post    Post object.
-	 * @param bool    $update  Whether this is an update (true) or new post (false).
+	 * @param int $product_id Product ID.
 	 *
 	 * @return void
 	 */
-	public function on_product_save( $post_id, $post, $update ) {
-		// Skip autosaves and revisions.
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
-		}
-
-		if ( wp_is_post_revision( $post_id ) ) {
-			return;
-		}
-
-		// Only sync published products.
-		if ( 'publish' !== $post->post_status ) {
-			return;
-		}
-
-		$product = wc_get_product( $post_id );
-
-		if ( ! $product instanceof \WC_Product ) {
-			return;
-		}
-
-		$payload = $this->product_to_payload( $product );
-
-		$response = $this->api_client->post(
-			'/api/v1/plugin/catalog/sync',
-			array(
-				'products' => array( $payload ),
-			)
-		);
-
-		$this->log_sync_outcome( 'on_product_save', $post_id, $response );
+	public function on_product_changed( $product_id ) {
+		$this->enqueue_product_sync( $product_id );
 	}
 
 	/**
-	 * Handle stock quantity change.
+	 * Handle stock change of a product (also fires inside checkout).
 	 *
-	 * Hooked to 'woocommerce_product_set_stock'. Sends an incremental
-	 * sync with only the stock-relevant fields.
-	 *
-	 * @since 1.0.0
+	 * Hooked to 'woocommerce_product_set_stock'. Only schedules the sync:
+	 * no HTTP on the buyer's payment request.
 	 *
 	 * @param WC_Product $product The product whose stock changed.
 	 *
@@ -112,21 +83,110 @@ class Trusteed_Catalog_Sync {
 			return;
 		}
 
-		// Only sync published products.
-		if ( 'publish' !== get_post_status( $product->get_id() ) ) {
+		$this->enqueue_product_sync( $this->sync_target_id( $product ) );
+	}
+
+	/**
+	 * Handle stock change of a variation.
+	 *
+	 * Hooked to 'woocommerce_variation_set_stock'; syncs the parent product,
+	 * whose payload carries the variations.
+	 *
+	 * @param WC_Product $variation The variation whose stock changed.
+	 *
+	 * @return void
+	 */
+	public function on_variation_stock_change( $variation ) {
+		$this->on_stock_change( $variation );
+	}
+
+	/**
+	 * Parent id for variations, own id otherwise.
+	 *
+	 * @param WC_Product $product Product or variation.
+	 *
+	 * @return int
+	 */
+	private function sync_target_id( $product ) {
+		$parent_id = method_exists( $product, 'get_parent_id' ) ? absint( $product->get_parent_id() ) : 0;
+
+		return $parent_id > 0 ? $parent_id : absint( $product->get_id() );
+	}
+
+	/**
+	 * Schedule a deduplicated, non-blocking product sync.
+	 *
+	 * Action Scheduler (bundled with WooCommerce) when available, WP-Cron
+	 * single event otherwise. Skipped while the store is not connected.
+	 *
+	 * @param int $product_id Product ID.
+	 *
+	 * @return void
+	 */
+	public function enqueue_product_sync( $product_id ) {
+		$product_id = absint( $product_id );
+
+		if ( 0 === $product_id || ! $this->is_connected() ) {
 			return;
 		}
 
-		$payload = $this->product_to_payload( $product );
+		$args = array( $product_id );
+
+		if ( function_exists( 'as_enqueue_async_action' ) ) {
+			if ( function_exists( 'as_has_scheduled_action' ) && as_has_scheduled_action( self::SYNC_HOOK, $args, 'trusteed' ) ) {
+				return;
+			}
+			as_enqueue_async_action( self::SYNC_HOOK, $args, 'trusteed' );
+			return;
+		}
+
+		if ( ! wp_next_scheduled( self::SYNC_HOOK, $args ) ) {
+			wp_schedule_single_event( time() + 5, self::SYNC_HOOK, $args );
+		}
+	}
+
+	/**
+	 * Async worker: send one product to the API.
+	 *
+	 * @param int $product_id Product ID.
+	 *
+	 * @return void
+	 */
+	public function sync_product( $product_id ) {
+		$product_id = absint( $product_id );
+
+		if ( 0 === $product_id || ! $this->is_connected() ) {
+			return;
+		}
+
+		// Only sync published products.
+		if ( 'publish' !== get_post_status( $product_id ) ) {
+			return;
+		}
+
+		$product = wc_get_product( $product_id );
+
+		if ( ! $product instanceof \WC_Product ) {
+			return;
+		}
 
 		$response = $this->api_client->post(
 			'/api/v1/plugin/catalog/sync',
 			array(
-				'products' => array( $payload ),
+				'products' => array( $this->product_to_payload( $product ) ),
 			)
 		);
 
-		$this->log_sync_outcome( 'on_stock_change', $product->get_id(), $response );
+		$this->log_sync_outcome( 'sync_product', $product_id, $response );
+	}
+
+	/**
+	 * Whether the store has an API key (no calls, no log noise otherwise).
+	 *
+	 * @return bool
+	 */
+	protected function is_connected() {
+		return '' !== Trusteed_Api_Client::get_stored_api_key();
 	}
 
 	/**

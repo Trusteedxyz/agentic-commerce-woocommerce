@@ -31,7 +31,7 @@ declare(strict_types=1);
  *   TV-15  Wrong JWK key type (rsa instead of OKP) → state=invalid, error=wrong_key_type
  *   TV-16  JWK with bad pubkey bytes (wrong length) → state=invalid, error=bad_pubkey
  *   TV-17  Token with DID fragment kid → DID extracted correctly, valid state
- *   TV-18  Token with merchantId absent → passes check (merchantId optional)
+ *   TV-18  Token with merchantId absent → invalid, merchant_id_mismatch (SEC-238)
  *   TV-19  Token exactly at exp boundary (within 30s grace) → state=valid
  *   TV-20  Token at exact MAX_AGE_SECONDS (300s) for iat → state=valid (boundary); 301s → too_old
  *
@@ -439,10 +439,10 @@ class TokenVerifierTest extends TestCase
         $this->assertSame(self::AGENT_DID, $result->agent_did);
     }
 
-    // ── TV-18: merchantId absent → passes ────────────────────────────────────
+    // ── TV-18: merchantId absent → rejected (SEC-238) ────────────────────────
 
-    /** Token without merchantId claim is accepted (optional binding). */
-    public function testTokenWithoutMerchantIdClaimPasses(): void
+    /** SEC-238: the canonical schema requires merchantId; PrestaShop/Odoo reject its absence. */
+    public function testTokenWithoutMerchantIdClaimIsRejected(): void
     {
         $resolver = $this->buildResolver(self::AGENT_DID, self::$pubkeyRaw);
         $claims   = $this->baseClaims();
@@ -451,7 +451,8 @@ class TokenVerifierTest extends TestCase
 
         $result = Trusteed_Token_Verifier::verify($jws, $resolver, self::MERCHANT_ID);
 
-        $this->assertSame(Trusteed_Token_State::VALID, $result->state);
+        $this->assertSame(Trusteed_Token_State::INVALID, $result->state);
+        $this->assertSame('merchant_id_mismatch', $result->error);
     }
 
     // ── TV-19: exp within 30s grace ─────────────────────────────────────────

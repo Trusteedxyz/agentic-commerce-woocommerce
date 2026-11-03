@@ -167,6 +167,12 @@ Investigating the report surfaced something it did not flag: an OAuth scope (`mc
 
 ## Changelog
 
+### 2.5.7
+- Fix: the idempotency lock on order creation is now atomic, so two simultaneous requests with the same payment reference can no longer both create an order, and a fatal PHP error no longer leaves the lock held for 120 seconds.
+- Security: agent tokens without a merchant identifier are now rejected, as in the PrestaShop and Odoo integrations. Conforming agents always send it.
+- Fix: product changes are synced after WooCommerce has saved the price and stock, and the call to Trusteed runs in a background task instead of slowing down the save.
+- Fix: when you connect with a dashboard key, the plugin now stores the plugin key that Trusteed issues in exchange, instead of keeping the dashboard key.
+
 ### 2.5.6
 - Fix: My rules always shows a rule that is switched on, even when it is only partly enforced on WooCommerce (for example "approval required"). Before, such a rule stayed active but hidden: it could not be seen or switched off, and the counter showed one rule less.
 - Fix: Payment methods. With PayPal connected, the credential fields are folded behind "Change credentials" instead of showing empty fields under "Connected". KYApay is named and described correctly in every language: it verifies agent identity and does not charge (the old text described a buy-now-pay-later service).

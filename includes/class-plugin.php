@@ -307,8 +307,13 @@ class Trusteed_Plugin {
 		}
 
 		// Sync products on save/update/delete/stock change.
-		add_action( 'save_post_product', array( $this->catalog_sync, 'on_product_save' ), 10, 3 );
+		// CAB-001: hooks that fire after WooCommerce persists the data; the HTTP
+		// call runs in an async worker, never in the request that triggered it.
+		add_action( 'woocommerce_new_product', array( $this->catalog_sync, 'on_product_changed' ), 10, 1 );
+		add_action( 'woocommerce_update_product', array( $this->catalog_sync, 'on_product_changed' ), 10, 1 );
 		add_action( 'woocommerce_product_set_stock', array( $this->catalog_sync, 'on_stock_change' ), 10, 1 );
+		add_action( 'woocommerce_variation_set_stock', array( $this->catalog_sync, 'on_variation_stock_change' ), 10, 1 );
+		add_action( Trusteed_Catalog_Sync::SYNC_HOOK, array( $this->catalog_sync, 'sync_product' ), 10, 1 );
 		add_action( 'woocommerce_delete_product', array( $this->catalog_sync, 'on_product_delete' ), 10, 1 );
 		add_action( 'woocommerce_trash_product', array( $this->catalog_sync, 'on_product_delete' ), 10, 1 );
 

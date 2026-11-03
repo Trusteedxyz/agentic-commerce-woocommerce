@@ -277,6 +277,22 @@ final class AgentOrdersEndpointTest extends TestCase
         $this->assertSame(1, count(array_keys($this->port->calls, 'create', true)));
     }
 
+    public function test_orders_con_el_cerrojo_de_creacion_ajeno_da_409_y_no_crea_nada(): void
+    {
+        $GLOBALS['__amcp_options_store']['trusteed_payref_lock_order_ord_123'] = time() . ':ajeno';
+        $res = $this->endpoint->handle_create_order($this->signed($this->orderBody()));
+        $this->assertSame(409, $res->get_status());
+        $this->assertSame('in_progress', $res->get_data()['error']['code']);
+        $this->assertCount(0, $this->port->orders);
+        $this->assertArrayHasKey('trusteed_payref_lock_order_ord_123', $GLOBALS['__amcp_options_store'], 'el cerrojo ajeno no se libera');
+    }
+
+    public function test_orders_libera_el_cerrojo_de_creacion_al_terminar(): void
+    {
+        $this->endpoint->handle_create_order($this->signed($this->orderBody()));
+        $this->assertArrayNotHasKey('trusteed_payref_lock_order_ord_123', $GLOBALS['__amcp_options_store']);
+    }
+
     public function test_orders_con_total_distinto_da_409_con_ambos_totales_y_borra_el_pedido(): void
     {
         $res = $this->endpoint->handle_create_order($this->signed($this->orderBody(['expected_total_cents' => 6000])));
