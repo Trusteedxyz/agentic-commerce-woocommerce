@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.7
+Stable tag: 2.5.8
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,11 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.8 =
+* Added: the agent-readiness panel names the new "merchant decision" probe result ("Your choice" / "Decisión tuya") instead of showing it as an unrecognised state.
+* Fixed: the "Client types" labels in the Spanish panel read "Tipos de Client" (a mixed-language leftover); they now say "Tipos de cliente".
+* Fixed: the "ChatGPT / OpenAI" client type description in the Spanish panel read as if a word was missing; it now says "los GPT creados con ChatGPT y Codex".
 
 = 2.5.7 =
 * Fix: the idempotency lock on order creation is now atomic, so two simultaneous requests with the same payment reference can no longer both create an order, and a fatal PHP error no longer leaves the lock held for 120 seconds.

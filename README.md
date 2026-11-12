@@ -167,6 +167,11 @@ Investigating the report surfaced something it did not flag: an OAuth scope (`mc
 
 ## Changelog
 
+### 2.5.8
+- Added: the agent-readiness panel names the new "merchant decision" probe result ("Your choice" / "Decisión tuya") instead of showing it as an unrecognised state.
+- Fixed: the "Client types" labels in the Spanish panel read "Tipos de Client" (a mixed-language leftover); they now say "Tipos de cliente".
+- Fixed: the "ChatGPT / OpenAI" client type description in the Spanish panel read as if a word was missing; it now says "los GPT creados con ChatGPT y Codex".
+
 ### 2.5.7
 - Fix: the idempotency lock on order creation is now atomic, so two simultaneous requests with the same payment reference can no longer both create an order, and a fatal PHP error no longer leaves the lock held for 120 seconds.
 - Security: agent tokens without a merchant identifier are now rejected, as in the PrestaShop and Odoo integrations. Conforming agents always send it.
