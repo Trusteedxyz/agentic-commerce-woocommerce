@@ -167,6 +167,9 @@ Investigating the report surfaced something it did not flag: an OAuth scope (`mc
 
 ## Changelog
 
+### 2.5.9
+- Fixed: the Spanish panel no longer shows English text left over from the translation: the receipt detail title read "Detalle de Receipt" and now says "Detalle del recibo", the order ID column and the operator agents screen are translated.
+
 ### 2.5.8
 - Added: the agent-readiness panel names the new "merchant decision" probe result ("Your choice" / "Decisión tuya") instead of showing it as an unrecognised state.
 - Fixed: the "Client types" labels in the Spanish panel read "Tipos de Client" (a mixed-language leftover); they now say "Tipos de cliente".

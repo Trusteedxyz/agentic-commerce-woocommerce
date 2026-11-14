@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.8
+Stable tag: 2.5.9
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -145,6 +145,9 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it: a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.9 =
+* Fixed: the Spanish panel no longer shows English text left over from the translation: the receipt detail title read "Detalle de Receipt" and now says "Detalle del recibo", the order ID column and the operator agents screen are translated.
 
 = 2.5.8 =
 * Added: the agent-readiness panel names the new "merchant decision" probe result ("Your choice" / "Decisión tuya") instead of showing it as an unrecognised state.
