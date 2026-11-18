@@ -543,3 +543,27 @@ msgstr "Conecta tu tienda WooCommerce con agentes de IA mediante MCP (Model Cont
 #: includes/class-settings.php
 msgid "you@yourstore.com"
 msgstr "tu@tutienda.com"
+
+#: includes/class-settings.php
+msgid "Returns page"
+msgstr "Página de devoluciones"
+
+#: includes/class-settings.php
+msgid "Returns and withdrawal page"
+msgstr "Página de devoluciones y desistimiento"
+
+#: includes/class-settings.php
+msgid "Choose the published page where your store explains returns and the right of withdrawal. The plugin tells Trusteed its address, together with your terms page. If you choose none, nothing is sent."
+msgstr "Elige la página publicada donde tu tienda explica las devoluciones y el derecho de desistimiento. El plugin comunica su dirección a Trusteed, junto con tu página de condiciones. Si no eliges ninguna, no se envía nada."
+
+#: includes/class-settings.php
+msgid "— None —"
+msgstr "— Ninguna —"
+
+#: includes/class-settings.php
+msgid "Save page"
+msgstr "Guardar página"
+
+#: includes/class-settings.php
+msgid "Returns page saved."
+msgstr "Página de devoluciones guardada."

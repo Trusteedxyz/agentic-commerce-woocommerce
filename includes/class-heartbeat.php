@@ -8,7 +8,7 @@
  * Mismo credencial (`X-AgenticMCP-Key`) que el sync. Fallos: log, nunca fatal.
  *
  * @package Trusteed
- * @since   2.4.2 (taxConfig: 2.4.3, policyPages: 2.4.8)
+ * @since   2.4.2 (taxConfig: 2.4.3, policyPages: 2.4.8, returns/source: 2.5.11)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,6 +19,9 @@ class Trusteed_Heartbeat {
 
 	public const HOOK     = 'trusteed_heartbeat_hourly';
 	public const ENDPOINT = '/api/v1/plugin/heartbeat';
+
+	/** Opción con el ID de la página de devoluciones/desistimiento que elige el comercio. */
+	public const RETURNS_OPTION = 'trusteed_returns_page_id';
 
 	public static function register(): void {
 		add_action( self::HOOK, array( self::class, 'send' ) );
@@ -57,12 +60,15 @@ class Trusteed_Heartbeat {
 	 * borradores, ni privadas, ni el cuerpo. La API las guarda como importadas,
 	 * aparte de lo que declara el comercio, y no cuentan para el trust score.
 	 *
-	 * @return array<int,array{type:string,url:string,title:string,page_modified_at:string}>
+	 * @return array<int,array{type:string,url:string,title:string,page_modified_at:string,source:string}>
 	 */
 	public static function policy_pages(): array {
 		$sources = array(
 			'terms'   => 'woocommerce_terms_page_id',
 			'privacy' => 'wp_page_for_privacy_policy',
+			// No hay ajuste nativo de devoluciones en WooCommerce: es el que el
+			// comercio elige en Ajustes de Trusteed. Nunca se adivina por el título.
+			'returns' => self::RETURNS_OPTION,
 		);
 		$pages   = array();
 		foreach ( $sources as $type => $option ) {
@@ -81,6 +87,7 @@ class Trusteed_Heartbeat {
 				'url'              => $url,
 				'title'            => (string) get_the_title( $id ),
 				'page_modified_at' => gmdate( 'Y-m-d\TH:i:s\Z', $ts ),
+				'source'           => 'woocommerce_page',
 			);
 		}
 		return $pages;

@@ -4,7 +4,7 @@ Tags: ai, mcp, agentic-commerce, ai-agents, product-search, chatgpt, claude, ai-
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.10
+Stable tag: 2.5.11
 WC requires at least: 8.0
 WC tested up to: 11.0
 License: GPLv2 or later
@@ -148,6 +148,9 @@ The report's central claim is accurate: our OAuth dynamic client registration en
 Investigating the report surfaced something it did not flag: an OAuth scope (mcp:admin) was published across our discovery documents and offered on the consent screen, but no code enforced it — a token holding it carried the exact same privileges as mcp:read. That scope has been retired platform-wide. The fix lives in our private API and dashboard, not in this plugin, but we record the credit here as agreed with the reporter.
 
 == Changelog ==
+
+= 2.5.11 =
+* Added: you can choose the page where your store explains returns and the right of withdrawal (in the Trusteed plugin settings). The plugin tells Trusteed its address, together with your terms page. If you choose none, nothing is sent.
 
 = 2.5.10 =
 * Changed: My rules now describes the two buyer-intent rules ("Buyer intent required" and "Purchase does not match the request") exactly: what each one checks, which purchases it applies to, and what each available action does, so you can pick the action that fits your store.

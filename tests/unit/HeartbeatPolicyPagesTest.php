@@ -42,6 +42,7 @@ final class HeartbeatPolicyPagesTest extends TestCase
         $GLOBALS['__trusteed_pages'] = [
             10 => ['status' => 'publish', 'url' => 'https://tienda.example/terminos/', 'title' => 'Términos y condiciones', 'post_modified_gmt' => '2026-09-01 10:00:00'],
             11 => ['status' => 'publish', 'url' => 'https://tienda.example/privacidad/', 'title' => 'Privacidad', 'post_modified_gmt' => '2026-09-02 11:30:00'],
+            13 => ['status' => 'publish', 'url' => 'https://tienda.example/devoluciones/', 'title' => 'Devoluciones y desistimiento', 'post_modified_gmt' => '2026-09-04 08:00:00'],
             12 => ['status' => 'draft', 'url' => 'https://tienda.example/?p=12', 'title' => 'Borrador', 'post_modified_gmt' => '2026-09-03 00:00:00'],
         ];
     }
@@ -52,8 +53,8 @@ final class HeartbeatPolicyPagesTest extends TestCase
         $GLOBALS['__amcp_options_store']['wp_page_for_privacy_policy'] = '11';
         $this->assertSame(
             [
-                ['type' => 'terms', 'url' => 'https://tienda.example/terminos/', 'title' => 'Términos y condiciones', 'page_modified_at' => '2026-09-01T10:00:00Z'],
-                ['type' => 'privacy', 'url' => 'https://tienda.example/privacidad/', 'title' => 'Privacidad', 'page_modified_at' => '2026-09-02T11:30:00Z'],
+                ['type' => 'terms', 'url' => 'https://tienda.example/terminos/', 'title' => 'Términos y condiciones', 'page_modified_at' => '2026-09-01T10:00:00Z', 'source' => 'woocommerce_page'],
+                ['type' => 'privacy', 'url' => 'https://tienda.example/privacidad/', 'title' => 'Privacidad', 'page_modified_at' => '2026-09-02T11:30:00Z', 'source' => 'woocommerce_page'],
             ],
             Trusteed_Heartbeat::policy_pages()
         );
@@ -74,7 +75,7 @@ final class HeartbeatPolicyPagesTest extends TestCase
         $GLOBALS['__trusteed_pages'][10]['post_content'] = 'cuerpo secreto';
         $keys = array_keys(Trusteed_Heartbeat::policy_pages()[0]);
         sort($keys);
-        $this->assertSame(['page_modified_at', 'title', 'type', 'url'], $keys);
+        $this->assertSame(['page_modified_at', 'source', 'title', 'type', 'url'], $keys);
     }
 
     public function test_heartbeat_payload_includes_policy_pages(): void
@@ -83,5 +84,22 @@ final class HeartbeatPolicyPagesTest extends TestCase
         $payload = Trusteed_Heartbeat::build_payload();
         $this->assertArrayHasKey('taxConfig', $payload);
         $this->assertCount(1, $payload['policyPages']);
+    }
+
+    public function test_returns_comes_only_from_the_merchant_chosen_page(): void
+    {
+        $GLOBALS['__amcp_options_store']['trusteed_returns_page_id'] = '13';
+        $this->assertSame(
+            [['type' => 'returns', 'url' => 'https://tienda.example/devoluciones/', 'title' => 'Devoluciones y desistimiento', 'page_modified_at' => '2026-09-04T08:00:00Z', 'source' => 'woocommerce_page']],
+            Trusteed_Heartbeat::policy_pages()
+        );
+    }
+
+    public function test_returns_is_not_guessed_and_unpublished_choice_is_omitted(): void
+    {
+        // La página existe y se llama «Devoluciones», pero el comercio no la eligió: no se manda.
+        $this->assertSame([], Trusteed_Heartbeat::policy_pages());
+        $GLOBALS['__amcp_options_store']['trusteed_returns_page_id'] = '12'; // borrador
+        $this->assertSame([], Trusteed_Heartbeat::policy_pages());
     }
 }

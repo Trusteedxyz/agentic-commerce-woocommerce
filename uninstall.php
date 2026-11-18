@@ -175,6 +175,7 @@ $trusteed_prefixed_options = array(
 	'failure_mode',
 	'browser_agent_signature_mode',
 	'webmcp_checkout_tools',
+	'returns_page_id',
 	'merchant_id',
 	'woo_webhook_secret',
 );

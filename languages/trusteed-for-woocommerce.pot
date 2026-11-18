@@ -578,3 +578,27 @@ msgstr ""
 #: includes/class-settings.php
 msgid "Adds tools to the checkout page for AI agents that browse your site. They never place the order or charge: the buyer confirms. This setting applies immediately."
 msgstr ""
+
+#: includes/class-settings.php
+msgid "Returns page"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Returns and withdrawal page"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Choose the published page where your store explains returns and the right of withdrawal. The plugin tells Trusteed its address, together with your terms page. If you choose none, nothing is sent."
+msgstr ""
+
+#: includes/class-settings.php
+msgid "— None —"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Save page"
+msgstr ""
+
+#: includes/class-settings.php
+msgid "Returns page saved."
+msgstr ""

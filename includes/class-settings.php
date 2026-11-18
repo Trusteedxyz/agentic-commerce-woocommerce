@@ -511,6 +511,7 @@ class Trusteed_Settings {
 			</div>
 
 			<?php $this->render_enforcement_section(); ?>
+			<?php $this->render_returns_page_section(); ?>
 			<?php $this->render_upgrade_cta( $tier ); ?>
 			<?php endif; ?>
 		</div>
@@ -562,6 +563,7 @@ class Trusteed_Settings {
 				. '</p></div>';
 		}
 
+		$this->save_returns_page();
 		$current = (string) Trusteed_Options::get_option( 'failure_mode', 'enforce' );
 		$current = 'observe' === $current ? 'observe' : 'enforce';
 		$sig_mode = Trusteed_Browser_Agent_Signature::normalize_mode( (string) Trusteed_Options::get_option( 'browser_agent_signature_mode', Trusteed_Browser_Agent_Signature::DEFAULT_MODE ) );
@@ -614,6 +616,58 @@ class Trusteed_Settings {
 				</table>
 				<p class="submit">
 					<button type="submit" class="button button-primary"><?php esc_html_e( 'Save mode', 'trusteed-for-woocommerce' ); ?></button>
+				</p>
+			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Guarda la página de devoluciones/desistimiento que elige el comercio.
+	 * Solo páginas publicadas; 0 la quita. Nonce y capacidad comprobados.
+	 *
+	 * @return void
+	 */
+	private function save_returns_page(): void {
+		if (
+			! isset( $_POST['trusteed_returns_page_nonce'] ) // phpcs:ignore WordPress.Security.NonceVerification
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['trusteed_returns_page_nonce'] ) ), 'trusteed_returns_page_save' ) // phpcs:ignore WordPress.Security.NonceVerification
+		) {
+			return;
+		}
+		$id = isset( $_POST['trusteed_returns_page_id'] ) ? absint( wp_unslash( $_POST['trusteed_returns_page_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification
+		if ( $id > 0 && 'publish' !== get_post_status( $id ) ) {
+			$id = 0;
+		}
+		update_option( Trusteed_Heartbeat::RETURNS_OPTION, $id );
+		echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Returns page saved.', 'trusteed-for-woocommerce' ) . '</p></div>';
+	}
+
+	/**
+	 * Selector de la página de devoluciones y desistimiento.
+	 *
+	 * @return void
+	 */
+	private function render_returns_page_section(): void {
+		$selected = (int) get_option( Trusteed_Heartbeat::RETURNS_OPTION, 0 );
+		?>
+		<div class="agenticmcp-section" role="region" aria-label="<?php esc_attr_e( 'Returns page', 'trusteed-for-woocommerce' ); ?>" style="margin-top:24px;">
+			<h2><?php esc_html_e( 'Returns and withdrawal page', 'trusteed-for-woocommerce' ); ?></h2>
+			<p><?php esc_html_e( 'Choose the published page where your store explains returns and the right of withdrawal. The plugin tells Trusteed its address, together with your terms page. If you choose none, nothing is sent.', 'trusteed-for-woocommerce' ); ?></p>
+			<form method="post" action="">
+				<?php wp_nonce_field( 'trusteed_returns_page_save', 'trusteed_returns_page_nonce' ); ?>
+				<?php
+				wp_dropdown_pages(
+					array(
+						'name'              => 'trusteed_returns_page_id',
+						'selected'          => $selected,
+						'show_option_none'  => esc_html__( '— None —', 'trusteed-for-woocommerce' ),
+						'option_none_value' => '0',
+					)
+				);
+				?>
+				<p class="submit">
+					<button type="submit" class="button button-primary"><?php esc_html_e( 'Save page', 'trusteed-for-woocommerce' ); ?></button>
 				</p>
 			</form>
 		</div>
