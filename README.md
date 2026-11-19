@@ -8,7 +8,7 @@ AI agents are a new kind of online shopper. With Trusteed, the network that conn
 - Get signed receipts. Every transaction produces a cryptographically signed, tamper-evident receipt that records what the agent actually did, a verifiable proof of agent integrity. Aligned with eIDAS (EU) and with eSIGN (USA), but not yet a *qualified* signature or timestamp, so on its own it isn't ready-made dispute evidence for a bank or court.
 - See what agents do: how much they spend, what they buy and how often.
 - Block agents that look dangerous or cause problems.
-- Accept purchases in digital currencies through the X402 protocol.
+- Digital-currency payments through the x402 protocol are in sandbox (test value only); they are not available for real purchases.
 - Let agents and merchants trade directly, peer to peer.
 - Check whether agents can buy from you. The agent readiness dashboard tests live whether AI agents can actually buy in your store today. It gives three independent views (what others say, what you promise versus what you do, what we've observed), and nothing is scored until it's verified.
 
