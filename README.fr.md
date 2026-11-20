@@ -5,7 +5,7 @@
 Les agents IA sont un nouveau type d'acheteur en ligne. Avec Trusteed, le réseau qui met en relation les entreprises et les agents, ils peuvent acheter dans votre boutique selon vos conditions.
 
 - Définissez vos règles métier : qui peut acheter, jusqu'à quel montant, quelles catégories vous ne proposez pas aux agents, des limites de prix, des niveaux de stock qui vous protègent des agents frauduleux, et plus encore.
-- Recevez des reçus signés. Chaque transaction produit un reçu signé cryptographiquement, dont toute altération est détectable, et qui enregistre ce que l'agent a réellement fait, une preuve vérifiable de l'intégrité de l'agent. Aligné sur eIDAS (UE) et sur eSIGN (États-Unis), mais pas encore une signature ni un horodatage *qualifiés* : seul, il n'est donc pas une preuve de litige prête à être présentée à une banque ou à un tribunal.
+- Recevez des reçus signés. Chaque transaction produit un reçu signé cryptographiquement, dont toute altération est détectable, et qui enregistre ce que l'agent a réellement fait, un enregistrement vérifiable du contexte signé de l'opération (il ne prouve pas l'identité de l'agent). Aligné sur eIDAS (UE) et sur eSIGN (États-Unis), mais pas encore une signature ni un horodatage *qualifiés* : seul, il n'est donc pas une preuve de litige prête à être présentée à une banque ou à un tribunal.
 - Voyez ce que font les agents : combien ils dépensent, ce qu'ils achètent et à quelle fréquence.
 - Bloquez les agents qui semblent dangereux ou qui posent problème.
 - Acceptez des achats en monnaies numériques grâce au protocole X402.

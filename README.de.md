@@ -5,7 +5,7 @@
 KI-Agenten sind eine neue Art von Online-Käufern. Mit Trusteed, dem Netzwerk, das Unternehmen und Agenten verbindet, können sie zu Ihren Bedingungen in Ihrem Shop einkaufen.
 
 - Legen Sie Ihre Geschäftsregeln fest: wer kaufen darf, bis zu welchem Betrag, welche Kategorien Sie Agenten nicht anbieten, Preisgrenzen, Lagerbestände, die Sie vor betrügerischen Agenten schützen, und mehr.
-- Erhalten Sie signierte Belege. Jede Transaktion erzeugt einen kryptografisch signierten Beleg, an dem sich jede Manipulation erkennen lässt und der festhält, was der Agent tatsächlich getan hat, ein überprüfbarer Nachweis der Agentenintegrität. An eIDAS (EU) und an eSIGN (USA) ausgerichtet, aber noch keine *qualifizierte* Signatur und kein qualifizierter Zeitstempel, sodass er für sich allein kein fertiger Streitfallnachweis für eine Bank oder ein Gericht ist.
+- Erhalten Sie signierte Belege. Jede Transaktion erzeugt einen kryptografisch signierten Beleg, an dem sich jede Manipulation erkennen lässt und der festhält, was der Agent tatsächlich getan hat, eine überprüfbare Aufzeichnung des signierten Kontexts der Operation (sie belegt nicht die Identität des Agenten). An eIDAS (EU) und an eSIGN (USA) ausgerichtet, aber noch keine *qualifizierte* Signatur und kein qualifizierter Zeitstempel, sodass er für sich allein kein fertiger Streitfallnachweis für eine Bank oder ein Gericht ist.
 - Sehen Sie, was Agenten tun: wie viel sie ausgeben, was sie kaufen und wie oft.
 - Sperren Sie Agenten, die gefährlich wirken oder Probleme verursachen.
 - Nehmen Sie Käufe in digitalen Währungen über das X402-Protokoll an.

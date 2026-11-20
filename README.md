@@ -5,7 +5,7 @@
 AI agents are a new kind of online shopper. With Trusteed, the network that connects businesses and agents, they can buy from your store on your terms.
 
 - Set your business rules: who can buy, up to what amount, which categories you don't offer to agents, price limits, stock levels that protect you from fraudulent agents, and more.
-- Get signed receipts. Every transaction produces a cryptographically signed, tamper-evident receipt that records what the agent actually did, a verifiable proof of agent integrity. Aligned with eIDAS (EU) and with eSIGN (USA), but not yet a *qualified* signature or timestamp, so on its own it isn't ready-made dispute evidence for a bank or court.
+- Get signed receipts. Every transaction produces a cryptographically signed, tamper-evident receipt that records what the agent actually did, a verifiable record of the signed context of the operation (it does not prove the agent's identity). Aligned with eIDAS (EU) and with eSIGN (USA), but not yet a *qualified* signature or timestamp, so on its own it isn't ready-made dispute evidence for a bank or court.
 - See what agents do: how much they spend, what they buy and how often.
 - Block agents that look dangerous or cause problems.
 - Digital-currency payments through the x402 protocol are in sandbox (test value only); they are not available for real purchases.
@@ -36,7 +36,7 @@ Each panel below maps to an item in the **Trusteed** menu inside WooCommerce.
 |--------------------------------------|------------------|
 | ![Trust Receipts](assets/screenshots/ai-receipts.png) | ![Agent Readiness](assets/screenshots/agent-readiness.png) |
 
-Every agent transaction produces a signed trust receipt, a tamper-evident record (aligned with eIDAS and with eSIGN) listed under **My Sales → AI Sales**. Click a row to see the details: agent ID, tool called, input and output hashes, JWS. You can also download the receipt as a ZIP file. The export is a verifiable proof of agent integrity. It's a useful backup if a buyer claims they never placed the order, but on its own it doesn't replace the evidence a bank or court may require in a dispute.
+Every agent transaction produces a signed trust receipt, a tamper-evident record (aligned with eIDAS and with eSIGN) listed under **My Sales → AI Sales**. Click a row to see the details: agent ID, tool called, input and output hashes, JWS. You can also download the receipt as a ZIP file. The export is a verifiable record of the signed context of the operation; it does not prove the agent's identity. It's a useful backup if a buyer claims they never placed the order, but on its own it doesn't replace the evidence a bank or court may require in a dispute.
 
 ## Features
 

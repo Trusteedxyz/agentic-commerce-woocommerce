@@ -5,7 +5,7 @@
 Los agentes de IA son un tipo nuevo de comprador online. Con Trusteed, la red que conecta a negocios y agentes, pueden comprar en tu tienda con las condiciones que tú fijes.
 
 - Define tus reglas de negocio: a quién dejas comprar, hasta qué importe, qué categorías no quieres ofrecer a los agentes, límites de precio, niveles de stock que te protejan de agentes fraudulentos, y más.
-- Recibe recibos firmados. Cada transacción genera un recibo firmado criptográficamente, en el que cualquier alteración queda a la vista, y que registra lo que el agente hizo realmente, una prueba verificable de la integridad del agente. Alineado con eIDAS (UE) y con eSIGN (EE. UU.), pero todavía no es una firma ni un sello de tiempo *cualificados*, así que por sí solo no sirve como evidencia de disputa lista para un banco o un tribunal.
+- Recibe recibos firmados. Cada transacción genera un recibo firmado criptográficamente, en el que cualquier alteración queda a la vista, y que registra lo que el agente hizo realmente, un registro verificable del contexto firmado de la operación (no prueba la identidad del agente). Alineado con eIDAS (UE) y con eSIGN (EE. UU.), pero todavía no es una firma ni un sello de tiempo *cualificados*, así que por sí solo no sirve como evidencia de disputa lista para un banco o un tribunal.
 - Consulta lo que hacen los agentes: cuánto gastan, qué productos compran y con qué frecuencia.
 - Bloquea a los agentes que parezcan peligrosos o den problemas.
 - Acepta compras en divisas digitales mediante el protocolo X402.
